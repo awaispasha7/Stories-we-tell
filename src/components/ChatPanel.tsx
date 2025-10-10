@@ -10,7 +10,7 @@ export function ChatPanel() {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
-      content: "Welcome to Stories We Tell! I&apos;m your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story. What&apos;s the story you&apos;d like to tell today?"
+      content: "Welcome to Stories We Tell! I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story. What's the story you'd like to tell today?"
     }
   ])
   const [isLoading, setIsLoading] = useState(false)
@@ -116,7 +116,7 @@ export function ChatPanel() {
           const newMessages = [...prev]
           newMessages[newMessages.length - 1] = {
             role: 'assistant',
-            content: "I&apos;m sorry, I didn&apos;t receive a proper response. Please try again."
+            content: "I'm sorry, I didn't receive a proper response. Please try again."
           }
           return newMessages
         })
@@ -125,7 +125,7 @@ export function ChatPanel() {
       console.error('Chat error:', error)
       const errorMessage: BubbleProps = {
         role: 'assistant',
-        content: "I&apos;m sorry, I encountered an error. Please make sure the backend server is running and try again."
+        content: "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."
       }
       setMessages(prev => {
         const newMessages = [...prev]
@@ -156,7 +156,7 @@ export function ChatPanel() {
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">Welcome to Stories We Tell</h2>
               <p className="text-gray-600 max-w-md leading-relaxed">
-                I&apos;m your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story.
+                I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story.
               </p>
               <div className="mt-6 text-sm text-gray-500">
                 Start by sharing your story idea or asking for help with character development
