@@ -14,11 +14,47 @@ export function ChatPanel() {
     }
   ])
   const [isLoading, setIsLoading] = useState(false)
+  const [typingMessage, setTypingMessage] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   // const _send = useChatStore(s => s.send) // Unused for now
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const getDynamicTypingMessage = (userMessage: string) => {
+    const message = userMessage.toLowerCase()
+    
+    // Story development keywords
+    const storyKeywords = [
+      'character', 'plot', 'scene', 'setting', 'theme', 'conflict', 'resolution',
+      'protagonist', 'antagonist', 'dialogue', 'script', 'story', 'narrative',
+      'beginning', 'middle', 'end', 'climax', 'tension', 'drama', 'comedy',
+      'thriller', 'romance', 'action', 'adventure', 'mystery', 'horror'
+    ]
+    
+    // Check if user is talking about story development
+    const isStoryDevelopment = storyKeywords.some(keyword => message.includes(keyword))
+    
+    if (isStoryDevelopment) {
+      return "Crafting your story..."
+    }
+    
+    // Casual conversation responses
+    const casualMessages = [
+      "Thinking...",
+      "Cooking a response...",
+      "Building blocks...",
+      "Connecting dots...",
+      "Processing...",
+      "Weaving thoughts...",
+      "Gathering ideas...",
+      "Shaping words...",
+      "Finding the right words...",
+      "Putting pieces together..."
+    ]
+    
+    return casualMessages[Math.floor(Math.random() * casualMessages.length)]
   }
 
   useEffect(() => {
@@ -32,6 +68,10 @@ export function ChatPanel() {
     const userMessage: BubbleProps = { role: 'user', content: text }
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
+    
+    // Set dynamic typing message
+    const dynamicMessage = getDynamicTypingMessage(text)
+    setTypingMessage(dynamicMessage)
 
     // Add empty assistant message that we'll stream into
     const assistantMessage: BubbleProps = { role: 'assistant', content: '' }
@@ -151,6 +191,7 @@ export function ChatPanel() {
       })
     } finally {
       setIsLoading(false)
+      setTypingMessage('')
     }
   }
 
@@ -189,7 +230,7 @@ export function ChatPanel() {
             />
           ))}
 
-          {/* Enhanced Typing Indicator */}
+          {/* Dynamic Typing Indicator */}
           {isLoading && (
             <div className="flex items-start gap-3 mb-6 animate-in slide-in-from-bottom-2 duration-300 ml-8" style={{ marginTop: '2px', marginLeft: '16px' }}>
               <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 mt-1 ml-4">
@@ -197,28 +238,15 @@ export function ChatPanel() {
               </div>
               <div className="flex items-center pt-2">
                 <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '0ms' }}>C</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '100ms' }}>r</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '200ms' }}>a</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '300ms' }}>f</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '400ms' }}>t</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '500ms' }}>i</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '600ms' }}>n</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '700ms' }}>g</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '800ms' }}>&nbsp;</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '900ms' }}>y</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1000ms' }}>o</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1100ms' }}>u</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1200ms' }}>r</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1300ms' }}>&nbsp;</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1400ms' }}>s</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1500ms' }}>t</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1600ms' }}>o</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1700ms' }}>r</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1800ms' }}>y</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '1900ms' }}>.</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '2000ms' }}>.</span>
-                  <span className="inline-block animate-pulse-wave" style={{ animationDelay: '2100ms' }}>.</span>
+                  {typingMessage.split('').map((char, index) => (
+                    <span 
+                      key={index}
+                      className="inline-block animate-pulse-wave" 
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      {char}
+                    </span>
+                  ))}
                 </span>
               </div>
             </div>
