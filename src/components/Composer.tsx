@@ -15,6 +15,13 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Auto-focus textarea when component becomes enabled
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [disabled])
+
   const handleSend = () => {
     if (!text.trim() || disabled) return
     onSend(text)
