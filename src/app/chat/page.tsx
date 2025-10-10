@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => { init() }, [init])
