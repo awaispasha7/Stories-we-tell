@@ -1,0 +1,31 @@
+'use client'
+
+import { Film, Sparkles } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+
+export function Topbar() {
+  return (
+    <header className="flex items-center gap-4 px-6 h-16 border-b border-gray-200/50 bg-white/90 backdrop-blur-lg shadow-sm flex-shrink-0">
+      <div className="flex items-center gap-3 text-brand-700">
+        <div className="p-2 bg-gradient-to-br from-brand-100 to-brand-200 rounded-xl shadow-sm">
+          <Film className="h-6 w-6" />
+        </div>
+        <div>
+          <h1 className="font-bold text-lg">Stories We Tell</h1>
+          <p className="text-xs text-gray-600 font-medium">AI Story Development</p>
+        </div>
+      </div>
+      <Separator orientation="vertical" className="mx-2 h-8" />
+      <div className="hidden md:flex items-center gap-2 text-sm text-gray-600 bg-gray-50/80 px-3 py-1.5 rounded-full">
+        <Sparkles className="h-4 w-4 text-brand-600" />
+        <span className="font-medium">Cinematic intake assistant</span>
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <div className="hidden sm:block text-xs text-gray-500 bg-gray-100/80 px-2 py-1 rounded-md">
+          v0.1
+        </div>
+        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+      </div>
+    </header>
+  )
+}
