@@ -147,7 +147,6 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 .composer-textarea {
   caret-color: #3b82f6 !important;
   caret-shape: block !important;
-  caret-width: 1px !important;
   text-shadow: none !important;
   -webkit-text-stroke: none !important;
   border-left: none !important;
@@ -167,7 +166,6 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 .composer-textarea:focus {
   caret-color: #3b82f6 !important;
   caret-shape: block !important;
-  caret-width: 1px !important;
   text-shadow: none !important;
   -webkit-text-stroke: none !important;
   border-left: none !important;
