@@ -22,6 +22,8 @@ interface SceneData {
   description?: string
   setting_time?: string
   setting_location?: string
+  time_of_day?: string
+  interior_exterior?: string
   tone?: string
 }
 

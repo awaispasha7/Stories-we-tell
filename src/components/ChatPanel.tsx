@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
-import { useChatStore } from '@/lib/store'
+// import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
 export function ChatPanel() {
