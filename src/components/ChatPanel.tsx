@@ -10,12 +10,12 @@ export function ChatPanel() {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
-      content: "Welcome to Stories We Tell! I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story. What's the story you'd like to tell today?"
+      content: "Welcome to Stories We Tell! I&apos;m your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story. What&apos;s the story you&apos;d like to tell today?"
     }
   ])
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const _send = useChatStore(s => s.send)
+  // const _send = useChatStore(s => s.send) // Unused for now
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -156,7 +156,7 @@ export function ChatPanel() {
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">Welcome to Stories We Tell</h2>
               <p className="text-gray-600 max-w-md leading-relaxed">
-                I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story.
+                I&apos;m your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story.
               </p>
               <div className="mt-6 text-sm text-gray-500">
                 Start by sharing your story idea or asking for help with character development
