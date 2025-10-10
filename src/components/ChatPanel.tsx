@@ -70,10 +70,11 @@ export function ChatPanel() {
       const decoder = new TextDecoder()
       let assistantContent = ''
       let chunkCount = 0
+      let streamComplete = false
 
       console.log('🟢 Starting to read stream...')
 
-      while (true) {
+      while (!streamComplete) {
         const { done, value } = await reader.read()
         
         if (done) {
@@ -110,6 +111,7 @@ export function ChatPanel() {
                 // Check if this is the final chunk
                 if (data.done) {
                   console.log('✅ Stream completed with done flag')
+                  streamComplete = true
                   break
                 }
               }
