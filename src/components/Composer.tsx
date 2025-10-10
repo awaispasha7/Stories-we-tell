@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Paperclip, Send, Loader2 } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
 import { cn } from '@/lib/utils'
 

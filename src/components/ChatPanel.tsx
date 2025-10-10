@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
 import { useChatStore } from '@/lib/store'
-import { Loader2 } from 'lucide-react'
+// import { Loader2 } from 'lucide-react' // Unused import
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<BubbleProps[]>([
@@ -15,7 +15,7 @@ export function ChatPanel() {
   ])
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const send = useChatStore(s => s.send)
+  const _send = useChatStore(s => s.send)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -116,7 +116,7 @@ export function ChatPanel() {
           const newMessages = [...prev]
           newMessages[newMessages.length - 1] = {
             role: 'assistant',
-            content: "I'm sorry, I didn't receive a proper response. Please try again."
+            content: "I&apos;m sorry, I didn&apos;t receive a proper response. Please try again."
           }
           return newMessages
         })
@@ -125,7 +125,7 @@ export function ChatPanel() {
       console.error('Chat error:', error)
       const errorMessage: BubbleProps = {
         role: 'assistant',
-        content: "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."
+        content: "I&apos;m sorry, I encountered an error. Please make sure the backend server is running and try again."
       }
       setMessages(prev => {
         const newMessages = [...prev]

@@ -5,7 +5,7 @@ interface ChatStore {
   send: (message: string) => void
 }
 
-export const useChatStore = create<ChatStore>((set) => ({
+export const useChatStore = create<ChatStore>((_set) => ({
   init: () => {
     // Initialize chat store
     console.log('Chat store initialized')

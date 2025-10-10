@@ -3,11 +3,36 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+// import { Separator } from '@/components/ui/separator' // Unused import
 import { api } from '@/lib/api'
 
+interface DossierData {
+  title: string
+  logline: string
+  genre: string
+  tone: string
+  scenes: SceneData[]
+  characters: CharacterData[]
+  locations: string[]
+}
+
+interface SceneData {
+  scene_id: string
+  one_liner?: string
+  description?: string
+  setting_time?: string
+  setting_location?: string
+  tone?: string
+}
+
+interface CharacterData {
+  character_id: string
+  name: string
+  description: string
+}
+
 export function SidebarDossier() {
-  const { data } = useQuery({ queryKey: ['dossier'], queryFn: () => api.get('dossier').json<any>() })
+  const { data } = useQuery({ queryKey: ['dossier'], queryFn: () => api.get('dossier').json<DossierData>() })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 
   return (
@@ -68,7 +93,7 @@ export function SidebarDossier() {
           </CardHeader>
         <Card className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16">  
           <CardContent className="space-y-4">
-            {(d.scenes ?? []).slice(0, 4).map((s: any, index: number) => (
+            {(d.scenes ?? []).slice(0, 4).map((s: SceneData, index: number) => (
               <div key={s.scene_id} className="bg-white/70 p-3 rounded-lg border border-blue-200 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -117,7 +142,7 @@ export function SidebarDossier() {
           <CardContent>
             {(d.characters ?? []).length > 0 ? (
               <div className="space-y-3">
-                {d.characters.slice(0, 3).map((char: any) => (
+                {d.characters.slice(0, 3).map((char: CharacterData) => (
                   <div key={char.character_id} className="bg-white/70 p-3 rounded-lg border border-green-200">
                     <div className="font-semibold text-gray-800">{char.name}</div>
                     <div className="text-xs text-gray-600 mt-1">{char.description}</div>

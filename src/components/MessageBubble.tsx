@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 export type BubbleProps = { role: 'user'|'assistant'; content: string }
 
