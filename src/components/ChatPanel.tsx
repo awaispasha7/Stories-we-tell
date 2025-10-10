@@ -53,8 +53,13 @@ export function ChatPanel() {
       
       clearTimeout(timeoutId)
 
+      console.log('🔍 Response status:', response.status)
+      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        throw new Error('Failed to get response from server')
+        const errorText = await response.text()
+        console.error('❌ Response error:', errorText)
+        throw new Error(`Failed to get response from server: ${response.status} - ${errorText}`)
       }
 
       const reader = response.body?.getReader()
@@ -65,15 +70,26 @@ export function ChatPanel() {
       const decoder = new TextDecoder()
       let assistantContent = ''
       let chunkCount = 0
+      let lastChunkTime = Date.now()
 
       console.log('🟢 Starting to read stream...')
 
       while (true) {
+        // Add timeout for individual chunk reads
+        const chunkTimeout = setTimeout(() => {
+          console.log('⏰ Chunk read timeout - ending stream')
+          reader.cancel()
+        }, 10000) // 10 second timeout per chunk
+
         const { done, value } = await reader.read()
+        clearTimeout(chunkTimeout)
+        
         if (done) {
           console.log('🔚 Stream reading completed')
           break
         }
+
+        lastChunkTime = Date.now()
 
         chunkCount++
         const chunk = decoder.decode(value)
