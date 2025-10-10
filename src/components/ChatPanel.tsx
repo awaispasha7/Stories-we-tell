@@ -51,7 +51,17 @@ export function ChatPanel() {
       "Gathering ideas...",
       "Shaping words...",
       "Finding the right words...",
-      "Putting pieces together..."
+      "Putting pieces together...",
+      "Brewing ideas...",
+      "Spinning thoughts...",
+      "Crafting a reply...",
+      "Mixing concepts...",
+      "Stirring creativity...",
+      "Blending insights...",
+      "Forming thoughts...",
+      "Assembling ideas...",
+      "Polishing words...",
+      "Refining thoughts..."
     ]
     
     return casualMessages[Math.floor(Math.random() * casualMessages.length)]
@@ -71,6 +81,7 @@ export function ChatPanel() {
     
     // Set dynamic typing message
     const dynamicMessage = getDynamicTypingMessage(text)
+    console.log(`🎭 Selected typing message: "${dynamicMessage}"`)
     setTypingMessage(dynamicMessage)
 
     // Add empty assistant message that we'll stream into
@@ -244,7 +255,7 @@ export function ChatPanel() {
                       className="inline-block animate-pulse-wave" 
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      {char}
+                      {char === ' ' ? '\u00A0' : char}
                     </span>
                   ))}
                 </span>
