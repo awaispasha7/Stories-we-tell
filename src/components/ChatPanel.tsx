@@ -164,7 +164,7 @@ export function ChatPanel() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 custom-scrollbar">
         <div className="w-full px-6 py-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">

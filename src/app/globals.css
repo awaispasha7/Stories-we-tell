@@ -393,3 +393,29 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
   }
 }
+
+/* Custom scrollbar styling for chat area */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: linear-gradient(to bottom, rgba(134, 239, 172, 0.1), rgba(147, 197, 253, 0.1));
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #86efac, #93c5fd);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #4ade80, #60a5fa);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #93c5fd rgba(147, 197, 253, 0.1);
+}
