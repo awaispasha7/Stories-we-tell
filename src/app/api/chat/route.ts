@@ -9,36 +9,61 @@ export async function POST(req: NextRequest) {
     
     console.log(`Frontend: Attempting to call backend at ${backendUrl}/chat`)
     
-    // Forward the request to the backend
-    const response = await fetch(`${backendUrl}/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text }),
-    })
+    // Try to call the backend with a timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
-    console.log(`Frontend: Backend response status: ${response.status}`)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Backend error: ${response.status} - ${errorText}`)
-      throw new Error(`Backend responded with status: ${response.status}`)
+    try {
+      const response = await fetch(`${backendUrl}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+        signal: controller.signal,
+      })
+      
+      clearTimeout(timeoutId)
+      console.log(`Frontend: Backend response status: ${response.status}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Backend error: ${response.status} - ${errorText}`)
+        throw new Error(`Backend responded with status: ${response.status}`)
+      }
+      
+      // Return the backend response with proper headers for streaming
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      })
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      console.error('Backend fetch failed:', fetchError)
+      
+      // Return a fallback response
+      const fallbackResponse = `I received your message: "${text}". I'm currently having trouble connecting to my AI backend, but I'm here to help with your story development! What kind of story are you working on?`
+      
+      return new Response(
+        `data: ${JSON.stringify({ type: 'content', content: fallbackResponse, done: true })}\n\n`,
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        }
+      )
     }
-    
-    // Return the backend response with proper headers for streaming
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    })
   } catch (error) {
     console.error('Chat API error:', error)
     return NextResponse.json(
