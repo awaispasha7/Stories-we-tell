@@ -10,7 +10,7 @@ export function ChatPanel() {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
-      content: "Welcome to Stories We Tell! I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story. What's the story you'd like to tell today?"
+      content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
     }
   ])
   const [isLoading, setIsLoading] = useState(false)
@@ -173,10 +173,10 @@ export function ChatPanel() {
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">Welcome to Stories We Tell</h2>
               <p className="text-gray-600 max-w-md leading-relaxed">
-                I'm your cinematic intake assistant. I can help you develop characters, create scenes, write scripts, and structure your story.
+                Let's bring your story to life, one step at a time.
               </p>
               <div className="mt-6 text-sm text-gray-500">
-                Start by sharing your story idea or asking for help with character development
+                Share your story idea to get started
               </div>
             </div>
           )}
