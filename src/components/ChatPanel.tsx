@@ -116,6 +116,12 @@ export function ChatPanel() {
                   }
                   return newMessages
                 })
+                
+                // Check if this is the final chunk
+                if (data.done) {
+                  console.log('✅ Stream completed with done flag')
+                  break
+                }
               }
             } catch (e) {
               console.error('❌ Error parsing streaming data:', e, 'Line:', line)
@@ -137,6 +143,9 @@ export function ChatPanel() {
           return newMessages
         })
       }
+      
+      // Ensure loading state is cleared
+      setIsLoading(false)
     } catch (error) {
       console.error('Chat error:', error)
       const errorMessage: BubbleProps = {
