@@ -5,6 +5,7 @@ import { Topbar } from '@/components/Topbar'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SidebarDossier } from '@/components/SidebarDossier'
 import { useChatStore } from '@/lib/store'
+import { DossierProvider } from '@/lib/dossier-context'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,7 +35,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-green-100 via-blue-100 to-red-100 relative">
+    <DossierProvider>
+      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-green-100 via-blue-100 to-red-100 relative">
       {/* Main Content Area */}
       <div className={cn(
         "flex flex-col h-screen overflow-hidden transition-all duration-300 ease-in-out",
@@ -120,6 +122,7 @@ export default function ChatPage() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
-    </div>
+      </div>
+    </DossierProvider>
   )
 }

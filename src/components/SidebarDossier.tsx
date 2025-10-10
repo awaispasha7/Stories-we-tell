@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 // import { Separator } from '@/components/ui/separator' // Unused import
 import { api } from '@/lib/api'
+import { useDossierRefresh } from '@/lib/dossier-context'
 
 interface DossierData {
   title: string
@@ -34,7 +35,15 @@ interface CharacterData {
 }
 
 export function SidebarDossier() {
-  const { data } = useQuery({ queryKey: ['dossier'], queryFn: () => api.get('dossier').json<DossierData>() })
+  const { refreshTrigger } = useDossierRefresh()
+  
+  const { data, refetch } = useQuery({ 
+    queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
+    queryFn: () => api.get('dossier').json<DossierData>(),
+    refetchInterval: 3000, // Refetch every 3 seconds
+    refetchOnWindowFocus: true, // Refetch when user focuses the window
+    staleTime: 1000 // Consider data stale after 1 second
+  })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 
   return (

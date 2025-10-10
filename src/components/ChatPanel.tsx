@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
+import { useDossierRefresh } from '@/lib/dossier-context'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -16,6 +17,7 @@ export function ChatPanel() {
   const [isLoading, setIsLoading] = useState(false)
   const [typingMessage, setTypingMessage] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
 
   const scrollToBottom = () => {
@@ -203,6 +205,8 @@ export function ChatPanel() {
     } finally {
       setIsLoading(false)
       setTypingMessage('')
+      // Trigger dossier refresh after conversation update
+      triggerRefresh()
     }
   }
 
