@@ -16,11 +16,11 @@ interface ProfileSettingsProps {
 export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
   const { profile, updateUserImage, updateUserName } = useProfile()
   const [tempName, setTempName] = useState(profile.userName)
-  const [tempImage, setTempImage] = useState(profile.userImage)
+  const [tempImage, setTempImage] = useState<string | null>(profile.userImage)
 
   const handleSave = () => {
     updateUserName(tempName)
-    updateUserImage(tempImage)
+    updateUserImage(tempImage || '')
     onClose()
   }
 
@@ -67,10 +67,21 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               className="mb-4"
             />
             
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-xs text-gray-500">
                 Supported: JPG, PNG, GIF (max 5MB)
               </p>
+              {tempImage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTempImage(null)}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Remove Picture
+                </Button>
+              )}
             </div>
           </div>
 

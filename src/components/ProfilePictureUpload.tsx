@@ -5,8 +5,8 @@ import { Camera, X, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ProfilePictureUploadProps {
-  currentImage?: string
-  onImageChange: (imageUrl: string) => void
+  currentImage?: string | null
+  onImageChange: (imageUrl: string | null) => void
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -54,7 +54,7 @@ export function ProfilePictureUpload({
   }
 
   const handleRemoveImage = () => {
-    onImageChange('')
+    onImageChange(null)
   }
 
   const handleClick = () => {
