@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
+      let errorData
+      try {
+        errorData = await response.json()
+      } catch {
+        errorData = { detail: `Backend responded with status ${response.status}` }
+      }
       console.error('Backend transcription error:', errorData)
       return NextResponse.json(errorData, { status: response.status })
     }
