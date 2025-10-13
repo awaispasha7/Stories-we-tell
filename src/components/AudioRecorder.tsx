@@ -18,6 +18,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
   const [isPlaying, setIsPlaying] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [transcriptionProgress, setTranscriptionProgress] = useState('')
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -88,11 +89,30 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
     if (!audioBlob) return
 
     setIsProcessing(true)
+    setTranscriptionProgress('Preparing audio for transcription...')
+    
     try {
-      // Here you would send the audio to your backend for transcription
-      // For now, we'll simulate a transcript
+      console.log('🎤 Processing audio for transcription...')
+      
+      // Simulate progress steps
+      const progressSteps = [
+        'Uploading audio file...',
+        'Processing with OpenAI Whisper...',
+        'Converting speech to text...',
+        'Finalizing transcription...'
+      ]
+      
+      // Show progress steps
+      for (let i = 0; i < progressSteps.length; i++) {
+        setTranscriptionProgress(progressSteps[i])
+        await new Promise(resolve => setTimeout(resolve, 800)) // Simulate processing time
+      }
+      
+      // Send audio to backend for transcription
       const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.wav')
+      formData.append('audio_file', audioBlob, 'recording.wav')
+      
+      setTranscriptionProgress('Sending to transcription service...')
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -101,16 +121,25 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
       
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Transcription successful:', data)
+        setTranscriptionProgress('Transcription complete!')
         setTranscript(data.transcript)
         onAudioData(audioBlob, data.transcript)
+        
+        // Clear progress after a moment
+        setTimeout(() => {
+          setTranscriptionProgress('')
+        }, 2000)
       } else {
-        // Fallback: simulate transcription
-        setTranscript('Audio transcribed successfully!')
-        onAudioData(audioBlob, 'Audio transcribed successfully!')
+        const errorData = await response.json()
+        console.error('❌ Transcription failed:', errorData)
+        setTranscriptionProgress('')
+        setTranscript(`Transcription failed: ${errorData.detail || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error processing audio:', error)
-      setTranscript('Error processing audio')
+      console.error('❌ Error processing audio:', error)
+      setTranscriptionProgress('')
+      setTranscript(`Error processing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsProcessing(false)
     }
@@ -120,6 +149,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
     setAudioBlob(null)
     setAudioUrl(null)
     setTranscript('')
+    setTranscriptionProgress('')
     setIsPlaying(false)
     if (audioRef.current) {
       audioRef.current.pause()
@@ -178,6 +208,21 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
         </div>
       )}
 
+      {/* Transcription Progress */}
+      {transcriptionProgress && (
+        <div className="flex flex-col items-center gap-2 w-full">
+          <div className="flex items-center gap-2 text-blue-600">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">{transcriptionProgress}</span>
+          </div>
+          {isProcessing && (
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Audio Playback */}
       {audioBlob && audioUrl && (
         <div className="flex flex-col items-center gap-2 w-full">
@@ -217,10 +262,17 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
 
           {/* Transcript Display */}
           {transcript && (
-            <div className="w-full p-3 bg-gray-100 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong>Transcript:</strong> {transcript}
+            <div className="w-full p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-sm font-semibold text-green-700">Transcription Complete</span>
+              </div>
+              <p className="text-sm text-gray-800 leading-relaxed">
+                {transcript}
               </p>
+              <div className="mt-2 text-xs text-gray-500">
+                This text will be sent to the chat automatically
+              </div>
             </div>
           )}
         </div>
