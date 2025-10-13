@@ -1,10 +1,16 @@
 'use client'
 
-import { Film, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { Film, Sparkles, Settings } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { ProfileSettings } from './ProfileSettings'
 
 export function Topbar() {
+  const [showProfileSettings, setShowProfileSettings] = useState(false)
+
   return (
+    <>
     <header className="flex items-center gap-4 px-6 h-16 border-b border-gray-200/50 bg-white/90 backdrop-blur-lg shadow-sm flex-shrink-0">
       <div className="flex items-center gap-3 text-brand-700">
         <div className="p-2 bg-gradient-to-br from-brand-100 to-brand-200 rounded-xl shadow-sm">
@@ -21,11 +27,25 @@ export function Topbar() {
         <span className="font-medium">Cinematic intake assistant</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowProfileSettings(true)}
+          className="h-8 w-8 hover:bg-gray-100"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
         <div className="hidden sm:block text-xs text-gray-500 bg-gray-100/80 px-2 py-1 rounded-md">
           v0.1
         </div>
         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
       </div>
     </header>
+    
+    <ProfileSettings 
+      isOpen={showProfileSettings} 
+      onClose={() => setShowProfileSettings(false)} 
+    />
+    </>
   )
 }

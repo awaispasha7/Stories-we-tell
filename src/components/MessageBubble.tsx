@@ -1,10 +1,13 @@
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useProfile } from '@/lib/profile-context'
+import Image from 'next/image'
 
 export type BubbleProps = { role: 'user'|'assistant'; content: string }
 
 export function MessageBubble({ role, content }: BubbleProps) {
   const isUser = role === 'user'
+  const { profile } = useProfile()
   return (
     <div className={cn(
       'flex w-full gap-3 animate-in slide-in-from-bottom-2 duration-300',
@@ -16,7 +19,13 @@ export function MessageBubble({ role, content }: BubbleProps) {
       {!isUser && (
         <Avatar className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-green-200" style={{ marginLeft: '16px', marginTop: '16px' }}>
           <AvatarFallback className="bg-gradient-to-br from-green-200 to-green-300 text-green-800 text-xs font-bold shadow-sm">
-            SW
+            <Image 
+              src="/swt-logo.svg" 
+              alt="SWT Assistant" 
+              width={24} 
+              height={24}
+              className="w-6 h-6"
+            />
           </AvatarFallback>
         </Avatar>
       )}
@@ -45,7 +54,17 @@ export function MessageBubble({ role, content }: BubbleProps) {
       {isUser && (
         <Avatar className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-blue-200" style={{ marginRight: '16px' }}>
           <AvatarFallback className="bg-gradient-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm">
-            U
+            {profile.userImage ? (
+              <Image 
+                src={profile.userImage} 
+                alt="User Profile" 
+                width={24} 
+                height={24}
+                className="w-6 h-6 rounded-full object-cover"
+              />
+            ) : (
+              profile.userName.charAt(0).toUpperCase()
+            )}
           </AvatarFallback>
         </Avatar>
       )}
