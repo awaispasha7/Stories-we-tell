@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Loader2, Mic } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
+import { AudioRecorder } from './AudioRecorder'
 import { cn } from '@/lib/utils'
 
 interface ComposerProps {
@@ -13,6 +14,7 @@ interface ComposerProps {
 
 export function Composer({ onSend, disabled = false }: ComposerProps) {
   const [text, setText] = useState('')
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-focus textarea when component becomes enabled
@@ -35,6 +37,15 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
     }
   }
 
+  const handleAudioData = (audioBlob: Blob, transcript: string) => {
+    setText(transcript)
+    setShowAudioRecorder(false)
+    // Auto-send the transcribed text
+    if (transcript.trim()) {
+      onSend(transcript)
+    }
+  }
+
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
@@ -45,8 +56,31 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
 
   return (
     <div className="p-3">
+        {/* Audio Recorder */}
+        {showAudioRecorder && (
+          <div className="mb-3">
+            <AudioRecorder 
+              onAudioData={handleAudioData}
+              disabled={disabled}
+            />
+          </div>
+        )}
+        
         <div className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-2xl p-3 border border-gray-200/50 shadow-lg overflow-visible pr-2">
           <UploadDropzone />
+          <button
+            type="button"
+            onClick={() => setShowAudioRecorder(!showAudioRecorder)}
+            disabled={disabled}
+            className={cn(
+              "h-[56px] w-[56px] rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0",
+              showAudioRecorder 
+                ? "bg-blue-500 text-white shadow-lg" 
+                : "bg-white/70 hover:bg-blue-50 border-2 border-dashed border-gray-300 hover:border-blue-400"
+            )}
+          >
+            <Mic className="h-5 w-5" />
+          </button>
           <Textarea
             ref={textareaRef}
             value={text}
