@@ -37,14 +37,41 @@ interface CharacterData {
 export function SidebarDossier() {
   const { refreshTrigger } = useDossierRefresh()
   
-  const { data } = useQuery({ 
+  const { data, error, isLoading } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
-    queryFn: () => api.get('dossier').json<DossierData>(),
+    queryFn: async () => {
+      console.log('🔄 Fetching dossier from backend...')
+      try {
+        const result = await api.get('dossier').json<DossierData>()
+        console.log('✅ Dossier fetched successfully:', result)
+        return result
+      } catch (err) {
+        console.error('❌ Error fetching dossier:', err)
+        throw err
+      }
+    },
     refetchInterval: 3000, // Refetch every 3 seconds
     refetchOnWindowFocus: true, // Refetch when user focuses the window
     staleTime: 1000 // Consider data stale after 1 second
   })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
+
+  // Show error state if backend is not accessible
+  if (error) {
+    return (
+      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-semibold mb-2">Backend Connection Error</h3>
+          <p className="text-red-600 text-sm">
+            Unable to connect to the backend server. Please check if the backend is running.
+          </p>
+          <p className="text-red-500 text-xs mt-2">
+            Error: {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
