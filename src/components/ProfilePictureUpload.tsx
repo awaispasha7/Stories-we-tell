@@ -104,7 +104,7 @@ export function ProfilePictureUpload({
               e.stopPropagation()
               handleRemoveImage()
             }}
-            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-20"
           >
             <X className="w-3 h-3" />
           </button>
