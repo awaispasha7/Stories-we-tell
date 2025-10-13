@@ -1,4 +1,7 @@
 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="2" width="36" height="36" rx="18" stroke="black" stroke-width="3" fill="white"/>
-  <text x="20" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="black">swt.</text>
+  <!-- White background with black pill border -->
+  <rect x="4" y="12" width="32" height="16" rx="8" fill="white" stroke="black" stroke-width="3"/>
+  
+  <!-- Black text -->
+  <text x="20" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="black">swt.</text>
 </svg>

@@ -22,9 +22,9 @@ export function MessageBubble({ role, content }: BubbleProps) {
             <Image 
               src="/swt-logo.svg" 
               alt="SWT Assistant" 
-              width={24} 
-              height={24}
-              className="w-6 h-6"
+              width={36} 
+              height={36}
+              className="w-9 h-9"
             />
           </AvatarFallback>
         </Avatar>
