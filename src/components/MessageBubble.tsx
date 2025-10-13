@@ -55,7 +55,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
         </div>
       </div>
       {isUser && (
-        <div className="relative group">
+        <div className="relative group z-20 overflow-visible">
           <Avatar 
             className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-blue-200 cursor-pointer transition-all duration-200 hover:ring-blue-400 hover:scale-105" 
             style={{ marginRight: '16px' }}
@@ -77,7 +77,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
           </Avatar>
           
           {/* Settings icon on hover */}
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-30">
             <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
             </svg>
