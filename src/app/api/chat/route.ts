@@ -32,19 +32,54 @@ export async function POST(req: NextRequest) {
         throw new Error(`Backend responded with status: ${response.status}`)
       }
       
-      // Return the backend response with proper headers for streaming
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      })
+      // Check if backend returned JSON or streaming response
+      const contentType = response.headers.get('content-type')
+      
+      if (contentType && contentType.includes('application/json')) {
+        // Backend returned JSON response, convert to streaming format
+        const data = await response.json()
+        const reply = data.reply || data.response || 'No response received'
+        
+        // Convert to streaming format
+        const words = reply.split()
+        let streamContent = ''
+        
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i]
+          const chunk = {
+            type: 'content',
+            content: word + (i < words.length - 1 ? ' ' : ''),
+            done: i === words.length - 1
+          }
+          streamContent += `data: ${JSON.stringify(chunk)}\n\n`
+        }
+        
+        return new Response(streamContent, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        })
+      } else {
+        // Backend returned streaming response, pass it through
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        })
+      }
     } catch (fetchError) {
       clearTimeout(timeoutId)
       console.error('Backend fetch failed:', fetchError)
