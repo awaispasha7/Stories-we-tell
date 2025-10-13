@@ -134,11 +134,13 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
         const errorData = await response.json()
         console.error('❌ Transcription failed:', errorData)
         setTranscriptionProgress('')
+        setTranscript('') // Clear any previous transcript
         setTranscript(`Transcription failed: ${errorData.detail || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('❌ Error processing audio:', error)
       setTranscriptionProgress('')
+      setTranscript('') // Clear any previous transcript
       setTranscript(`Error processing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsProcessing(false)
@@ -261,18 +263,36 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
           />
 
           {/* Transcript Display */}
-          {transcript && (
-            <div className="w-full p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+          {transcript && !isProcessing && (
+            <div className={`w-full p-4 rounded-lg border ${
+              transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing') 
+                ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
+                : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
+            }`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-sm font-semibold text-green-700">Transcription Complete</span>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')
+                    ? 'bg-red-500' 
+                    : 'bg-green-500'
+                }`} />
+                <span className={`text-sm font-semibold ${
+                  transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')
+                    ? 'text-red-700' 
+                    : 'text-green-700'
+                }`}>
+                  {transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')
+                    ? 'Transcription Failed' 
+                    : 'Transcription Complete'}
+                </span>
               </div>
               <p className="text-sm text-gray-800 leading-relaxed">
                 {transcript}
               </p>
-              <div className="mt-2 text-xs text-gray-500">
-                This text will be sent to the chat automatically
-              </div>
+              {!transcript.startsWith('Transcription failed') && !transcript.startsWith('Error processing') && (
+                <div className="mt-2 text-xs text-gray-500">
+                  This text will be sent to the chat automatically
+                </div>
+              )}
             </div>
           )}
         </div>
