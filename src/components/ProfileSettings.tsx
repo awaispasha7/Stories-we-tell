@@ -102,7 +102,7 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               placeholder="Enter your name"
-              className="flex h-12 w-full rounded-xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm px-4 py-3 text-sm ring-offset-background placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:border-blue-500 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full mx-4 rounded-xl border-2 border-gray-300 bg-white/90 backdrop-blur-sm px-4 py-3 text-sm ring-offset-background placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:border-blue-500 hover:border-gray-400 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm hover:shadow-md"
             />
             <p className="text-xs text-gray-500 bg-blue-50 px-3 py-1 rounded-full inline-block">
               This will appear in your messages
