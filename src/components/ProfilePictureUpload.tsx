@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { Camera, X, User } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface ProfilePictureUploadProps {
@@ -81,6 +80,7 @@ export function ProfilePictureUpload({
         onClick={handleClick}
       >
         {currentImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img 
             src={currentImage} 
             alt="Profile" 

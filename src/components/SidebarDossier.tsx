@@ -37,7 +37,7 @@ interface CharacterData {
 export function SidebarDossier() {
   const { refreshTrigger } = useDossierRefresh()
   
-  const { data, refetch } = useQuery({ 
+  const { data } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
     queryFn: () => api.get('dossier').json<DossierData>(),
     refetchInterval: 3000, // Refetch every 3 seconds

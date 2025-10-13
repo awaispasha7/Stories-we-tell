@@ -3,11 +3,10 @@
 import { useState } from 'react'
 import { Settings, User, Save, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+// import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProfilePictureUpload } from './ProfilePictureUpload'
 import { useProfile } from '@/lib/profile-context'
-import { cn } from '@/lib/utils'
 
 interface ProfileSettingsProps {
   isOpen: boolean
@@ -81,12 +80,12 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               <User className="w-4 h-4" />
               Display Name
             </label>
-            <Input
+            <input
               id="userName"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               placeholder="Enter your name"
-              className="w-full"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-gray-500">
               This will appear in your messages
