@@ -17,7 +17,16 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       let errorData
       try {
-        errorData = await response.json()
+        const responseText = await response.text()
+        console.log('Backend response text:', responseText)
+        
+        // Try to parse as JSON
+        try {
+          errorData = JSON.parse(responseText)
+        } catch {
+          // If not JSON, create error object from text
+          errorData = { detail: responseText || `Backend responded with status ${response.status}` }
+        }
       } catch {
         errorData = { detail: `Backend responded with status ${response.status}` }
       }
@@ -25,7 +34,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(errorData, { status: response.status })
     }
 
-    const data = await response.json()
+    const responseText = await response.text()
+    console.log('Backend response text:', responseText)
+    
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch {
+      data = { transcript: responseText, success: true }
+    }
+    
     console.log('Backend transcription successful:', data)
     return NextResponse.json(data)
 
