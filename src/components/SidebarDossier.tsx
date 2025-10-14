@@ -50,9 +50,9 @@ export function SidebarDossier() {
         throw err
       }
     },
-    refetchInterval: 3000, // Refetch every 3 seconds
-    refetchOnWindowFocus: true, // Refetch when user focuses the window
-    staleTime: 1000 // Consider data stale after 1 second
+    refetchInterval: false, // Disable automatic polling - rely on event-driven refresh
+    refetchOnWindowFocus: true, // Still refetch when user focuses the window
+    staleTime: 30000 // Consider data stale after 30 seconds (much longer)
   })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 

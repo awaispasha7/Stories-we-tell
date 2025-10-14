@@ -79,6 +79,10 @@ export function ChatPanel() {
     // Add user message
     const userMessage: BubbleProps = { role: 'user', content: text }
     setMessages(prev => [...prev, userMessage])
+    
+    // Trigger dossier refresh immediately after user message
+    triggerRefresh()
+    
     setIsLoading(true)
     
     // Set dynamic typing message
@@ -205,8 +209,6 @@ export function ChatPanel() {
     } finally {
       setIsLoading(false)
       setTypingMessage('')
-      // Trigger dossier refresh after conversation update
-      triggerRefresh()
     }
   }
 
