@@ -263,38 +263,35 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
           />
 
           {/* Transcript Display */}
-          {transcript && !isProcessing && (
-            <div className={`w-full p-4 rounded-lg border ${
-              (transcript && (transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')))
-                ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
-                : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${
-                  (transcript && (transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')))
-                    ? 'bg-red-500' 
-                    : 'bg-green-500'
-                }`} />
-                <span className={`text-sm font-semibold ${
-                  (transcript && (transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')))
-                    ? 'text-red-700' 
-                    : 'text-green-700'
-                }`}>
-                  {(transcript && (transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')))
-                    ? 'Transcription Failed' 
-                    : 'Transcription Complete'}
-                </span>
-              </div>
-              <p className="text-sm text-gray-800 leading-relaxed">
-                {transcript || ''}
-              </p>
-              {transcript && !transcript.startsWith('Transcription failed') && !transcript.startsWith('Error processing') && (
-                <div className="mt-2 text-xs text-gray-500">
-                  This text will be sent to the chat automatically
+          {transcript && !isProcessing && (() => {
+            const isError = transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')
+            return (
+              <div className={`w-full p-4 rounded-lg border ${
+                isError
+                  ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
+                  : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                    isError ? 'bg-red-500' : 'bg-green-500'
+                  }`} />
+                  <span className={`text-sm font-semibold ${
+                    isError ? 'text-red-700' : 'text-green-700'
+                  }`}>
+                    {isError ? 'Transcription Failed' : 'Transcription Complete'}
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
+                <p className="text-sm text-gray-800 leading-relaxed">
+                  {transcript}
+                </p>
+                {!isError && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    This text will be sent to the chat automatically
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>

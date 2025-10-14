@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useProfile } from '@/lib/profile-context'
@@ -11,6 +11,11 @@ export function MessageBubble({ role, content }: BubbleProps) {
   const isUser = role === 'user'
   const { profile } = useProfile()
   const [showProfileSettings, setShowProfileSettings] = useState(false)
+  const [timestamp, setTimestamp] = useState('')
+  
+  useEffect(() => {
+    setTimestamp(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+  }, [])
   return (
     <div className={cn(
       'flex w-full gap-3 animate-in slide-in-from-bottom-2 duration-300',
@@ -51,7 +56,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
           marginLeft: '10px',
           marginRight: isUser ? '10px' : '10px'
         }}>
-          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {timestamp}
         </div>
       </div>
       {isUser && (
