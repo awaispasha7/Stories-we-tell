@@ -212,6 +212,7 @@ export function ChatPanel() {
     }
   }
 
+  
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-white via-green-50/60 to-blue-50/40 relative overflow-hidden">
       {/* Animated Background Elements */}
