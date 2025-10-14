@@ -40,7 +40,7 @@ export function SidebarDossier() {
   const { data, error, isLoading } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
     queryFn: async () => {
-      console.log('🔄 Fetching dossier from backend...')
+      // console.log('🔄 Fetching dossier from backend...')
       try {
         const result = await api.get('dossier').json<DossierData>()
         console.log('✅ Dossier fetched successfully:', result)

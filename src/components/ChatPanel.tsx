@@ -87,7 +87,7 @@ export function ChatPanel() {
     
     // Set dynamic typing message
     const dynamicMessage = getDynamicTypingMessage(text)
-    console.log(`🎭 Selected typing message: "${dynamicMessage}"`)
+    // console.log(`🎭 Selected typing message: "${dynamicMessage}"`)
     setTypingMessage(dynamicMessage)
 
     // Add empty assistant message that we'll stream into
@@ -110,8 +110,8 @@ export function ChatPanel() {
       
       clearTimeout(timeoutId)
 
-      console.log('🔍 Response status:', response.status)
-      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()))
+      // console.log('🔍 Response status:', response.status)
+      // console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -129,19 +129,19 @@ export function ChatPanel() {
       let chunkCount = 0
       let streamComplete = false
 
-      console.log('🟢 Starting to read stream...')
+      // console.log('🟢 Starting to read stream...')
 
       while (!streamComplete) {
         const { done, value } = await reader.read()
         
         if (done) {
-          console.log('🔚 Stream reading completed')
+          // console.log('🔚 Stream reading completed')
           break
         }
 
         chunkCount++
         const chunk = decoder.decode(value)
-        console.log(`📥 Received chunk ${chunkCount}:`, chunk)
+        // console.log(`📥 Received chunk ${chunkCount}:`, chunk)
         
         const lines = chunk.split('\n')
 
@@ -149,11 +149,11 @@ export function ChatPanel() {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
-              console.log('📦 Parsed data:', data)
+              // console.log('📦 Parsed data:', data)
               
               if (data.type === 'content') {
                 assistantContent += data.content
-                console.log(`📝 Content so far: "${assistantContent}"`)
+                // console.log(`📝 Content so far: "${assistantContent}"`)
                 
                 // Update the last message (assistant message) with new content
                 setMessages(prev => {
@@ -167,7 +167,7 @@ export function ChatPanel() {
                 
                 // Check if this is the final chunk
                 if (data.done) {
-                  console.log('✅ Stream completed with done flag')
+                  // console.log('✅ Stream completed with done flag')
                   streamComplete = true
                   break
                 }
@@ -212,7 +212,7 @@ export function ChatPanel() {
     }
   }
 
-  
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-white via-green-50/60 to-blue-50/40 relative overflow-hidden">
       {/* Animated Background Elements */}
