@@ -182,7 +182,7 @@ export function ChatPanel() {
         }
       }
       
-      console.log(`🎯 Final assistant content: "${assistantContent}"`)
+      // console.log(`🎯 Final assistant content: "${assistantContent}"`)
       
       // Check if we received any content - if not, show error message
       if (assistantContent.trim() === '') {
