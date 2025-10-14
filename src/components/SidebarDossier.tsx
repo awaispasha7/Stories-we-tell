@@ -40,7 +40,7 @@ export function SidebarDossier() {
   const { data, error, isLoading } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
     queryFn: async () => {
-      // console.log('🔄 Fetching dossier from backend...')
+      console.log('🔄 Fetching dossier from backend...')
       try {
         const result = await api.get('dossier').json<DossierData>()
         console.log('✅ Dossier fetched successfully:', result)
@@ -50,9 +50,11 @@ export function SidebarDossier() {
         throw err
       }
     },
-    refetchInterval: false, // Disable automatic polling - rely on event-driven refresh
-    refetchOnWindowFocus: true, // Still refetch when user focuses the window
-    staleTime: 30000 // Consider data stale after 30 seconds (much longer)
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus to prevent stale fetches
+    refetchOnMount: true, // Allow initial fetch on mount
+    staleTime: Infinity, // Never consider data stale - only fetch when explicitly triggered
+    enabled: true // Allow initial fetch and triggered fetches
   })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 

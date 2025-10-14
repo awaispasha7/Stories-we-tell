@@ -83,9 +83,6 @@ export function ChatPanel() {
     const userMessage: BubbleProps = { role: 'user', content: text }
     setMessages(prev => [...prev, userMessage])
     
-    // Trigger dossier refresh immediately after user message
-    triggerRefresh()
-    
     setIsLoading(true)
     
     // Set dynamic typing message
@@ -212,6 +209,12 @@ export function ChatPanel() {
     } finally {
       setIsLoading(false)
       setTypingMessage('')
+      
+      // Trigger dossier refresh after AI response completes
+      // Add a small delay to ensure backend dossier update is finished
+      setTimeout(() => {
+        triggerRefresh()
+      }, 2000) // 2 second delay to ensure backend processing is complete
     }
   }
 
