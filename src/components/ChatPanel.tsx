@@ -42,7 +42,7 @@ export function ChatPanel() {
       return "Crafting your story..."
     }
     
-    // Casual conversation responses
+    // Use a deterministic approach based on message content to avoid hydration issues
     const casualMessages = [
       "Thinking...",
       "Cooking a response...",
@@ -66,7 +66,10 @@ export function ChatPanel() {
       "Refining thoughts..."
     ]
     
-    return casualMessages[Math.floor(Math.random() * casualMessages.length)]
+    // Use message length and first character to create deterministic selection
+    const hash = message.length + (message.charCodeAt(0) || 0)
+    const index = hash % casualMessages.length
+    return casualMessages[index]
   }
 
   useEffect(() => {

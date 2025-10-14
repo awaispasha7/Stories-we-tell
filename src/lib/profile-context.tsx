@@ -11,6 +11,7 @@ interface ProfileContextType {
   profile: ProfileData
   updateUserImage: (imageUrl: string) => void
   updateUserName: (name: string) => void
+  isHydrated: boolean
 }
 
 const defaultProfile: ProfileData = {
@@ -22,6 +23,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<ProfileData>(defaultProfile)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   // Load profile from localStorage on mount
   useEffect(() => {
@@ -34,6 +36,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         console.error('Error parsing saved profile:', error)
       }
     }
+    setIsHydrated(true)
   }, [])
 
   const updateUserImage = useCallback((imageUrl: string) => {
@@ -53,7 +56,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <ProfileContext.Provider value={{ profile, updateUserImage, updateUserName }}>
+    <ProfileContext.Provider value={{ profile, updateUserImage, updateUserName, isHydrated }}>
       {children}
     </ProfileContext.Provider>
   )

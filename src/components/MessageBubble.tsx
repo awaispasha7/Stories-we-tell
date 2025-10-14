@@ -9,7 +9,7 @@ export type BubbleProps = { role: 'user'|'assistant'; content: string }
 
 export function MessageBubble({ role, content }: BubbleProps) {
   const isUser = role === 'user'
-  const { profile } = useProfile()
+  const { profile, isHydrated } = useProfile()
   const [showProfileSettings, setShowProfileSettings] = useState(false)
   const [timestamp, setTimestamp] = useState('')
   
@@ -67,7 +67,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
             onClick={() => setShowProfileSettings(true)}
           >
             <AvatarFallback className="bg-gradient-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm">
-              {profile.userImage ? (
+              {isHydrated && profile.userImage ? (
                 <Image 
                   src={profile.userImage} 
                   alt="User Profile" 
@@ -76,7 +76,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
                   className="w-6 h-6 rounded-full object-cover"
                 />
               ) : (
-                profile.userName.charAt(0).toUpperCase()
+                isHydrated ? profile.userName.charAt(0).toUpperCase() : 'U'
               )}
             </AvatarFallback>
           </Avatar>
