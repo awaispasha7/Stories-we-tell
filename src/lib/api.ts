@@ -1,7 +1,111 @@
 import ky from 'ky'
 
+// Get user ID from localStorage for API calls
+const getUserHeaders = () => {
+  if (typeof window === 'undefined') return {}
+  
+  try {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const userData = JSON.parse(user)
+      return {
+        'X-User-ID': userData.user_id
+      }
+    }
+  } catch (error) {
+    console.error('Error getting user headers:', error)
+  }
+  
+  return {}
+}
+
 export const api = ky.create({
   prefixUrl: process.env.NEXT_PUBLIC_API_URL || 'https://stories-we-tell-backend.vercel.app',
   timeout: 30000,
   retry: 2,
+  hooks: {
+    beforeRequest: [
+      (request) => {
+        // Add user ID header to all requests
+        const headers = getUserHeaders()
+        Object.entries(headers).forEach(([key, value]) => {
+          request.headers.set(key, value)
+        })
+        
+        // Add Authorization header if token is available
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('access_token')
+          if (token) {
+            request.headers.set('Authorization', `Bearer ${token}`)
+          }
+        }
+      }
+    ]
+  }
 })
+
+// API endpoints for the new session-based system
+export const sessionApi = {
+  // Chat with session support
+  chat: (text: string, sessionId?: string, projectId?: string) => 
+    api.post('api/v1/chat', { json: { text, session_id: sessionId, project_id: projectId } }),
+  
+  // Get user sessions
+  getSessions: (limit = 10) => 
+    api.get('api/v1/sessions', { searchParams: { limit } }).json(),
+  
+  // Get session messages
+  getSessionMessages: (sessionId: string, limit = 50, offset = 0) => 
+    api.get(`api/v1/sessions/${sessionId}/messages`, { 
+      searchParams: { limit, offset } 
+    }).json(),
+  
+  // Update session title
+  updateSessionTitle: (sessionId: string, title: string) => 
+    api.put(`api/v1/sessions/${sessionId}/title`, { json: { title } }).json(),
+  
+  // Delete session
+  deleteSession: (sessionId: string) => 
+    api.delete(`api/v1/sessions/${sessionId}`).json(),
+  
+  // Create user
+  createUser: (userData: { email?: string; display_name?: string; avatar_url?: string }) => 
+    api.post('api/v1/users', { json: userData }).json(),
+  
+  // Get current user
+  getCurrentUser: () => 
+    api.get('api/v1/users/me').json()
+}
+
+// Authentication API
+export const authApi = {
+  // Login with email and password
+  login: (email: string, password: string) =>
+    api.post('api/v1/auth/login', { 
+      json: { email, password } 
+    }).json(),
+  
+  // Signup with email, display name, and password
+  signup: (email: string, displayName: string, password: string) =>
+    api.post('api/v1/auth/signup', { 
+      json: { email, display_name: displayName, password } 
+    }).json(),
+  
+  // Google OAuth authentication
+  googleAuth: (token: string, email: string, name: string, picture?: string) =>
+    api.post('api/v1/auth/google', { 
+      json: { token, email, name, picture } 
+    }).json(),
+  
+  // Get current user info
+  getCurrentUser: () =>
+    api.get('api/v1/auth/me').json(),
+  
+  // Refresh access token
+  refreshToken: () =>
+    api.post('api/v1/auth/refresh').json(),
+  
+  // Logout
+  logout: () =>
+    api.post('api/v1/auth/logout').json()
+}

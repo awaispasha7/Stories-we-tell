@@ -4,16 +4,19 @@ import { useEffect, useState } from 'react'
 import { Topbar } from '@/components/Topbar'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SidebarDossier } from '@/components/SidebarDossier'
+import { SessionManager } from '@/components/SessionManager'
+import { AuthGuard } from '@/components/AuthGuard'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
-import { ProfileProvider } from '@/lib/profile-context'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [activeTab, setActiveTab] = useState<'chat' | 'sessions'>('chat')
+  const [currentSessionId, setCurrentSessionId] = useState<string>('')
 
   useEffect(() => { init() }, [init])
 
@@ -35,8 +38,13 @@ export default function ChatPage() {
     setSidebarOpen(!sidebarOpen)
   }
 
+  const handleSessionSelect = (sessionId: string) => {
+    setCurrentSessionId(sessionId)
+    setActiveTab('chat')
+  }
+
   return (
-    <ProfileProvider>
+    <AuthGuard>
       <DossierProvider>
         <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-green-100 via-blue-100 to-red-100 relative">
       {/* Main Content Area */}
@@ -52,7 +60,7 @@ export default function ChatPage() {
         {/* Chat Area - Centered with gaps on all sides */}
         <div className="flex-1 min-h-0 px-3 py-6 flex justify-center items-center">
           <div className="w-full max-w-6xl h-[calc(100%-2rem)] bg-gradient-to-br from-white via-green-50 to-blue-50 backdrop-blur rounded-2xl shadow-[0_40px_80px_rgba(0,0,0,0.4)] border-2 border-gray-300 overflow-hidden flex flex-col">
-            <ChatPanel />
+            <ChatPanel sessionId={currentSessionId} />
           </div>
         </div>
       </div>
@@ -106,7 +114,46 @@ export default function ChatPage() {
             </button>
           </div>
         )}
-        <SidebarDossier />
+        
+        {/* Sidebar Tabs */}
+        <div className="flex border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <button
+            onClick={() => setActiveTab('sessions')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors",
+              activeTab === 'sessions'
+                ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            )}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Sessions
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors",
+              activeTab === 'chat'
+                ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+            )}
+          >
+            <FileText className="w-4 h-4" />
+            Dossier
+          </button>
+        </div>
+        
+        {/* Sidebar Content */}
+        <div className="h-[calc(100%-60px)]">
+          {activeTab === 'sessions' ? (
+            <SessionManager 
+              onSessionSelect={handleSessionSelect}
+              currentSessionId={currentSessionId}
+            />
+          ) : (
+            <SidebarDossier />
+          )}
+        </div>
       </aside>
 
       {/* Desktop Backdrop */}
@@ -126,6 +173,6 @@ export default function ChatPage() {
       )}
         </div>
       </DossierProvider>
-    </ProfileProvider>
+    </AuthGuard>
   )
 }

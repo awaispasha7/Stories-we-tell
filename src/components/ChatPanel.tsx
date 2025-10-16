@@ -7,7 +7,11 @@ import { useDossierRefresh } from '@/lib/dossier-context'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
-export function ChatPanel() {
+interface ChatPanelProps {
+  sessionId?: string
+}
+
+export function ChatPanel({ sessionId }: ChatPanelProps) {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',

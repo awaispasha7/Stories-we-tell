@@ -1,5 +1,32 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 
 export default function Home() {
-  redirect('/chat')
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        router.push('/chat')
+      } else {
+        router.push('/auth/login')
+      }
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  // Show loading while checking authentication
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <span className="text-2xl text-white font-bold">SW</span>
+        </div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  )
 }
