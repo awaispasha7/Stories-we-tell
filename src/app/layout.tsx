@@ -1,4 +1,5 @@
 import './globals.css'
+import './auth/auth-styles.css'
 import { ReactNode } from 'react'
 import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/QueryProvider'
@@ -15,8 +16,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body className={`${inter.className} bg-slate-950 text-slate-100 antialiased`}>
         <QueryProvider>
           <AuthProvider>
             <ProfileProvider>
