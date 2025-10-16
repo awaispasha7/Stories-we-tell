@@ -35,7 +35,7 @@ export const initializeGoogleAuth = () => {
   })
 }
 
-export const handleGoogleResponse = (response: any) => {
+export const handleGoogleResponse = (response: { credential: string }) => {
   // Decode the JWT token
   const payload = JSON.parse(atob(response.credential.split('.')[1]))
   
@@ -70,6 +70,13 @@ export const renderGoogleButton = (elementId: string) => {
 // Extend Window interface for Google
 declare global {
   interface Window {
-    google: any
+    google: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (response: { credential: string }) => void }) => void
+          renderButton: (element: HTMLElement | null, config: object) => void
+        }
+      }
+    }
   }
 }

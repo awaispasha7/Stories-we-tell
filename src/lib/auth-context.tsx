@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
-import { api } from './api'
 
 interface User {
   user_id: string

@@ -37,7 +37,7 @@ interface CharacterData {
 export function SidebarDossier() {
   const { refreshTrigger } = useDossierRefresh()
   
-  const { data, error, isLoading } = useQuery({ 
+  const { data, error } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
     queryFn: async () => {
       console.log('🔄 Fetching dossier from backend...')

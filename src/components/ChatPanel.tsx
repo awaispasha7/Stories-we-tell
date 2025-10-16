@@ -11,7 +11,7 @@ interface ChatPanelProps {
   sessionId?: string
 }
 
-export function ChatPanel({ sessionId }: ChatPanelProps) {
+export function ChatPanel({ sessionId: _sessionId }: ChatPanelProps) {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
@@ -130,7 +130,7 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
 
       const decoder = new TextDecoder()
       let assistantContent = ''
-      let chunkCount = 0
+      // let chunkCount = 0
       let streamComplete = false
 
       // console.log('🟢 Starting to read stream...')
@@ -143,9 +143,9 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
           break
         }
 
-        chunkCount++
+        // chunkCount++
         const chunk = decoder.decode(value)
-        // console.log(`📥 Received chunk ${chunkCount}:`, chunk)
+        // console.log(`📥 Received chunk:`, chunk)
         
         const lines = chunk.split('\n')
 

@@ -59,6 +59,7 @@ export function Topbar() {
             className="h-8 w-8 hover:bg-gray-100"
           >
             {profile.userImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img 
                 src={profile.userImage} 
                 alt="Profile" 

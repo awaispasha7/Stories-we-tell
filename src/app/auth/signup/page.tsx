@@ -24,16 +24,16 @@ export default function SignupPage() {
 
   const signupMutation = useMutation({
     mutationFn: async (data: { email: string; displayName: string; password: string }) => {
-      return authApi.signup(data.email, data.displayName, data.password)
+      return authApi.signup(data.email, data.displayName, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>
     },
-    onSuccess: (response: any) => {
+    onSuccess: (response: { access_token: string; user: { email: string; display_name: string } }) => {
       // Store the access token
       localStorage.setItem('access_token', response.access_token)
       // Auto-login after successful signup
       login(response.user.email, response.user.display_name)
       router.push('/chat')
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       setErrors({ general: error.message || 'Signup failed. Please try again.' })
     }
   })

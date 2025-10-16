@@ -8,7 +8,7 @@ import { useProfile } from '@/lib/profile-context'
 
 export default function ProfilePage() {
   const { user, updateProfile, logout } = useAuth()
-  const { profile, updateUserImage, updateUserName } = useProfile()
+  const { profile, updateUserName } = useProfile()
   const [isEditing, setIsEditing] = useState(false)
   const [displayName, setDisplayName] = useState(user?.display_name || '')
   const [email, setEmail] = useState(user?.email || '')
@@ -54,6 +54,7 @@ export default function ProfilePage() {
           <CardHeader className="text-center pb-6">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               {profile.userImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img 
                   src={profile.userImage} 
                   alt="Profile" 

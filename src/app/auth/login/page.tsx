@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 import { useMutation } from '@tanstack/react-query'
 import { authApi } from '@/lib/api'
-import { Eye, EyeOff, Mail, User, Lock, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -21,16 +21,16 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      return authApi.login(data.email, data.password)
+      return authApi.login(data.email, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>
     },
-    onSuccess: (response: any) => {
+    onSuccess: (response: { access_token: string; user: { email: string; display_name: string } }) => {
       // Store the access token
       localStorage.setItem('access_token', response.access_token)
       // Login with user data
       login(response.user.email, response.user.display_name)
       router.push('/chat')
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       setErrors({ general: error.message || 'Login failed. Please try again.' })
     }
   })

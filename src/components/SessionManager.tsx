@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionApi } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 
 interface Session {
   session_id: string
@@ -26,7 +25,6 @@ interface SessionManagerProps {
 }
 
 export function SessionManager({ onSessionSelect, currentSessionId }: SessionManagerProps) {
-  const [isCreatingNew, setIsCreatingNew] = useState(false)
   const queryClient = useQueryClient()
 
   // Fetch user sessions
@@ -47,14 +45,14 @@ export function SessionManager({ onSessionSelect, currentSessionId }: SessionMan
     }
   })
 
-  // Update session title mutation
-  const updateTitleMutation = useMutation({
-    mutationFn: ({ sessionId, title }: { sessionId: string; title: string }) => 
-      sessionApi.updateSessionTitle(sessionId, title),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] })
-    }
-  })
+  // Update session title mutation (commented out for now)
+  // const updateTitleMutation = useMutation({
+  //   mutationFn: ({ sessionId, title }: { sessionId: string; title: string }) =>
+  //     sessionApi.updateSessionTitle(sessionId, title),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['sessions'] })
+  //   }
+  // })
 
   const handleDeleteSession = async (sessionId: string) => {
     if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
@@ -70,7 +68,7 @@ export function SessionManager({ onSessionSelect, currentSessionId }: SessionMan
   }
 
   const handleCreateNewSession = () => {
-    setIsCreatingNew(true)
+        // setIsCreatingNew(true)
     onSessionSelect('') // Clear current session to create new one
   }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { Mic, MicOff, Square, Play, Pause } from 'lucide-react'
+import { Mic, Square, Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
