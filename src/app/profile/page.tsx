@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+// import { Button } from '@/components/ui/button' // Removed - using custom styling
+// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card' // Removed - using custom styling
 import { useProfile } from '@/lib/profile-context'
 
 export default function ProfilePage() {
@@ -50,8 +50,8 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
+        <div className="shadow-lg border-0 bg-white/80 backdrop-blur-sm rounded-lg">
+          <div className="text-center pb-6 p-6">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               {profile.userImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -66,15 +66,15 @@ export default function ProfilePage() {
                 </span>
               )}
             </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               Profile Settings
-            </CardTitle>
+            </h1>
             <p className="text-gray-600 text-sm">
               Manage your account information and preferences
             </p>
-          </CardHeader>
+          </div>
           
-          <CardContent className="space-y-6">
+          <div className="space-y-6 p-6 pt-0">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -128,42 +128,40 @@ export default function ProfilePage() {
             <div className="flex gap-3 pt-4">
               {isEditing ? (
                 <>
-                  <Button
+                  <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
                   >
                     {isLoading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleCancel}
-                    variant="outline"
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
                   >
                     Cancel
-                  </Button>
+                  </button>
                 </>
               ) : (
-                <Button
+                <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+                  className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-4 py-2 rounded-lg"
                 >
                   Edit Profile
-                </Button>
+                </button>
               )}
             </div>
 
             <div className="pt-6 border-t border-gray-200">
-              <Button
+              <button
                 onClick={logout}
-                variant="outline"
-                className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                className="w-full border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg"
               >
                 Sign Out
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

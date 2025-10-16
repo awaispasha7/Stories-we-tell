@@ -1,8 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card' // Removed - using custom styling
+// import { Badge } from '@/components/ui/badge' // Removed - using custom styling
 // import { Separator } from '@/components/ui/separator' // Unused import
 import { api } from '@/lib/api'
 import { useDossierRefresh } from '@/lib/dossier-context'
@@ -87,14 +87,14 @@ export function SidebarDossier() {
 
       {/* Story Overview Card */}
       <div>
-        <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
+        <div className="pb-3">
+            <h3 className="text-lg flex items-center gap-2 font-semibold">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               Story Overview
-            </CardTitle>
-        </CardHeader>
-        <Card className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16" style={{ padding: '0.75rem' }}>
-          <CardContent className="space-y-4">
+            </h3>
+        </div>
+        <div className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg" style={{ padding: '0.75rem' }}>
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">Title</div>
               <div className="font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm">
@@ -109,30 +109,30 @@ export function SidebarDossier() {
             </div>
             <div className="flex gap-2 flex-wrap">
               {d.genre && (
-                <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-sm">
+                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-sm px-2 py-1 rounded-full text-xs">
                   {d.genre}
-                </Badge>
+                </span>
               )}
               {d.tone && (
-                <Badge variant="outline" className="border-red-300 text-red-700 bg-red-50/50">
+                <span className="border border-red-300 text-red-700 bg-red-50/50 px-2 py-1 rounded-full text-xs">
                   {d.tone}
-                </Badge>
+                </span>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Scenes Card */}
       <div>
-        <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
+        <div className="pb-3">
+            <h3 className="text-lg flex items-center gap-2 font-semibold">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               Scene Structure
-            </CardTitle>
-          </CardHeader>
-        <Card className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16">  
-          <CardContent className="space-y-4">
+            </h3>
+          </div>
+        <div className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg">  
+          <div className="space-y-4 p-4">
             {(d.scenes ?? []).slice(0, 4).map((s: SceneData, index: number) => (
               <div key={s.scene_id} className="bg-white/70 p-3 rounded-lg border border-blue-200 shadow-sm">
                 <div className="flex items-start gap-3">
@@ -166,20 +166,20 @@ export function SidebarDossier() {
                 <div className="text-sm">Start chatting to build your scenes</div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
       
       {/* Characters Card */}
       <div>
-        <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
+        <div className="pb-3">
+            <h3 className="text-lg flex items-center gap-2 font-semibold">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               Characters
-            </CardTitle>
-        </CardHeader>
-        <Card className="bg-gradient-to-br from-white via-red-50/50 to-pink-50/30 border-2 border-red-300 shadow-lg mt-8 sm:mt-12 lg:mt-16" style={{ padding: '0.75rem' }}>
-          <CardContent>
+            </h3>
+        </div>
+        <div className="bg-gradient-to-br from-white via-red-50/50 to-pink-50/30 border-2 border-red-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg" style={{ padding: '0.75rem' }}>
+          <div>
             {(d.characters ?? []).length > 0 ? (
               <div className="space-y-3">
                 {d.characters.slice(0, 3).map((char: CharacterData) => (
@@ -195,8 +195,8 @@ export function SidebarDossier() {
                 <div className="text-xs text-gray-600 mt-1">Main character with a clear goal</div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

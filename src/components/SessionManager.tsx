@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+// import { useState } from 'react' // Unused import
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionApi } from '@/lib/api'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+// import { Card, CardContent } from '@/components/ui/card' // Removed - using custom styling
+// import { Button } from '@/components/ui/button' // Removed - using custom styling
 
 interface Session {
   session_id: string
@@ -116,13 +116,12 @@ export function SessionManager({ onSessionSelect, currentSessionId }: SessionMan
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-800">Chat Sessions</h2>
-          <Button
+          <button
             onClick={handleCreateNewSession}
-            size="sm"
-            className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+            className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-3 py-1.5 rounded-lg text-sm"
           >
             New Chat
-          </Button>
+          </button>
         </div>
         <p className="text-sm text-gray-600">
           {(sessions as Session[]).length} session{(sessions as Session[]).length !== 1 ? 's' : ''}
@@ -140,25 +139,25 @@ export function SessionManager({ onSessionSelect, currentSessionId }: SessionMan
             <p className="text-gray-600 text-sm mb-4">
               Start a new conversation to begin your story development journey
             </p>
-            <Button
+            <button
               onClick={handleCreateNewSession}
-              className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+              className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white px-4 py-2 rounded-lg"
             >
               Start Your First Chat
-            </Button>
+            </button>
           </div>
         ) : (
           (sessions as Session[]).map((session: Session) => (
-            <Card
+            <div
               key={session.session_id}
-              className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+              className={`cursor-pointer transition-all duration-200 hover:shadow-md rounded-lg border ${
                 currentSessionId === session.session_id
                   ? 'ring-2 ring-blue-500 bg-blue-50'
-                  : 'hover:bg-gray-50'
+                  : 'hover:bg-gray-50 border-gray-200'
               }`}
               onClick={() => onSessionSelect(session.session_id)}
             >
-              <CardContent className="p-4">
+              <div className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-800 truncate mb-1">
@@ -185,21 +184,19 @@ export function SessionManager({ onSessionSelect, currentSessionId }: SessionMan
                   </div>
                   
                   <div className="flex items-center gap-1 ml-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDeleteSession(session.session_id)
                       }}
-                      className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded"
                     >
                       🗑️
-                    </Button>
+                    </button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))
         )}
       </div>

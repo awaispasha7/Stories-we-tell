@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Textarea } from '@/components/ui/textarea'
+// import { Textarea } from '@/components/ui/textarea' // Removed - using custom styling
 import { Send, Loader2, Mic } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
 import { AudioRecorder } from './AudioRecorder'
@@ -81,14 +81,14 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
           >
             <Mic className="h-5 w-5" />
           </button>
-          <Textarea
+          <textarea
             ref={textareaRef}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Take me to the moment your story begins…"
             className={cn(
-              "composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 bg-white/70 backdrop-blur-sm focus:bg-white rounded-xl transition-all duration-200 text-sm sm:text-base",
+              "composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 bg-white/70 backdrop-blur-sm focus:bg-white rounded-xl transition-all duration-200 text-sm sm:text-base px-3 py-2",
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}

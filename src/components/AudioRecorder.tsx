@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Mic, Square, Play, Pause } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button' // Removed - using custom styling
 import { cn } from '@/lib/utils'
 
 interface AudioRecorderProps {
@@ -164,35 +164,32 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
       {/* Recording Controls */}
       <div className="flex items-center gap-2">
         {!isRecording && !audioBlob && (
-          <Button
+          <button
             onClick={startRecording}
             disabled={disabled}
-            className="bg-red-500 hover:bg-red-600 text-white"
-            size="sm"
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center disabled:opacity-50"
           >
             <Mic className="w-4 h-4 mr-2" />
             Start Recording
-          </Button>
+          </button>
         )}
 
         {isRecording && (
           <>
-            <Button
+            <button
               onClick={pauseRecording}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-              size="sm"
+              className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center"
             >
               {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
               {isPaused ? 'Resume' : 'Pause'}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={stopRecording}
-              className="bg-gray-500 hover:bg-gray-600 text-white"
-              size="sm"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center"
             >
               <Square className="w-4 h-4 mr-2" />
               Stop
-            </Button>
+            </button>
           </>
         )}
       </div>
@@ -229,29 +226,26 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
       {audioBlob && audioUrl && (
         <div className="flex flex-col items-center gap-2 w-full">
           <div className="flex items-center gap-2">
-            <Button
+            <button
               onClick={playAudio}
-              variant="outline"
-              size="sm"
+              className="border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-sm flex items-center"
             >
               {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
               {isPlaying ? 'Pause' : 'Play'}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={processAudio}
               disabled={isProcessing}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              size="sm"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : 'Transcribe'}
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={resetRecording}
-              variant="outline"
-              size="sm"
+              className="border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-sm"
             >
               Reset
-            </Button>
+            </button>
           </div>
 
           {/* Audio Element */}

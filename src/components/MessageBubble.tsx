@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+// import { Avatar, AvatarFallback } from '@/components/ui/avatar' // Removed - using custom styling
 import { useProfile } from '@/lib/profile-context'
 import { ProfileSettings } from './ProfileSettings'
 import Image from 'next/image'
@@ -25,8 +25,8 @@ export function MessageBubble({ role, content }: BubbleProps) {
       marginBottom: '16px'
     }}>
       {!isUser && (
-        <Avatar className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-green-200" style={{ marginLeft: '16px', marginTop: '16px' }}>
-          <AvatarFallback className="bg-gradient-to-br from-green-200 to-green-300 text-green-800 text-xs font-bold shadow-sm">
+        <div className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-green-200 rounded-full flex items-center justify-center" style={{ marginLeft: '16px', marginTop: '16px' }}>
+          <div className="bg-gradient-to-br from-green-200 to-green-300 text-green-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
             <Image 
               src="/swt-logo.svg" 
               alt="SWT Assistant" 
@@ -34,8 +34,8 @@ export function MessageBubble({ role, content }: BubbleProps) {
               height={36}
               className="w-9 h-9"
             />
-          </AvatarFallback>
-        </Avatar>
+          </div>
+        </div>
       )}
       <div className={cn(
         'max-w-[70%] rounded-xl px-8 py-6 text-sm leading-relaxed transform transition-all duration-200 hover:scale-[1.02]',
@@ -61,12 +61,12 @@ export function MessageBubble({ role, content }: BubbleProps) {
       </div>
       {isUser && (
         <div className="relative group z-20 overflow-visible">
-          <Avatar 
-            className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-blue-200 cursor-pointer transition-all duration-200 hover:ring-blue-400 hover:scale-105" 
+          <div 
+            className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-blue-200 cursor-pointer transition-all duration-200 hover:ring-blue-400 hover:scale-105 rounded-full flex items-center justify-center" 
             style={{ marginRight: '16px' }}
             onClick={() => setShowProfileSettings(true)}
           >
-            <AvatarFallback className="bg-gradient-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm">
+            <div className="bg-gradient-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
               {isHydrated && profile.userImage ? (
                 <Image 
                   src={profile.userImage} 
@@ -78,8 +78,8 @@ export function MessageBubble({ role, content }: BubbleProps) {
               ) : (
                 isHydrated ? profile.userName.charAt(0).toUpperCase() : 'U'
               )}
-            </AvatarFallback>
-          </Avatar>
+            </div>
+          </div>
           
           {/* Settings button on hover */}
           <button

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { Paperclip, CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button' // Removed - using custom styling
 import { cn } from '@/lib/utils'
 
 interface UploadedFile {
@@ -99,11 +99,9 @@ export function UploadDropzone() {
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
       >
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           className={cn(
-            "h-[56px] w-[56px] hover:bg-white/80 hover:scale-105 active:scale-95 transition-all duration-200 rounded-xl border-2 border-dashed shadow-sm hover:shadow-md",
+            "h-[56px] w-[56px] hover:bg-white/80 hover:scale-105 active:scale-95 transition-all duration-200 rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center",
             isDragging 
               ? "border-blue-500 bg-blue-50/80" 
               : "border-gray-300 bg-white/50 hover:border-blue-400",
@@ -118,7 +116,7 @@ export function UploadDropzone() {
           ) : (
             <Paperclip className="h-5 w-5 text-gray-600 hover:text-blue-600 transition-colors" />
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Upload status indicators */}
