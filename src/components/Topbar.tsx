@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Film, Sparkles, Settings, User, LogOut, LogIn, UserPlus } from 'lucide-react'
+import { Film, Settings, User, LogOut, LogIn, UserPlus } from 'lucide-react'
 import { ProfileSettings } from './ProfileSettings'
 import { ThemeSelector } from './ThemeSelector'
 import { useAuth } from '@/lib/auth-context'

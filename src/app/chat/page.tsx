@@ -28,7 +28,14 @@ export default function ChatPage() {
 
   return (
     <DossierProvider>
-        <div className={`h-screen w-screen overflow-hidden ${colors.background} flex`}>
+      <div className={`h-screen w-screen overflow-hidden ${colors.background} flex flex-col`}>
+        {/* Topbar - Full width across entire screen */}
+        <div className="flex-shrink-0">
+          <Topbar />
+        </div>
+        
+        {/* Main Content Area - Below Topbar */}
+        <div className="flex-1 flex min-h-0">
           {/* Left Sidebar - Always visible with sessions */}
           <ResizableSidebar 
             minWidth={250} 
@@ -77,21 +84,14 @@ export default function ChatPage() {
             </div>
           </ResizableSidebar>
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Header */}
-            <div className="flex-shrink-0">
-              <Topbar />
-            </div>
-            
-            {/* Chat Area */}
-            <div className="flex-1 min-h-0 p-4">
-              <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-                    <ChatPanel _sessionId={currentSessionId} />
-              </div>
+          {/* Chat Area */}
+          <div className="flex-1 min-h-0 p-4">
+            <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
+              <ChatPanel _sessionId={currentSessionId} />
             </div>
           </div>
         </div>
-      </DossierProvider>
+      </div>
+    </DossierProvider>
   )
 }
