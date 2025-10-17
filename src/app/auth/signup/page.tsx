@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
-import { authApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth-context'
 import '../auth-styles.css'
 
@@ -22,17 +21,15 @@ export default function SignupPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
   const router = useRouter()
-  const { login } = useAuth()
+  const { signup } = useAuth()
 
   const signupMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string }) => {
       console.log('Signup attempt with data:', { email: data.email, display_name: data.name, password: '***' })
-      return authApi.signup(data.email, data.name, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>
+      return signup(data.email, data.password, data.name)
     },
-    onSuccess: (res) => {
-      console.log('Signup successful:', res)
-      localStorage.setItem('access_token', res.access_token)
-      login(res.user.email, res.user.display_name)
+    onSuccess: () => {
+      console.log('Signup successful')
       setShowSuccess(true)
       setTimeout(() => {
         router.push('/chat')

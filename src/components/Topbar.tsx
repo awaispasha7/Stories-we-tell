@@ -18,8 +18,8 @@ export function Topbar() {
   
   const colors = getThemeColors(resolvedTheme)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     router.push('/auth/login')
   }
 

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
-import { authApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth-context'
 import '../auth-styles.css'
 
@@ -19,10 +18,8 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) =>
-      authApi.login(data.email, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>,
-    onSuccess: (res) => {
-      localStorage.setItem('access_token', res.access_token)
-      login(res.user.email, res.user.display_name)
+      login(data.email, data.password),
+    onSuccess: () => {
       setShowSuccess(true)
       setTimeout(() => {
         router.push('/chat')
