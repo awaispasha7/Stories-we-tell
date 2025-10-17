@@ -100,7 +100,7 @@ export default function AuthCallback() {
           {/* Status Content */}
           {status === 'loading' && (
             <div className="space-y-6 flex flex-col gap-4">
-              <div className="flex flex gap-2 items-end justify-center">
+              <div className="flex gap-2 items-end justify-center">
                 <div className="relative">
                   <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
                   <div className="absolute inset-0 w-7 h-7 border-2 border-transparent border-t-emerald-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
@@ -120,7 +120,7 @@ export default function AuthCallback() {
 
           {status === 'success' && (
             <div className="space-y-6 flex flex-col gap-4">
-              <div className="flex flex gap-2 items-end justify-center">
+              <div className="flex gap-2 items-end justify-center">
                 <CheckCircle className="text-white w-7 h-7 bg-gradient-to-br from-emerald-500 to-green-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30" />
                 <h1 className="text-2xl font-bold text-emerald-400 mb-3">Email Confirmed!</h1>
               </div>
@@ -137,7 +137,7 @@ export default function AuthCallback() {
 
           {status === 'error' && (
             <div className="space-y-6 flex flex-col gap-4">
-              <div className="flex flex gap-2 items-end justify-center">
+              <div className="flex gap-2 items-end justify-center">
                 <XCircle className="text-white w-7 h-7 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-red-500/30" />
                 <h1 className="text-2xl font-bold text-red-400 mb-3">Confirmation Failed</h1>
               </div>

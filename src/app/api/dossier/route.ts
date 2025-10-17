@@ -5,14 +5,14 @@ export async function GET() {
     // Get the backend URL from environment variables
     const backendUrl = process.env.BACKEND_URL || 'https://stories-we-tell-backend.vercel.app'
     
-    console.log(`Frontend: Fetching dossier from backend at ${backendUrl}/api/v1/dossiers`)
+    console.log(`Frontend: Fetching dossier from backend at ${backendUrl}/dossier`)
     
     // Fetch from backend with timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
     try {
-      const response = await fetch(`${backendUrl}/api/v1/dossiers`, {
+      const response = await fetch(`${backendUrl}/dossier`, {
         method: 'GET',
         signal: controller.signal,
         headers: {
