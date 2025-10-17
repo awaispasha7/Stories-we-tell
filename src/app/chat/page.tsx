@@ -6,7 +6,6 @@ import { ChatPanel } from '@/components/ChatPanel'
 import { SidebarDossier } from '@/components/SidebarDossier'
 import { SessionsSidebar } from '@/components/SessionsSidebar'
 import { ResizableSidebar } from '@/components/ResizableSidebar'
-import { AuthGuard } from '@/components/AuthGuard'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -39,8 +38,7 @@ export default function ChatPage() {
   }
 
   return (
-    <AuthGuard>
-      <DossierProvider>
+    <DossierProvider>
         <div className={`h-screen w-screen overflow-hidden ${colors.background} flex`}>
           {/* Left Sidebar - Always visible with sessions */}
           <ResizableSidebar 
@@ -106,6 +104,5 @@ export default function ChatPage() {
           </div>
         </div>
       </DossierProvider>
-    </AuthGuard>
   )
 }

@@ -10,13 +10,10 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (isAuthenticated) {
-        router.push('/chat')
-      } else {
-        router.push('/auth/login')
-      }
+      // Always redirect to chat - users can explore without authentication
+      router.push('/chat')
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isLoading, router])
 
   // Show loading while checking authentication
   return (

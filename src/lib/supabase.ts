@@ -11,7 +11,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 })
 
@@ -25,7 +26,8 @@ export const auth = {
       options: {
         data: {
           display_name: displayName,
-        }
+        },
+        emailRedirectTo: `https://stories-we-tell.vercel.app/auth/callback`
       }
     })
     return { data, error }

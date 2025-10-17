@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
-import { MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { MessageSquare, Plus, Trash2, LogIn, UserPlus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface Session {
   session_id: string
@@ -29,6 +30,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { isAuthenticated } = useAuth()
+  const router = useRouter()
 
   // Fetch user sessions only if authenticated
   const { data: sessions = [], isLoading, error } = useQuery({
@@ -153,16 +155,46 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
             <div className={`w-16 h-16 ${colors.backgroundTertiary} rounded-full flex items-center justify-center mx-auto mb-4`}>
               <MessageSquare className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className={`text-lg font-medium ${colors.text} mb-2`}>No previous chats</h3>
-            <p className={`${colors.textSecondary} text-sm mb-4`}>
-              Start a new conversation to begin your story development journey
-            </p>
-            <button
-              onClick={handleCreateNewSession}
-              className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm`}
-            >
-              Start Your First Chat
-            </button>
+            {isAuthenticated ? (
+              <>
+                <h3 className={`text-lg font-medium ${colors.text} mb-2`}>No previous chats</h3>
+                <p className={`${colors.textSecondary} text-sm mb-4`}>
+                  Start a new conversation to begin your story development journey
+                </p>
+                <button
+                  onClick={handleCreateNewSession}
+                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm`}
+                >
+                  Start Your First Chat
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className={`text-lg font-medium ${colors.text} mb-2`}>Welcome to Stories We Tell</h3>
+                <p className={`${colors.textSecondary} text-sm mb-6`}>
+                  Sign up to save your conversations and access your story development history
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push('/auth/signup')}
+                    className={`w-full ${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2`}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Create Account
+                  </button>
+                  <button
+                    onClick={() => router.push('/auth/login')}
+                    className={`w-full ${colors.buttonSecondary} px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2`}
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </button>
+                </div>
+                <p className={`${colors.textTertiary} text-xs mt-4`}>
+                  You can still chat without an account, but your conversations won't be saved
+                </p>
+              </>
+            )}
           </div>
         ) : (
           (sessions as Session[]).map((session: Session) => (

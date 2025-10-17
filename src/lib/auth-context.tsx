@@ -18,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, displayName: string) => Promise<void>
+  signup: (email: string, password: string, displayName: string) => Promise<any>
   logout: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
 }
@@ -112,6 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user) {
         setUser(convertSupabaseUser(data.user))
       }
+      
+      return data
     } catch (error) {
       console.error('Signup error:', error)
       throw error

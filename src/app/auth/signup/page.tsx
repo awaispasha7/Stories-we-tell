@@ -28,12 +28,18 @@ export default function SignupPage() {
       console.log('Signup attempt with data:', { email: data.email, display_name: data.name, password: '***' })
       return signup(data.email, data.password, data.name)
     },
-    onSuccess: () => {
-      console.log('Signup successful')
-      setShowSuccess(true)
-      setTimeout(() => {
-        router.push('/chat')
-      }, 3000)
+    onSuccess: (data) => {
+      console.log('Signup successful:', data)
+      // Check if email confirmation is required
+      if (data?.user && !data?.session) {
+        setShowSuccess(true)
+        // Don't redirect immediately - user needs to confirm email
+      } else {
+        // User is already confirmed, redirect to chat
+        setTimeout(() => {
+          router.push('/chat')
+        }, 2000)
+      }
     },
     onError: (err: Error) => {
       console.error('Signup error:', err)
@@ -375,9 +381,17 @@ export default function SignupPage() {
           ) : (
             /* Success Message */
             <div className="auth-success-message show">
-              <div className="auth-success-icon">✓</div>
-              <h3>Account Created!</h3>
-              <p>Welcome to Stories We Tell. Redirecting...</p>
+              <div className="auth-success-icon">📧</div>
+              <h3>Check Your Email!</h3>
+              <p>We've sent you a confirmation link. Please check your email and click the link to activate your account.</p>
+              <div className="mt-4">
+                <button
+                  onClick={() => router.push('/auth/login')}
+                  className="auth-back-button"
+                >
+                  Go to Login
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Film, Sparkles, Settings, User, LogOut } from 'lucide-react'
+import { Film, Sparkles, Settings, User, LogOut, LogIn, UserPlus } from 'lucide-react'
 import { ProfileSettings } from './ProfileSettings'
 import { ThemeSelector } from './ThemeSelector'
 import { useAuth } from '@/lib/auth-context'
@@ -44,56 +44,79 @@ export function Topbar() {
         <Sparkles className="h-4 w-4 text-sky-400" />
         <span className="font-medium">Cinematic intake assistant</span>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        {/* Theme Selector */}
-        <ThemeSelector />
-        
-        {/* User Profile */}
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:block text-right">
-            <p className={`text-sm font-medium ${colors.textSecondary}`}>
-              {user?.display_name || 'User'}
-            </p>
-            <p className={`text-xs ${colors.textTertiary}`}>
-              {user?.email || ''}
-            </p>
-          </div>
-          <button
-            onClick={handleProfileClick}
-            className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
-          >
-            {profile.userImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={profile.userImage} 
-                alt="Profile" 
-                className="w-6 h-6 rounded-full object-cover"
-              />
+          <div className="ml-auto flex items-center gap-2">
+            {/* Theme Selector */}
+            <ThemeSelector />
+            
+            {user ? (
+              /* Authenticated User */
+              <>
+                {/* User Profile */}
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:block text-right">
+                    <p className={`text-sm font-medium ${colors.textSecondary}`}>
+                      {user?.display_name || 'User'}
+                    </p>
+                    <p className={`text-xs ${colors.textTertiary}`}>
+                      {user?.email || ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleProfileClick}
+                    className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
+                  >
+                    {profile.userImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img 
+                        src={profile.userImage} 
+                        alt="Profile" 
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className={`h-4 w-4 ${colors.textSecondary}`} />
+                    )}
+                  </button>
+                </div>
+                
+                <button
+                  onClick={() => setShowProfileSettings(true)}
+                  className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
+                >
+                  <Settings className={`h-4 w-4 ${colors.textSecondary}`} />
+                </button>
+                
+                <button
+                  onClick={handleLogout}
+                  className="h-8 w-8 rounded-lg hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
+                >
+                  <LogOut className={`h-4 w-4 ${colors.textSecondary}`} />
+                </button>
+              </>
             ) : (
-              <User className={`h-4 w-4 ${colors.textSecondary}`} />
+              /* Unauthenticated User */
+              <>
+                <button
+                  onClick={() => router.push('/auth/login')}
+                  className={`${colors.buttonSecondary} px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors`}
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sign In</span>
+                </button>
+                <button
+                  onClick={() => router.push('/auth/signup')}
+                  className={`${colors.buttonPrimary} px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors`}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sign Up</span>
+                </button>
+              </>
             )}
-          </button>
-        </div>
-        
-        <button
-          onClick={() => setShowProfileSettings(true)}
-          className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
-        >
-          <Settings className={`h-4 w-4 ${colors.textSecondary}`} />
-        </button>
-        
-        <button
-          onClick={handleLogout}
-          className="h-8 w-8 rounded-lg hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
-        >
-          <LogOut className={`h-4 w-4 ${colors.textSecondary}`} />
-        </button>
-        
-        <div className={`hidden sm:block text-xs ${colors.textTertiary} ${colors.backgroundTertiary} px-2 py-1 rounded-md border ${colors.border}`}>
-          v0.1
-        </div>
-        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-      </div>
+            
+            <div className={`hidden sm:block text-xs ${colors.textTertiary} ${colors.backgroundTertiary} px-2 py-1 rounded-md border ${colors.border}`}>
+              v0.1
+            </div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          </div>
     </header>
     
     <ProfileSettings 
