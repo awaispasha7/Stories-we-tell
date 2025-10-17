@@ -42,13 +42,29 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
   const router = useRouter()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
       // Fetch user sessions only if authenticated
       const { data: sessions = [], isLoading, error } = useQuery({
         queryKey: ['sessions'],
         queryFn: async () => {
           console.log('🔄 Fetching sessions...')
+          
+          // Try to ensure user exists in backend first
+          if (user) {
+            try {
+              await sessionApi.createUser({
+                email: user.email,
+                display_name: user.display_name,
+                avatar_url: user.avatar_url
+              })
+              console.log('✅ User synced to backend during session fetch')
+            } catch (error) {
+              console.warn('⚠️ Failed to sync user during session fetch:', error)
+              // Continue anyway - user might already exist
+            }
+          }
+          
           const result = await sessionApi.getSessions(20)
           console.log('✅ Sessions fetched:', result)
           

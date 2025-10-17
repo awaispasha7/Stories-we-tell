@@ -115,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (backendError) {
           console.warn('⚠️ Failed to sync user to backend:', backendError)
           // Don't throw here - the user can still log in
+          // We'll retry user sync when they try to use session features
         }
         
         setUser(convertSupabaseUser(data.user))
@@ -149,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (backendError) {
           console.warn('⚠️ Failed to create user in backend:', backendError)
           // Don't throw here - the user was created in Supabase auth, which is the main thing
+          // The user can still use the app, and we'll try to sync them later
         }
       }
       
