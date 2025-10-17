@@ -516,15 +516,16 @@
   font-size: 14px;
 }
 
-.auth-signup-link a {
+.auth-signup-link .a {
   color: #06b6d4;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.auth-signup-link a:hover {
+.auth-signup-link .a:hover {
   color: white;
+  cursor: pointer;
 }
 
 /* Back Button */

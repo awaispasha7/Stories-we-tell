@@ -154,12 +154,12 @@ export default function SignupPage() {
     <div className="auth-container">
       <div className="auth-card-container">
         {/* Back Button */}
-        <button
+        {/* <button
           onClick={handleBackToLogin}
           className="auth-back-button"
         >
           ← Back to Login
-        </button>
+        </button> */}
 
         <div className={`auth-card ${isShaking ? 'animate-shake' : ''}`}>
           {!showSuccess ? (
