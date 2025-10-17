@@ -248,7 +248,7 @@ export default function LoginPage() {
                   Don't have an account?{' '}
                   <button
                     onClick={handleSignupLink}
-                    className="auth-signup-link a"
+                    className="auth-signup-link a px-4 py-2 rounded-lg hover:scale-105 transition-all duration-200"
                   >
                     Sign up
                   </button>

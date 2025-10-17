@@ -363,7 +363,7 @@ export default function SignupPage() {
                   Already have an account?{' '}
                   <button
                     onClick={handleBackToLogin}
-                    className="auth-signup-link a"
+                    className="auth-signup-link a px-4 py-2 rounded-lg hover:scale-105 transition-all duration-200"
                   >
                     Sign in
                   </button>

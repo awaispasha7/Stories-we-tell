@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { Paperclip, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 // import { Button } from '@/components/ui/button' // Removed - using custom styling
-import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { useTheme } from '@/lib/theme-context'
 import { cn } from '@/lib/utils'
 
 interface UploadedFile {

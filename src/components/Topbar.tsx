@@ -39,10 +39,10 @@ export function Topbar() {
             <h1 className={`font-bold text-lg ${colors.text}`}>Stories We Tell</h1>
             <p className={`text-xs ${colors.textTertiary} font-medium`}>AI Story Development</p>
           </div>
-          <div className={`hidden md:flex items-center gap-2 text-sm ${colors.textSecondary} ${colors.backgroundTertiary} px-3 py-1.5 rounded-full border ${colors.border}`}>
+          {/* <div className={`hidden md:flex items-center gap-2 text-sm ${colors.textSecondary} ${colors.backgroundTertiary} px-3 py-1.5 rounded-full border ${colors.border}`}>
             <Sparkles className="h-4 w-4 text-sky-400" />
             <span className="font-medium">Cinematic intake assistant</span>
-          </div>
+          </div> */}
         </div>
       </div>
           <div className="ml-auto flex items-center gap-2">
