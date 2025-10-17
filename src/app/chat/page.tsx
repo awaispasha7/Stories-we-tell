@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils'
 
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
-  const [isMobile, setIsMobile] = useState(false)
   const [activeTab, setActiveTab] = useState<'sessions' | 'dossier'>('sessions')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
   const { resolvedTheme } = useTheme()
@@ -22,16 +21,6 @@ export default function ChatPage() {
 
   useEffect(() => { init() }, [init])
 
-  // Check if mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024) // lg breakpoint
-    }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   const handleSessionSelect = (sessionId: string) => {
     setCurrentSessionId(sessionId)

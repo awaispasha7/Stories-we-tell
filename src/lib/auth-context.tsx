@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { auth, supabase } from './supabase'
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
+import type { User as SupabaseUser, Session, AuthResponse } from '@supabase/supabase-js'
 
 interface User {
   user_id: string
@@ -18,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, displayName: string) => Promise<any>
+  signup: (email: string, password: string, displayName: string) => Promise<unknown>
   logout: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
 }
@@ -103,17 +103,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = useCallback(async (email: string, password: string, displayName: string) => {
     try {
       setIsLoading(true)
-      const { data, error } = await auth.signUp(email, password, displayName)
+      const response = await auth.signUp(email, password, displayName)
       
-      if (error) {
-        throw new Error(error.message)
+      if (response.error) {
+        throw new Error(response.error.message)
       }
       
-      if (data.user) {
-        setUser(convertSupabaseUser(data.user))
-      }
+      // Don't set user immediately on signup - they need to confirm email first
+      // User will be set when they click the email confirmation link
       
-      return data
+      return response
     } catch (error) {
       console.error('Signup error:', error)
       throw error

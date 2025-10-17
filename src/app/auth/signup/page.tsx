@@ -28,18 +28,10 @@ export default function SignupPage() {
       console.log('Signup attempt with data:', { email: data.email, display_name: data.name, password: '***' })
       return signup(data.email, data.password, data.name)
     },
-    onSuccess: (data) => {
+    onSuccess: (data: unknown) => {
       console.log('Signup successful:', data)
-      // Check if email confirmation is required
-      if (data?.user && !data?.session) {
-        setShowSuccess(true)
-        // Don't redirect immediately - user needs to confirm email
-      } else {
-        // User is already confirmed, redirect to chat
-        setTimeout(() => {
-          router.push('/chat')
-        }, 2000)
-      }
+      // Always show email confirmation message for signup
+      setShowSuccess(true)
     },
     onError: (err: Error) => {
       console.error('Signup error:', err)

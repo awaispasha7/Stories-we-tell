@@ -5,15 +5,20 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!isLoading) {
-      // Always redirect to chat - users can explore without authentication
-      router.push('/chat')
+      if (isAuthenticated) {
+        // Authenticated users go to chat
+        router.push('/chat')
+      } else {
+        // Unauthenticated users can also go to chat to explore
+        router.push('/chat')
+      }
     }
-  }, [isLoading, router])
+  }, [isAuthenticated, isLoading, router])
 
   // Show loading while checking authentication
   return (
