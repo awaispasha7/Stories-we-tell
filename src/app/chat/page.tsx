@@ -43,30 +43,26 @@ export default function ChatPage() {
             defaultWidth={300}
             className={`${colors.sidebarBackground} border-r ${colors.border}`}
           >
-            {/* Sidebar Tabs */}
-            <div className={`flex border-b ${colors.border} ${colors.backgroundSecondary}`}>
+            {/* Enhanced Sidebar Switch */}
+            <div className="sidebar-switch-container">
               <button
                 onClick={() => setActiveTab('sessions')}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors",
-                  activeTab === 'sessions'
-                    ? `${colors.text} ${colors.sidebarItemActive} border-b-2 border-blue-500`
-                    : `${colors.textSecondary} ${colors.sidebarItem}`
+                  "sidebar-switch-button",
+                  activeTab === 'sessions' && "active"
                 )}
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="sidebar-switch-icon" />
                 Chats
               </button>
               <button
                 onClick={() => setActiveTab('dossier')}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors",
-                  activeTab === 'dossier'
-                    ? `${colors.text} ${colors.sidebarItemActive} border-b-2 border-blue-500`
-                    : `${colors.textSecondary} ${colors.sidebarItem}`
+                  "sidebar-switch-button",
+                  activeTab === 'dossier' && "active"
                 )}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="sidebar-switch-icon" />
                 Dossier
               </button>
             </div>

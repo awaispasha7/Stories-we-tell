@@ -4,20 +4,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
-import { MessageSquare, Plus, Trash2, LogIn, UserPlus } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { MessageSquare, Plus, Trash2 } from 'lucide-react'
 
 interface Session {
   session_id: string
+  user_id: string
   project_id: string
   title: string
   created_at: string
   updated_at: string
   last_message_at: string
-  message_count: number
-  last_message_preview?: string
-  project_title?: string
-  project_logline?: string
+  is_active: boolean
+  first_message?: string
+  message_count?: number
+}
+
+interface ChatMessage {
+  message_id: string
+  session_id: string
+  turn_id?: string
+  role: string
+  content: string
+  metadata?: Record<string, unknown>
+  created_at: string
+  updated_at: string
 }
 
 interface SessionsSidebarProps {
@@ -30,24 +40,46 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { isAuthenticated } = useAuth()
-  const router = useRouter()
 
-  // Fetch user sessions only if authenticated
-  const { data: sessions = [], isLoading, error } = useQuery({
-    queryKey: ['sessions'],
-    queryFn: async () => {
-      console.log('🔄 Fetching sessions...')
-      const result = await sessionApi.getSessions(20)
-      console.log('✅ Sessions fetched:', result)
-      return result as Session[]
-    },
-    refetchInterval: false, // No automatic refresh
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnMount: true, // Only fetch on component mount
-    staleTime: Infinity, // Never consider data stale
-    enabled: isAuthenticated, // Only fetch if user is authenticated
-    retry: false, // Don't retry on error to avoid repeated calls
-  })
+      // Fetch user sessions only if authenticated
+      const { data: sessions = [], isLoading, error } = useQuery({
+        queryKey: ['sessions'],
+        queryFn: async () => {
+          console.log('🔄 Fetching sessions...')
+          const result = await sessionApi.getSessions(20)
+          console.log('✅ Sessions fetched:', result)
+          
+          // Fetch first message for each session to show as preview
+          const sessionsWithFirstMessage = await Promise.all(
+            (result as Session[]).map(async (session) => {
+              try {
+                const messages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
+                const firstMessage = messages.length > 0 ? messages[0].content : undefined
+                return {
+                  ...session,
+                  first_message: firstMessage,
+                  message_count: messages.length
+                }
+              } catch (error) {
+                console.warn(`Failed to fetch first message for session ${session.session_id}:`, error)
+                return {
+                  ...session,
+                  first_message: undefined,
+                  message_count: 0
+                }
+              }
+            })
+          )
+          
+          return sessionsWithFirstMessage
+        },
+        refetchInterval: false, // No automatic refresh
+        refetchOnWindowFocus: false, // Don't refetch on window focus
+        refetchOnMount: true, // Only fetch on component mount
+        staleTime: Infinity, // Never consider data stale
+        enabled: isAuthenticated, // Only fetch if user is authenticated
+        retry: false, // Don't retry on error to avoid repeated calls
+      })
 
   // Delete session mutation
   const deleteSessionMutation = useMutation({
@@ -144,7 +176,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
           </h2>
           <button
             onClick={handleCreateNewSession}
-            className={`p-2 rounded-lg ${colors.buttonSecondary} hover:${colors.buttonPrimary} transition-colors`}
+            className={`p-2 rounded-lg ${colors.buttonSecondary} hover:${colors.buttonPrimary} transition-colors bg-gradient-to-r from-sky-500 to-emerald-500`}
             title="New Chat"
           >
             <Plus className="h-4 w-4" />
@@ -159,9 +191,6 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {(sessions as Session[]).length === 0 ? (
           <div className="text-center py-8">
-            <div className={`w-16 h-16 ${colors.backgroundTertiary} rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <MessageSquare className={`h-8 w-8 ${colors.textTertiary}`} />
-            </div>
             {isAuthenticated ? (
               <>
                 <h3 className={`text-lg font-medium ${colors.text} mb-2`}>No previous chats</h3>
@@ -181,25 +210,6 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
                 <p className={`${colors.textSecondary} text-sm mb-6`}>
                   Sign up to save your conversations and access your story development history
                 </p>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => router.push('/auth/signup')}
-                    className={`w-full ${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Create Account
-                  </button>
-                  <button
-                    onClick={() => router.push('/auth/login')}
-                    className={`w-full ${colors.buttonSecondary} px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
-                  >
-                    <LogIn className="h-4 w-4" />
-                    Sign In
-                  </button>
-                </div>
-                <p className={`${colors.textTertiary} text-xs mt-4`}>
-                  You can still chat without an account, but your conversations won't be saved
-                </p>
               </>
             )}
           </div>
@@ -207,7 +217,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
           (sessions as Session[]).map((session: Session) => (
             <div
               key={session.session_id}
-              className={`cursor-pointer transition-all duration-200 hover:shadow-md rounded-lg border p-3 ${
+              className={`group cursor-pointer transition-all duration-200 hover:shadow-md rounded-lg border p-3 ${
                 currentSessionId === session.session_id
                   ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : `${colors.sidebarItem} ${colors.border}`
@@ -217,19 +227,23 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-medium ${colors.text} truncate mb-1 text-sm`}>
-                    {session.title || 'Untitled Session'}
+                    {session.title || 'New Chat'}
                   </h3>
                   
-                  {session.last_message_preview && (
-                    <p className={`text-xs ${colors.textTertiary} truncate mb-2`}>
-                      {session.last_message_preview}
+                  {session.first_message && (
+                    <p className={`text-xs ${colors.textTertiary} line-clamp-2 mb-2 leading-relaxed`}>
+                      {session.first_message}
                     </p>
                   )}
                   
                   <div className={`flex items-center gap-2 text-xs ${colors.textTertiary}`}>
                     <span>{formatDate(session.last_message_at)}</span>
-                    <span>•</span>
-                    <span>{session.message_count} msg{session.message_count !== 1 ? 's' : ''}</span>
+                    {session.message_count && session.message_count > 0 && (
+                      <>
+                        <span>•</span>
+                        <span>{session.message_count} msg{session.message_count !== 1 ? 's' : ''}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 
