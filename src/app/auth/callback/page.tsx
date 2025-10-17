@@ -12,6 +12,7 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // First, let Supabase handle the URL parameters (email confirmation)
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -21,17 +22,48 @@ export default function AuthCallback() {
           return
         }
 
+        // If we have a session, the email was confirmed successfully
         if (data.session) {
           setStatus('success')
           setMessage('Email confirmed successfully! Redirecting to chat...')
           
-          // Redirect to chat after a short delay
-          setTimeout(() => {
-            router.push('/chat')
-          }, 2000)
+          // Redirect to chat immediately
+          router.push('/chat')
         } else {
-          setStatus('error')
-          setMessage('No session found. Please try signing up again.')
+          // No session found - this could mean:
+          // 1. Email confirmation failed
+          // 2. User already confirmed and session expired
+          // 3. Invalid confirmation link
+          
+          // Let's try to get the current URL to see if there are confirmation parameters
+          const urlParams = new URLSearchParams(window.location.search)
+          const tokenHash = urlParams.get('token_hash')
+          const type = urlParams.get('type')
+          
+          if (tokenHash && type) {
+            // We have confirmation parameters, try to verify them
+            const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type as any
+            })
+            
+            if (verifyError) {
+              console.error('Email verification error:', verifyError)
+              setStatus('error')
+              setMessage(`Email verification failed: ${verifyError.message}`)
+            } else if (verifyData.session) {
+              setStatus('success')
+              setMessage('Email confirmed successfully! Redirecting to chat...')
+              
+              router.push('/chat')
+            } else {
+              setStatus('error')
+              setMessage('Email verification completed but no session was created.')
+            }
+          } else {
+            setStatus('error')
+            setMessage('No session found. Please try signing up again.')
+          }
         }
       } catch (err) {
         console.error('Unexpected error:', err)
