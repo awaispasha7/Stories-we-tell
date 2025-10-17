@@ -62,11 +62,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth()
 
     // Listen to auth state changes
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
       const typedSession = session as Session | null
       console.log('Auth state changed:', event, typedSession?.user?.email)
       
       if (event === 'SIGNED_IN' && typedSession?.user) {
+        // Ensure user exists in backend
+        try {
+          const { sessionApi } = await import('./api')
+          await sessionApi.createUser({
+            email: typedSession.user.email,
+            display_name: typedSession.user.user_metadata?.display_name || typedSession.user.email?.split('@')[0],
+            avatar_url: typedSession.user.user_metadata?.avatar_url
+          })
+          console.log('✅ User synced to backend on auth state change')
+        } catch (backendError) {
+          console.warn('⚠️ Failed to sync user to backend on auth state change:', backendError)
+        }
+        
         setUser(convertSupabaseUser(typedSession.user))
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
@@ -90,6 +103,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       if (data.user) {
+        // Ensure user exists in backend
+        try {
+          const { sessionApi } = await import('./api')
+          await sessionApi.createUser({
+            email: data.user.email,
+            display_name: data.user.user_metadata?.display_name || data.user.email?.split('@')[0],
+            avatar_url: data.user.user_metadata?.avatar_url
+          })
+          console.log('✅ User synced to backend successfully')
+        } catch (backendError) {
+          console.warn('⚠️ Failed to sync user to backend:', backendError)
+          // Don't throw here - the user can still log in
+        }
+        
         setUser(convertSupabaseUser(data.user))
       }
     } catch (error) {
@@ -107,6 +134,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (response.error) {
         throw new Error(response.error.message)
+      }
+      
+      // If user was created successfully, also create them in the backend
+      if (response.data.user) {
+        try {
+          const { sessionApi } = await import('./api')
+          await sessionApi.createUser({
+            email: response.data.user.email,
+            display_name: displayName,
+            avatar_url: response.data.user.user_metadata?.avatar_url
+          })
+          console.log('✅ User created in backend successfully')
+        } catch (backendError) {
+          console.warn('⚠️ Failed to create user in backend:', backendError)
+          // Don't throw here - the user was created in Supabase auth, which is the main thing
+        }
       }
       
       // Don't set user immediately on signup - they need to confirm email first

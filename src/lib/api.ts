@@ -96,8 +96,18 @@ export const sessionApi = {
   },
   
   // Create user
-  createUser: (userData: { email?: string; display_name?: string; avatar_url?: string }) => 
-    api.post('api/v1/users', { json: userData }).json(),
+  createUser: async (userData: { email?: string; display_name?: string; avatar_url?: string }) => {
+    try {
+      return await api.post('api/v1/users', { json: userData }).json()
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        // User already exists, that's fine
+        console.log('User already exists in backend')
+        return { message: 'User already exists', user: userData }
+      }
+      throw error
+    }
+  },
   
   // Get current user
   getCurrentUser: () => 
