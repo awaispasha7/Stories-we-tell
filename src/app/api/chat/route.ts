@@ -2,24 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json()
+    const { text, session_id, project_id, user_id } = await req.json()
     
     // Get the backend URL from environment variables
     const backendUrl = process.env.BACKEND_URL || 'https://stories-we-tell-backend.vercel.app'
     
-    console.log(`Frontend: Attempting to call backend at ${backendUrl}/chat`)
+    console.log(`Frontend: Attempting to call backend at ${backendUrl}/api/v1/chat`)
     
     // Try to call the backend with a timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
     
     try {
-      const response = await fetch(`${backendUrl}/chat`, {
+      const response = await fetch(`${backendUrl}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-User-ID': user_id || '', // Include user ID for authentication
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, session_id, project_id }),
         signal: controller.signal,
       })
       

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
 import { useDossierRefresh } from '@/lib/dossier-context'
+import { useAuth } from '@/lib/auth-context'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -12,6 +13,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ _sessionId }: ChatPanelProps) {
+  const { user } = useAuth()
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
@@ -108,7 +110,12 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ 
+          text,
+          session_id: _sessionId || undefined,
+          project_id: undefined, // Let backend generate a new project_id
+          user_id: user?.user_id || undefined
+        }),
         signal: controller.signal,
       })
       
