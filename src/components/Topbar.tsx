@@ -29,20 +29,21 @@ export function Topbar() {
 
   return (
     <>
-    <header className={`flex items-center gap-4 px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0`}>
+        <header className={`flex items-center gap-4 px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0 relative z-50`}>
       <div className={`flex items-center gap-3 ${colors.textSecondary}`}>
         <div className="p-2 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-xl shadow-lg shadow-sky-500/30">
           <Film className="h-6 w-6 text-white" />
         </div>
-        <div>
-          <h1 className={`font-bold text-lg ${colors.text}`}>Stories We Tell</h1>
-          <p className={`text-xs ${colors.textTertiary} font-medium`}>AI Story Development</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className={`font-bold text-lg ${colors.text}`}>Stories We Tell</h1>
+            <p className={`text-xs ${colors.textTertiary} font-medium`}>AI Story Development</p>
+          </div>
+          <div className={`hidden md:flex items-center gap-2 text-sm ${colors.textSecondary} ${colors.backgroundTertiary} px-3 py-1.5 rounded-full border ${colors.border}`}>
+            <Sparkles className="h-4 w-4 text-sky-400" />
+            <span className="font-medium">Cinematic intake assistant</span>
+          </div>
         </div>
-      </div>
-      <div className={`w-px h-8 ${colors.borderSecondary} mx-2`}></div>
-      <div className={`hidden md:flex items-center gap-2 text-sm ${colors.textSecondary} ${colors.backgroundTertiary} px-3 py-1.5 rounded-full border ${colors.border}`}>
-        <Sparkles className="h-4 w-4 text-sky-400" />
-        <span className="font-medium">Cinematic intake assistant</span>
       </div>
           <div className="ml-auto flex items-center gap-2">
             {/* Theme Selector */}
@@ -93,23 +94,23 @@ export function Topbar() {
                 </button>
               </>
             ) : (
-              /* Unauthenticated User */
-              <>
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className={`${colors.buttonSecondary} px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors`}
-                >
-                  <LogIn className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
-                </button>
-                <button
-                  onClick={() => router.push('/auth/signup')}
-                  className={`${colors.buttonPrimary} px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition-colors`}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign Up</span>
-                </button>
-              </>
+          /* Unauthenticated User */
+          <>
+            <button
+              onClick={() => router.push('/auth/login')}
+              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg border border-white/20 shadow-lg backdrop-blur-sm hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+            <button
+              onClick={() => router.push('/auth/signup')}
+              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg border border-white/20 shadow-lg backdrop-blur-sm hover:from-emerald-600 hover:to-teal-700 hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign Up</span>
+            </button>
+          </>
             )}
             
             <div className={`hidden sm:block text-xs ${colors.textTertiary} ${colors.backgroundTertiary} px-2 py-1 rounded-md border ${colors.border}`}>

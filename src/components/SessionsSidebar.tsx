@@ -88,37 +88,44 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="h-full flex flex-col">
-        <div className={`p-4 border-b ${colors.border}`}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className={`text-lg font-semibold ${colors.text}`}>Previous Chats</h2>
+      if (isLoading) {
+        return (
+          <div className="h-full flex flex-col">
+            <div className={`p-4 border-b ${colors.border}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
+                  <MessageSquare className="h-5 w-5" />
+                  Previous Chats
+                </h2>
+              </div>
+              <p className={`text-sm ${colors.textSecondary}`}>Loading chats...</p>
+            </div>
+            <div className="p-4">
+              <div className="animate-pulse space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className={`h-16 ${colors.backgroundTertiary} rounded-lg`}></div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="p-4">
-          <div className="animate-pulse space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className={`h-16 ${colors.backgroundTertiary} rounded-lg`}></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+        )
+      }
 
   if (error) {
     return (
       <div className="h-full flex flex-col">
         <div className={`p-4 border-b ${colors.border}`}>
           <div className="flex items-center justify-between mb-3">
-            <h2 className={`text-lg font-semibold ${colors.text}`}>Previous Chats</h2>
+            <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
+              <MessageSquare className="h-5 w-5" />
+              Previous Chats
+            </h2>
           </div>
         </div>
         <div className="p-4">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <p className="text-red-600 dark:text-red-400 text-sm">
-              Failed to load sessions. Please try again.
+              Failed to load chats. Please try again.
             </p>
           </div>
         </div>
@@ -144,7 +151,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
           </button>
         </div>
         <p className={`text-sm ${colors.textSecondary}`}>
-          {(sessions as Session[]).length} session{(sessions as Session[]).length !== 1 ? 's' : ''}
+          {(sessions as Session[]).length} chat{(sessions as Session[]).length !== 1 ? 's' : ''}
         </p>
       </div>
 
@@ -153,7 +160,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
         {(sessions as Session[]).length === 0 ? (
           <div className="text-center py-8">
             <div className={`w-16 h-16 ${colors.backgroundTertiary} rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <MessageSquare className="h-8 w-8 text-gray-400" />
+              <MessageSquare className={`h-8 w-8 ${colors.textTertiary}`} />
             </div>
             {isAuthenticated ? (
               <>
@@ -163,7 +170,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
                 </p>
                 <button
                   onClick={handleCreateNewSession}
-                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm`}
+                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium`}
                 >
                   Start Your First Chat
                 </button>
@@ -177,14 +184,14 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
                 <div className="space-y-3">
                   <button
                     onClick={() => router.push('/auth/signup')}
-                    className={`w-full ${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2`}
+                    className={`w-full ${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
                   >
                     <UserPlus className="h-4 w-4" />
                     Create Account
                   </button>
                   <button
                     onClick={() => router.push('/auth/login')}
-                    className={`w-full ${colors.buttonSecondary} px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2`}
+                    className={`w-full ${colors.buttonSecondary} px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2`}
                   >
                     <LogIn className="h-4 w-4" />
                     Sign In

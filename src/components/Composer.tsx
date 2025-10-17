@@ -69,7 +69,7 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
           </div>
         )}
         
-        <div className={`flex items-center gap-3 ${colors.glassBackground} backdrop-blur-sm rounded-2xl p-3 border ${colors.glassBorder} shadow-lg overflow-visible pr-2`}>
+        <div className={`flex items-center gap-3 ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-3 border ${colors.glassBorder} shadow-lg overflow-visible pr-2`}>
           <UploadDropzone />
           <button
             type="button"
@@ -93,7 +93,10 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
             onKeyDown={handleKeyDown}
             placeholder="Take me to the moment your story begins…"
             className={cn(
-              `composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-xl transition-all duration-200 text-sm sm:text-base ${colors.text} ${colors.inputPlaceholder}`,
+              `composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-xl transition-all duration-200 text-sm sm:text-base ${colors.text}`,
+              resolvedTheme === 'light' 
+                ? 'placeholder-gray-500' 
+                : 'placeholder-slate-300',
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}

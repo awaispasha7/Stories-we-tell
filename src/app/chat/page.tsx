@@ -48,7 +48,7 @@ export default function ChatPage() {
                 )}
               >
                 <MessageSquare className="w-4 h-4" />
-                Sessions
+                Chats
               </button>
               <button
                 onClick={() => setActiveTab('dossier')}

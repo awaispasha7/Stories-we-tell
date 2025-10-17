@@ -7,7 +7,7 @@ export function ThemeSelector() {
   const { theme, setTheme, resolvedTheme } = useTheme()
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 relative z-[9999]">
       {/* Theme Toggle Button */}
       <button
         onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
@@ -71,7 +71,7 @@ export function ThemeSelector() {
         </button>
 
         {/* Dropdown Menu */}
-        <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+        <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] transform translate-y-0">
           <div className="py-1">
             <button
               onClick={() => setTheme('light')}

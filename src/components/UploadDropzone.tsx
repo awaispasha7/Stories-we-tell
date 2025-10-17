@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { Paperclip, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 // import { Button } from '@/components/ui/button' // Removed - using custom styling
+import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { cn } from '@/lib/utils'
 
 interface UploadedFile {
@@ -17,6 +18,7 @@ export function UploadDropzone() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -101,20 +103,26 @@ export function UploadDropzone() {
       >
         <button
           className={cn(
-            "h-[56px] w-[56px] hover:bg-white/80 hover:scale-105 active:scale-95 transition-all duration-200 rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center",
+            "h-[56px] w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
             isDragging 
-              ? "border-blue-500 bg-blue-50/80" 
-              : "border-gray-300 bg-white/50 hover:border-blue-400",
-            "backdrop-blur-sm",
+              ? "border-blue-500 bg-blue-50/80 dark:bg-blue-900/20" 
+              : resolvedTheme === 'light'
+                ? "border-gray-300 bg-white/50 hover:border-blue-400 hover:bg-white/80"
+                : "border-slate-500 bg-slate-700/50 hover:border-sky-400 hover:bg-slate-600/80",
             uploading && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => !uploading && document.getElementById('file-upload')?.click()}
           disabled={uploading}
         >
           {uploading ? (
-            <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+            <Loader2 className="h-5 w-5 text-blue-600 dark:text-sky-400 animate-spin" />
           ) : (
-            <Paperclip className="h-5 w-5 text-gray-600 hover:text-blue-600 transition-colors" />
+            <Paperclip className={cn(
+              "h-5 w-5 transition-colors",
+              resolvedTheme === 'light'
+                ? "text-gray-600 hover:text-blue-600"
+                : "text-slate-300 hover:text-sky-400"
+            )} />
           )}
         </button>
       </div>
