@@ -143,27 +143,37 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
         )
       }
 
-  if (error) {
-    return (
-      <div className="h-full flex flex-col">
-        <div className={`p-4 border-b ${colors.border}`}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
-              <MessageSquare className="h-5 w-5" />
-              Previous Chats
-            </h2>
+      if (error) {
+        return (
+          <div className="h-full flex flex-col">
+            <div className={`p-4 border-b ${colors.border}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
+                  <MessageSquare className="h-5 w-5" />
+                  Previous Chats
+                </h2>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="text-center py-8">
+                <div className={`w-16 h-16 ${colors.backgroundTertiary} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                  <MessageSquare className={`h-8 w-8 ${colors.textTertiary}`} />
+                </div>
+                <h3 className={`text-lg font-medium ${colors.text} mb-2`}>No previous chats found</h3>
+                <p className={`${colors.textSecondary} text-sm mb-4`}>
+                  Continue to build your story development history
+                </p>
+                <button
+                  onClick={handleCreateNewSession}
+                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium`}
+                >
+                  Start Your First Chat
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="p-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-red-600 dark:text-red-400 text-sm">
-              Failed to load chats. Please try again.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+        )
+      }
 
   return (
     <div className="h-full flex flex-col">
