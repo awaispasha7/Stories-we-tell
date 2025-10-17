@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
-import { MessageSquare, Trash2, LogIn, UserPlus, ChevronLeft } from 'lucide-react'
+import { MessageSquare, Trash2, LogIn, UserPlus, ChevronLeft, Plus } from 'lucide-react'
 
 interface Session {
   session_id: string
@@ -194,18 +194,29 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             <MessageSquare className="h-5 w-5" />
             Previous Chats
           </h2>
-                  <div className="flex items-center gap-2">
-                    {/* Back Button for mobile/tablet */}
-                    {onClose && (
-                      <button
-                        onClick={onClose}
-                        className="p-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
-                        title="Back to Chat"
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-                    )}
-                  </div>
+          <div className="flex items-center gap-2">
+            {/* Add New Chat Button */}
+            {isAuthenticated && (
+              <button
+                onClick={() => onSessionSelect('')}
+                className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                title="Start New Chat"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            )}
+            
+            {/* Back Button for mobile/tablet */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
+                title="Back to Chat"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+            )}
+          </div>
         </div>
         
         
