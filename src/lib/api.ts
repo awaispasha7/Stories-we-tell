@@ -54,13 +54,15 @@ export const sessionApi = {
   getSessions: async (limit = 10) => {
     try {
       return await api.get('api/v1/sessions', { searchParams: { limit } }).json()
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        console.warn('Sessions API not available, returning empty array')
-        return []
-      }
-      throw error
-    }
+        } catch (error: unknown) {
+          if (error && typeof error === 'object' && 'response' in error && 
+              error.response && typeof error.response === 'object' && 'status' in error.response &&
+              error.response.status === 404) {
+            console.warn('Sessions API not available, returning empty array')
+            return []
+          }
+          throw error
+        }
   },
   
   // Get session messages
@@ -69,13 +71,15 @@ export const sessionApi = {
       return await api.get(`api/v1/sessions/${sessionId}/messages`, { 
         searchParams: { limit, offset } 
       }).json()
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        console.warn('Session messages API not available, returning empty array')
-        return []
-      }
-      throw error
-    }
+        } catch (error: unknown) {
+          if (error && typeof error === 'object' && 'response' in error && 
+              error.response && typeof error.response === 'object' && 'status' in error.response &&
+              error.response.status === 404) {
+            console.warn('Session messages API not available, returning empty array')
+            return []
+          }
+          throw error
+        }
   },
   
   // Update session title
@@ -86,21 +90,25 @@ export const sessionApi = {
   deleteSession: async (sessionId: string) => {
     try {
       return await api.delete(`api/v1/sessions/${sessionId}`).json()
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        console.warn('Delete session API not available')
-        return { success: false, message: 'API not available' }
-      }
-      throw error
-    }
+        } catch (error: unknown) {
+          if (error && typeof error === 'object' && 'response' in error && 
+              error.response && typeof error.response === 'object' && 'status' in error.response &&
+              error.response.status === 404) {
+            console.warn('Delete session API not available')
+            return { success: false, message: 'API not available' }
+          }
+          throw error
+        }
   },
   
   // Create user
   createUser: async (userData: { email?: string; display_name?: string; avatar_url?: string }) => {
     try {
       return await api.post('api/v1/users', { json: userData }).json()
-    } catch (error: any) {
-      if (error.response?.status === 409) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'status' in error.response &&
+          error.response.status === 409) {
         // User already exists, that's fine
         console.log('User already exists in backend')
         return { message: 'User already exists', user: userData }

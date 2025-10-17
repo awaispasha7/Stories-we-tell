@@ -105,9 +105,9 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
     }
   }
 
-  const handleCreateNewSession = () => {
-    onSessionSelect('') // Clear current session to create new one
-  }
+  // const handleCreateNewSession = () => {
+  //   onSessionSelect('') // Clear current session to create new one
+  // }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

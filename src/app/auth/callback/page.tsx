@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { CheckCircle, XCircle, Loader2, ArrowLeft, Mail } from 'lucide-react'
+import { CheckCircle, XCircle, ArrowLeft, Mail } from 'lucide-react'
 
 export default function AuthCallback() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
