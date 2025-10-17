@@ -102,7 +102,7 @@ export const sessionApi = {
   },
   
   // Create user
-  createUser: async (userData: { email?: string; display_name?: string; avatar_url?: string }) => {
+  createUser: async (userData: { user_id?: string; email?: string; display_name?: string; avatar_url?: string }) => {
     try {
       return await api.post('api/v1/users', { json: userData }).json()
     } catch (error: unknown) {

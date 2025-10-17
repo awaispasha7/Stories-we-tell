@@ -54,6 +54,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
           if (user) {
             try {
               await sessionApi.createUser({
+                user_id: user.user_id, // Pass the Supabase auth user ID
                 email: user.email,
                 display_name: user.display_name,
                 avatar_url: user.avatar_url

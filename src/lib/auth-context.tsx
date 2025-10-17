@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { sessionApi } = await import('./api')
           await sessionApi.createUser({
+            user_id: typedSession.user.id, // Pass the Supabase auth user ID
             email: typedSession.user.email,
             display_name: typedSession.user.user_metadata?.display_name || typedSession.user.email?.split('@')[0],
             avatar_url: typedSession.user.user_metadata?.avatar_url
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { sessionApi } = await import('./api')
           await sessionApi.createUser({
+            user_id: data.user.id, // Pass the Supabase auth user ID
             email: data.user.email,
             display_name: data.user.user_metadata?.display_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url
@@ -142,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { sessionApi } = await import('./api')
           await sessionApi.createUser({
+            user_id: response.data.user.id, // Pass the Supabase auth user ID
             email: response.data.user.email,
             display_name: displayName,
             avatar_url: response.data.user.user_metadata?.avatar_url
