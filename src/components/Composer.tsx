@@ -93,7 +93,7 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
             onKeyDown={handleKeyDown}
             placeholder="Take me to the moment your story begins…"
             className={cn(
-              `composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-xl transition-all duration-200 text-sm sm:text-base px-3 py-2 ${colors.text} ${colors.inputPlaceholder}`,
+              `composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-xl transition-all duration-200 text-sm sm:text-base ${colors.text} ${colors.inputPlaceholder}`,
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}

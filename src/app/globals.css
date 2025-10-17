@@ -150,8 +150,8 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   caret-shape: block !important;
   text-shadow: none !important;
   -webkit-text-stroke: none !important;
-  border-left: none !important;
-  border-right: none !important;
+  border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   line-height: 1.2 !important;
   padding-top: 1rem !important;
@@ -162,6 +162,7 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   height: 56px !important;
   display: flex !important;
   align-items: center !important;
+  background: transparent !important;
 }
 
 .composer-textarea:focus {
@@ -169,8 +170,8 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   caret-shape: block !important;
   text-shadow: none !important;
   -webkit-text-stroke: none !important;
-  border-left: none !important;
-  border-right: none !important;
+  border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   line-height: 1.2 !important;
   padding-top: 1rem !important;
@@ -181,6 +182,7 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   height: 56px !important;
   display: flex !important;
   align-items: center !important;
+  background: transparent !important;
 }
 
 /* Sidebar animations */

@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { useAuth } from '@/lib/auth-context'
 import { MessageSquare, Plus, Trash2 } from 'lucide-react'
 
 interface Session {
@@ -27,18 +28,23 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
   const queryClient = useQueryClient()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
+  const { isAuthenticated } = useAuth()
 
-  // Fetch user sessions
+  // Fetch user sessions only if authenticated
   const { data: sessions = [], isLoading, error } = useQuery({
     queryKey: ['sessions'],
     queryFn: async () => {
+      console.log('🔄 Fetching sessions...')
       const result = await sessionApi.getSessions(20)
+      console.log('✅ Sessions fetched:', result)
       return result as Session[]
     },
     refetchInterval: false, // No automatic refresh
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchOnMount: true, // Only fetch on component mount
     staleTime: Infinity, // Never consider data stale
+    enabled: isAuthenticated, // Only fetch if user is authenticated
+    retry: false, // Don't retry on error to avoid repeated calls
   })
 
   // Delete session mutation
