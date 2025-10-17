@@ -8,10 +8,10 @@ import { useDossierRefresh } from '@/lib/dossier-context'
 // import { Loader2 } from 'lucide-react' // Unused import
 
 interface ChatPanelProps {
-  sessionId?: string
+  _sessionId?: string
 }
 
-export function ChatPanel({ sessionId: _sessionId }: ChatPanelProps) {
+export function ChatPanel({ _sessionId }: ChatPanelProps) {
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',

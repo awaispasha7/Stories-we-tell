@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { auth, supabase } from './supabase'
-import type { User as SupabaseUser, Session, AuthResponse } from '@supabase/supabase-js'
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 
 interface User {
   user_id: string
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [convertSupabaseUser])
+  }, [])
 
   const logout = useCallback(async () => {
     try {

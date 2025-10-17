@@ -87,7 +87,7 @@ export default function ChatPage() {
             {/* Chat Area */}
             <div className="flex-1 min-h-0 p-4">
               <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-                <ChatPanel sessionId={currentSessionId} />
+                    <ChatPanel _sessionId={currentSessionId} />
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 // import { Avatar, AvatarFallback } from '@/components/ui/avatar' // Removed - using custom styling
 import { useProfile } from '@/lib/profile-context'
-import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { useTheme } from '@/lib/theme-context'
 import { ProfileSettings } from './ProfileSettings'
 import Image from 'next/image'
 

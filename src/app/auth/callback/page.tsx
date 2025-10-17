@@ -44,7 +44,7 @@ export default function AuthCallback() {
             // We have confirmation parameters, try to verify them
             const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
               token_hash: tokenHash,
-              type: type as any
+              type: type as 'email'
             })
             
             if (verifyError) {

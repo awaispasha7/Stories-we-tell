@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useTheme, getThemeColors } from '@/lib/theme-context'
+// import { useTheme } from '@/lib/theme-context' // Unused for now
 
 interface ResizableSidebarProps {
   children: React.ReactNode
@@ -21,8 +21,7 @@ export function ResizableSidebar({
   const [width, setWidth] = useState(defaultWidth)
   const [isResizing, setIsResizing] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
-  const { resolvedTheme } = useTheme()
-  const colors = getThemeColors(resolvedTheme)
+  // const { resolvedTheme } = useTheme() // Unused for now
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
