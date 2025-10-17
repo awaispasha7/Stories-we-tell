@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 // import { useTheme } from '@/lib/theme-context' // Unused for now
 
 interface ResizableSidebarProps {
@@ -9,6 +10,8 @@ interface ResizableSidebarProps {
   maxWidth?: number
   defaultWidth?: number
   className?: string
+  isCollapsed?: boolean
+  onCollapseChange?: (collapsed: boolean) => void
 }
 
 export function ResizableSidebar({ 
@@ -16,12 +19,41 @@ export function ResizableSidebar({
   minWidth = 250, 
   maxWidth = 500, 
   defaultWidth = 300,
-  className = ''
+  className = '',
+  isCollapsed: externalCollapsed,
+  onCollapseChange
 }: ResizableSidebarProps) {
   const [width, setWidth] = useState(defaultWidth)
   const [isResizing, setIsResizing] = useState(false)
+  const [internalCollapsed, setInternalCollapsed] = useState(false)
+  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed
+  const [isMobile, setIsMobile] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   // const { resolvedTheme } = useTheme() // Unused for now
+
+  // Check if screen is mobile (only collapse on very small screens)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640) // Only mobile phones, not tablets
+      if (window.innerWidth < 640) {
+        if (onCollapseChange) {
+          onCollapseChange(true)
+        } else {
+          setInternalCollapsed(true)
+        }
+      } else {
+        if (onCollapseChange) {
+          onCollapseChange(false)
+        } else {
+          setInternalCollapsed(false) // Show sidebar on tablets and larger
+        }
+      }
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [onCollapseChange])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -61,23 +93,56 @@ export function ResizableSidebar({
     }
   }, [isResizing, handleMouseMove, handleMouseUp])
 
+  const toggleCollapse = () => {
+    if (onCollapseChange) {
+      onCollapseChange(!isCollapsed)
+    } else {
+      setInternalCollapsed(!isCollapsed)
+    }
+  }
+
   return (
     <>
+      {/* Mobile Toggle Button - Only on very small screens */}
+      {isMobile && (
+        <button
+          onClick={toggleCollapse}
+          className={`fixed top-1/2 z-50 p-4 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 sm:hidden ${
+            isCollapsed ? 'left-4 transform -translate-y-1/2' : 'right-4 transform -translate-y-1/2'
+          }`}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-8 w-8 text-gray-700 dark:text-gray-200" />
+          ) : (
+            <ChevronLeft className="h-8 w-8 text-gray-700 dark:text-gray-200" />
+          )}
+        </button>
+      )}
+
+      {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`${className} flex-shrink-0 relative`}
-        style={{ width: `${width}px` }}
+        className={`${className} flex-shrink-0 relative transition-all duration-300 ${
+          isMobile && isCollapsed ? 'w-0 overflow-hidden' : ''
+        } ${isMobile && !isCollapsed ? 'fixed inset-0 z-50 w-full h-full' : ''}`}
+        style={{ 
+          width: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${width}px`,
+          minWidth: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${minWidth}px`
+        }}
       >
         {children}
         
-        {/* Resize Handle */}
-        <div
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:w-2 transition-all duration-200 ${
-            isResizing ? 'w-2 bg-blue-500' : 'bg-transparent hover:bg-gray-300 dark:hover:bg-slate-600'
-          }`}
-          onMouseDown={handleMouseDown}
-        />
+        {/* Resize Handle - Hidden on mobile */}
+        {!isMobile && (
+          <div
+            className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:w-2 transition-all duration-200 ${
+              isResizing ? 'w-2 bg-blue-500' : 'bg-transparent hover:bg-gray-300 dark:hover:bg-slate-600'
+            }`}
+            onMouseDown={handleMouseDown}
+          />
+        )}
       </div>
+
     </>
   )
 }

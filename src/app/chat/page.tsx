@@ -16,6 +16,7 @@ export default function ChatPage() {
   const init = useChatStore(s => s.init)
   const [activeTab, setActiveTab] = useState<'sessions' | 'dossier'>('sessions')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
 
@@ -24,6 +25,10 @@ export default function ChatPage() {
 
   const handleSessionSelect = (sessionId: string) => {
     setCurrentSessionId(sessionId)
+  }
+
+  const handleSidebarClose = () => {
+    setIsSidebarCollapsed(true)
   }
 
   return (
@@ -42,6 +47,8 @@ export default function ChatPage() {
             maxWidth={400} 
             defaultWidth={300}
             className={`${colors.sidebarBackground} border-r ${colors.border}`}
+            isCollapsed={isSidebarCollapsed}
+            onCollapseChange={setIsSidebarCollapsed}
           >
             {/* Enhanced Sidebar Switch */}
             <div className="sidebar-switch-container">
@@ -73,6 +80,7 @@ export default function ChatPage() {
                 <SessionsSidebar 
                   onSessionSelect={handleSessionSelect}
                   currentSessionId={currentSessionId}
+                  onClose={handleSidebarClose}
                 />
               ) : (
                 <SidebarDossier />
@@ -81,7 +89,7 @@ export default function ChatPage() {
           </ResizableSidebar>
 
           {/* Chat Area */}
-          <div className="flex-1 min-h-0 p-4">
+          <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
             <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
               <ChatPanel _sessionId={currentSessionId} />
             </div>

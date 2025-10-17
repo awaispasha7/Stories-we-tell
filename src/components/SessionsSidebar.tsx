@@ -1,10 +1,11 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
-import { MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { MessageSquare, Trash2, LogIn, UserPlus, ChevronLeft } from 'lucide-react'
 
 interface Session {
   session_id: string
@@ -33,10 +34,12 @@ interface ChatMessage {
 interface SessionsSidebarProps {
   onSessionSelect: (sessionId: string) => void
   currentSessionId?: string
+  onClose?: () => void
 }
 
-export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsSidebarProps) {
+export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: SessionsSidebarProps) {
   const queryClient = useQueryClient()
+  const router = useRouter()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { isAuthenticated } = useAuth()
@@ -160,12 +163,6 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
                 <p className={`${colors.textSecondary} text-sm mb-4`}>
                   Continue to build your story development history
                 </p>
-                <button
-                  onClick={handleCreateNewSession}
-                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium`}
-                >
-                  Start Your First Chat
-                </button>
               </div>
             </div>
           </div>
@@ -173,50 +170,72 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId }: SessionsS
       }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col gap-8">
       {/* Header */}
-      <div className={`p-4 border-b ${colors.border}`}>
-        <div className="flex items-center justify-between mb-3">
+      <div className={`p-6 border-b ${colors.border}`}>
+        <div className="flex items-center justify-between mb-6">
           <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
             <MessageSquare className="h-5 w-5" />
             Previous Chats
           </h2>
-          <button
-            onClick={handleCreateNewSession}
-            className={`p-2 rounded-lg ${colors.buttonSecondary} hover:${colors.buttonPrimary} transition-colors bg-gradient-to-r from-sky-500 to-emerald-500`}
-            title="New Chat"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+                  <div className="flex items-center gap-2">
+                    {/* Back Button for mobile/tablet */}
+                    {onClose && (
+                      <button
+                        onClick={onClose}
+                        className="p-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors sm:hidden"
+                        title="Back to Chat"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                    )}
+                  </div>
         </div>
-        <p className={`text-sm ${colors.textSecondary}`}>
-          {(sessions as Session[]).length} chat{(sessions as Session[]).length !== 1 ? 's' : ''}
-        </p>
+        
+        
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {(sessions as Session[]).length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 flex flex-col gap-4 items-center justify-center mt-8">
             {isAuthenticated ? (
               <>
                 <h3 className={`text-lg font-medium ${colors.text} mb-2`}>No previous chats</h3>
                 <p className={`${colors.textSecondary} text-sm mb-4`}>
                   Start a new conversation to begin your story development journey
                 </p>
-                <button
-                  onClick={handleCreateNewSession}
-                  className={`${colors.buttonPrimary} px-4 py-2 rounded-lg text-sm font-medium`}
-                >
-                  Start Your First Chat
-                </button>
               </>
             ) : (
               <>
                 <h3 className={`text-lg font-medium ${colors.text} mb-2`}>Welcome to Stories We Tell</h3>
-                <p className={`${colors.textSecondary} text-sm mb-6`}>
+                <p className={`${colors.textSecondary} text-sm mb-8`}>
                   Sign up to save your conversations and access your story development history
                 </p>
+                
+                {/* Auth buttons after welcome text */}
+                <div className="flex gap-3 w-full mt-8 px-4 justify-center items-center">
+                  <button
+                    onClick={() => router.push('/auth/login')}
+                    className="auth-button-signin px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 mt-8"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In</span>
+                  </button>
+                  
+                  {/* Beautiful Divider */}
+                  <div className="flex items-center justify-center px-1">
+                    <div className="w-0.5 h-10 bg-gradient-to-b from-transparent via-white/50 to-transparent rounded-full"></div>
+                  </div>
+                  
+                  <button
+                    onClick={() => router.push('/auth/signup')}
+                    className="auth-button-signup px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 mt-8"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Sign Up</span>
+                  </button>
+                </div>
               </>
             )}
           </div>

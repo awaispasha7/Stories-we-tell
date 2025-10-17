@@ -16,9 +16,21 @@ interface ComposerProps {
 export function Composer({ onSend, disabled = false }: ComposerProps) {
   const [text, setText] = useState('')
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
+
+  // Check screen size for responsive placeholder
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 320)
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // Auto-focus textarea when component becomes enabled
   useEffect(() => {
@@ -58,10 +70,10 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   }, [text])
 
   return (
-    <div className="p-3">
+    <div className="p-2 sm:p-3">
         {/* Audio Recorder */}
         {showAudioRecorder && (
-          <div className="mb-3">
+          <div className="mb-2 sm:mb-3">
             <AudioRecorder 
               onAudioData={handleAudioData}
               disabled={disabled}
@@ -69,14 +81,14 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
           </div>
         )}
         
-        <div className={`flex items-center gap-3 ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-3 border ${colors.glassBorder} shadow-lg overflow-visible pr-2`}>
+        <div className={`flex items-center gap-1 sm:gap-2 md:gap-3 ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`}>
           <UploadDropzone />
           <button
             type="button"
             onClick={() => setShowAudioRecorder(!showAudioRecorder)}
             disabled={disabled}
             className={cn(
-              "h-[56px] w-[56px] rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0",
+              "h-8 w-8 sm:h-10 sm:w-10 md:h-[56px] md:w-[56px] rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0",
               showAudioRecorder 
                 ? "bg-blue-500 text-white shadow-lg" 
                 : resolvedTheme === 'light'
@@ -84,19 +96,19 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
                   : "bg-slate-700/70 hover:bg-slate-600 border-2 border-dashed border-slate-500 hover:border-sky-400"
             )}
           >
-            <Mic className={`h-5 w-5 ${showAudioRecorder ? 'text-white' : resolvedTheme === 'light' ? 'text-gray-600' : 'text-slate-300'}`} />
+            <Mic className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 ${showAudioRecorder ? 'text-white' : resolvedTheme === 'light' ? 'text-gray-600' : 'text-slate-300'}`} />
           </button>
           <textarea
             ref={textareaRef}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Take me to the moment your story begins…"
+            placeholder={isSmallScreen ? "Take me to the mo…" : "Take me to the moment your story begins…"}
             className={cn(
-              `composer-textarea flex-1 min-h-[56px] max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-xl transition-all duration-200 text-sm sm:text-base ${colors.text}`,
+              `composer-textarea flex-1 min-w-0 max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-lg sm:rounded-xl transition-all duration-200 text-xs sm:text-sm md:text-base ${colors.text} px-2 sm:px-3 py-2 sm:py-3`,
               resolvedTheme === 'light' 
-                ? 'placeholder-gray-500' 
-                : 'placeholder-slate-300',
+                ? 'placeholder-gray-500 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base' 
+                : 'placeholder-slate-300 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base',
               disabled && "opacity-50 cursor-not-allowed"
             )}
             disabled={disabled}
@@ -106,13 +118,13 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
             onClick={handleSend}
             disabled={!text.trim() || disabled}
               className={cn(
-                "send-button-shine h-10 w-10 rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative overflow-visible",
+                "send-button-shine h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative overflow-visible",
                 !text.trim() || disabled
                   ? "bg-white cursor-not-allowed shadow-sky-200/50"
                   : "bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:to-blue-800 hover:scale-110 active:scale-95 hover:shadow-2xl cursor-pointer shadow-blue-500/50"
               )}
               style={{ 
-                marginRight: '10px',
+                marginRight: '4px',
                 border: !text.trim() || disabled ? '2px solid #0ea5e9' : '2px solid #60a5fa',
                 borderRadius: '30%',
                 boxShadow: !text.trim() || disabled 
@@ -121,11 +133,11 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
               }}
           >
             {disabled ? (
-              <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
+              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 animate-spin text-sky-500" />
             ) : !text.trim() ? (
-              <Send className="h-5 w-5 text-sky-500 drop-shadow-xl" />
+              <Send className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-sky-500 drop-shadow-xl" />
             ) : (
-              <Send className="h-5 w-5 text-white drop-shadow-xl" />
+              <Send className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-white drop-shadow-xl" />
             )}
           </button>
         </div>

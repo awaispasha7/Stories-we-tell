@@ -103,7 +103,7 @@ export function UploadDropzone() {
       >
         <button
           className={cn(
-            "h-[56px] w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
+            "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
             isDragging 
               ? "border-blue-500 bg-blue-50/80 dark:bg-blue-900/20" 
               : resolvedTheme === 'light'
@@ -115,10 +115,10 @@ export function UploadDropzone() {
           disabled={uploading}
         >
           {uploading ? (
-            <Loader2 className="h-5 w-5 text-blue-600 dark:text-sky-400 animate-spin" />
+            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-sky-400 animate-spin" />
           ) : (
             <Paperclip className={cn(
-              "h-5 w-5 transition-colors",
+              "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
               resolvedTheme === 'light'
                 ? "text-gray-600 hover:text-blue-600"
                 : "text-slate-300 hover:text-sky-400"
