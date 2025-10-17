@@ -34,29 +34,36 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl border border-gray-200/50 rounded-2xl overflow-hidden">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200/50 p-6">
-          <h2 className="text-xl font-bold flex items-center gap-3 text-gray-800">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-              <Settings className="w-5 h-5 text-white" />
+      <div className="w-full max-w-lg bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 rounded-3xl overflow-hidden">
+        {/* Header */}
+        <div className="relative bg-gradient-to-br from-blue-500 via-purple-600 to-emerald-500 p-6">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                <Settings className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
+                <p className="text-blue-100 text-sm">Customize your experience</p>
+              </div>
             </div>
-            Profile Settings
-          </h2>
-          <button
-            onClick={handleCancel}
-            className="h-9 w-9 hover:bg-red-100 hover:text-red-600 transition-all duration-200 rounded-full flex items-center justify-center"
-          >
-            <X className="h-4 w-4" />
-          </button>
+            <button
+              onClick={handleCancel}
+              className="h-10 w-10 hover:bg-white/20 transition-all duration-200 rounded-xl flex items-center justify-center group"
+            >
+              <X className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+            </button>
+          </div>
         </div>
         
-        <div className="space-y-8 p-6">
+        <div className="space-y-8 p-8">
           {/* Profile Picture Section */}
           <div className="flex flex-col items-center space-y-6">
             <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2 text-gray-800">Profile Picture</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Click to upload your own picture
+              <h3 className="text-xl font-bold mb-2 text-gray-800">Profile Picture</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Upload a photo to personalize your account
               </p>
             </div>
             
@@ -69,27 +76,32 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               />
             </div>
             
-            <div className="text-center space-y-3">
-              <p className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-                Supported: JPG, PNG, GIF (max 5MB)
-              </p>
+            <div className="text-center space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl px-4 py-3">
+                <p className="text-xs text-gray-600 font-medium">
+                  📸 Supported: JPG, PNG, GIF (max 5MB)
+                </p>
+              </div>
               {tempImage && (
                 <button
                   onClick={() => setTempImage(null)}
-                  className="text-red-600 border border-red-300 hover:bg-red-50 hover:border-red-400 hover:text-red-700 transition-all duration-200 cursor-pointer rounded-full px-4 py-2 flex items-center"
+                  className="text-red-600 border-2 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all duration-200 cursor-pointer rounded-xl px-6 py-3 flex items-center justify-center gap-2 font-medium"
                 >
-                  <X className="w-3 h-3 mr-2" />
+                  <X className="w-4 h-4" />
                   Remove Picture
                 </button>
               )}
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+
           {/* Name Section */}
-          <div className="space-y-3">
-            <label htmlFor="userName" className="text-sm font-medium flex items-center gap-2 text-gray-700">
-              <div className="p-1.5 bg-blue-100 rounded-md">
-                <User className="w-4 h-4 text-blue-600" />
+          <div className="space-y-4">
+            <label htmlFor="userName" className="text-sm font-bold flex items-center gap-3 text-gray-800">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                <User className="w-4 h-4 text-white" />
               </div>
               Display Name
             </label>
@@ -97,26 +109,28 @@ export function ProfileSettings({ isOpen, onClose }: ProfileSettingsProps) {
               id="userName"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
-              placeholder="Enter your name"
-              className="flex h-12 w-full mx-4 rounded-xl border-2 border-gray-300 bg-white/90 backdrop-blur-sm px-4 py-3 text-sm ring-offset-background placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:border-blue-500 hover:border-gray-400 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm hover:shadow-md"
+              placeholder="Enter your display name"
+              className="flex h-14 w-full rounded-2xl border-2 border-gray-200 bg-white/90 backdrop-blur-sm px-6 py-4 text-base ring-offset-background placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:border-blue-500 hover:border-gray-300 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm hover:shadow-md"
             />
-            <p className="text-xs text-gray-500 bg-blue-50 px-3 py-1 rounded-full inline-block">
-              This will appear in your messages
-            </p>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-gray-600 font-medium">
+                💬 This name will appear in your chat messages
+              </p>
+            </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-6">
             <button
               onClick={handleSave}
-              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer transform hover:scale-105 flex items-center justify-center"
+              className="flex-1 bg-gradient-to-r from-blue-500 via-purple-600 to-emerald-500 hover:from-blue-600 hover:via-purple-700 hover:to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer transform hover:scale-105 flex items-center justify-center gap-2"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-5 h-5" />
               Save Changes
             </button>
             <button
               onClick={handleCancel}
-              className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition-all duration-200 cursor-pointer transform hover:scale-105"
+              className="flex-1 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-4 rounded-2xl transition-all duration-200 cursor-pointer transform hover:scale-105"
             >
               Cancel
             </button>
