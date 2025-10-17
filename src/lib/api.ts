@@ -51,22 +51,49 @@ export const sessionApi = {
     api.post('api/v1/chat', { json: { text, session_id: sessionId, project_id: projectId } }),
   
   // Get user sessions
-  getSessions: (limit = 10) => 
-    api.get('api/v1/sessions', { searchParams: { limit } }).json(),
+  getSessions: async (limit = 10) => {
+    try {
+      return await api.get('api/v1/sessions', { searchParams: { limit } }).json()
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Sessions API not available, returning empty array')
+        return []
+      }
+      throw error
+    }
+  },
   
   // Get session messages
-  getSessionMessages: (sessionId: string, limit = 50, offset = 0) => 
-    api.get(`api/v1/sessions/${sessionId}/messages`, { 
-      searchParams: { limit, offset } 
-    }).json(),
+  getSessionMessages: async (sessionId: string, limit = 50, offset = 0) => {
+    try {
+      return await api.get(`api/v1/sessions/${sessionId}/messages`, { 
+        searchParams: { limit, offset } 
+      }).json()
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Session messages API not available, returning empty array')
+        return []
+      }
+      throw error
+    }
+  },
   
   // Update session title
   updateSessionTitle: (sessionId: string, title: string) => 
     api.put(`api/v1/sessions/${sessionId}/title`, { json: { title } }).json(),
   
   // Delete session
-  deleteSession: (sessionId: string) => 
-    api.delete(`api/v1/sessions/${sessionId}`).json(),
+  deleteSession: async (sessionId: string) => {
+    try {
+      return await api.delete(`api/v1/sessions/${sessionId}`).json()
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Delete session API not available')
+        return { success: false, message: 'API not available' }
+      }
+      throw error
+    }
+  },
   
   // Create user
   createUser: (userData: { email?: string; display_name?: string; avatar_url?: string }) => 

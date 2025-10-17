@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
       console.error('Backend fetch failed:', fetchError)
       
       // Return a fallback response
-      const fallbackResponse = `I received your message: "${text}". I'm currently having trouble connecting to my AI backend, but I'm here to help with your story development! What kind of story are you working on?`
+      const fallbackResponse = `I received your message: "${text}". I'm currently having trouble connecting to my AI backend, but I'm here to help with your story development! 
+
+Let's start with the basics - what kind of story are you working on? Are you thinking of a novel, screenplay, short story, or something else?`
       
       return new Response(
         `data: ${JSON.stringify({ type: 'content', content: fallbackResponse, done: true })}\n\n`,
