@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Mic, Square, Play, Pause } from 'lucide-react'
 // import { Button } from '@/components/ui/button' // Removed - using custom styling
+import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { cn } from '@/lib/utils'
 
 interface AudioRecorderProps {
@@ -19,6 +20,8 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
   const [transcript, setTranscript] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [transcriptionProgress, setTranscriptionProgress] = useState('')
+  const { resolvedTheme } = useTheme()
+  const colors = getThemeColors(resolvedTheme)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -160,7 +163,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
   }, [])
 
   return (
-    <div className="flex flex-col items-center gap-3 p-4 bg-white/50 rounded-xl border border-gray-200">
+    <div className={`flex flex-col items-center gap-3 p-4 ${colors.glassBackground} rounded-xl border ${colors.glassBorder}`}>
       {/* Recording Controls */}
       <div className="flex items-center gap-2">
         {!isRecording && !audioBlob && (
@@ -215,7 +218,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
             <span className="text-sm font-medium">{transcriptionProgress}</span>
           </div>
           {isProcessing && (
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className={`w-full ${colors.backgroundTertiary} rounded-full h-2`}>
               <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
             </div>
           )}
@@ -228,7 +231,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
           <div className="flex items-center gap-2">
             <button
               onClick={playAudio}
-              className="border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-sm flex items-center"
+              className={`border ${colors.border} ${colors.buttonGhost} px-3 py-1.5 rounded-lg text-sm flex items-center`}
             >
               {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
               {isPlaying ? 'Pause' : 'Play'}
@@ -242,7 +245,7 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
             </button>
             <button
               onClick={resetRecording}
-              className="border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-sm"
+              className={`border ${colors.border} ${colors.buttonGhost} px-3 py-1.5 rounded-lg text-sm`}
             >
               Reset
             </button>
@@ -262,24 +265,28 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
             return (
               <div className={`w-full p-4 rounded-lg border ${
                 isError
-                  ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
-                  : 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
+                  ? resolvedTheme === 'light' 
+                    ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
+                    : 'bg-gradient-to-r from-red-900/20 to-orange-900/20 border-red-800'
+                  : resolvedTheme === 'light'
+                    ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
+                    : 'bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-800'
               }`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-2 h-2 rounded-full animate-pulse ${
                     isError ? 'bg-red-500' : 'bg-green-500'
                   }`} />
                   <span className={`text-sm font-semibold ${
-                    isError ? 'text-red-700' : 'text-green-700'
+                    isError ? resolvedTheme === 'light' ? 'text-red-700' : 'text-red-400' : resolvedTheme === 'light' ? 'text-green-700' : 'text-green-400'
                   }`}>
                     {isError ? 'Transcription Failed' : 'Transcription Complete'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-800 leading-relaxed">
+                <p className={`text-sm ${colors.text} leading-relaxed`}>
                   {transcript}
                 </p>
                 {!isError && (
-                  <div className="mt-2 text-xs text-gray-500">
+                  <div className={`mt-2 text-xs ${colors.textTertiary}`}>
                     This text will be sent to the chat automatically
                   </div>
                 )}

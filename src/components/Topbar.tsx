@@ -4,14 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Film, Sparkles, Settings, User, LogOut } from 'lucide-react'
 import { ProfileSettings } from './ProfileSettings'
+import { ThemeSelector } from './ThemeSelector'
 import { useAuth } from '@/lib/auth-context'
 import { useProfile } from '@/lib/profile-context'
+import { useTheme, getThemeColors } from '@/lib/theme-context'
 
 export function Topbar() {
   const [showProfileSettings, setShowProfileSettings] = useState(false)
   const { user, logout } = useAuth()
   const { profile } = useProfile()
+  const { resolvedTheme } = useTheme()
   const router = useRouter()
+  
+  const colors = getThemeColors(resolvedTheme)
 
   const handleLogout = () => {
     logout()
@@ -24,35 +29,38 @@ export function Topbar() {
 
   return (
     <>
-    <header className="flex items-center gap-4 px-6 h-16 border-b border-slate-700/50 bg-slate-900/90 backdrop-blur-lg shadow-sm flex-shrink-0">
-      <div className="flex items-center gap-3 text-slate-200">
+    <header className={`flex items-center gap-4 px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0`}>
+      <div className={`flex items-center gap-3 ${colors.textSecondary}`}>
         <div className="p-2 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-xl shadow-lg shadow-sky-500/30">
           <Film className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="font-bold text-lg text-slate-100">Stories We Tell</h1>
-          <p className="text-xs text-slate-400 font-medium">AI Story Development</p>
+          <h1 className={`font-bold text-lg ${colors.text}`}>Stories We Tell</h1>
+          <p className={`text-xs ${colors.textTertiary} font-medium`}>AI Story Development</p>
         </div>
       </div>
-      <div className="w-px h-8 bg-slate-700 mx-2"></div>
-      <div className="hidden md:flex items-center gap-2 text-sm text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50">
+      <div className={`w-px h-8 ${colors.borderSecondary} mx-2`}></div>
+      <div className={`hidden md:flex items-center gap-2 text-sm ${colors.textSecondary} ${colors.backgroundTertiary} px-3 py-1.5 rounded-full border ${colors.border}`}>
         <Sparkles className="h-4 w-4 text-sky-400" />
         <span className="font-medium">Cinematic intake assistant</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        {/* Theme Selector */}
+        <ThemeSelector />
+        
         {/* User Profile */}
         <div className="flex items-center gap-2">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-slate-200">
+            <p className={`text-sm font-medium ${colors.textSecondary}`}>
               {user?.display_name || 'User'}
             </p>
-            <p className="text-xs text-slate-400">
+            <p className={`text-xs ${colors.textTertiary}`}>
               {user?.email || ''}
             </p>
           </div>
           <button
             onClick={handleProfileClick}
-            className="h-8 w-8 rounded-lg hover:bg-slate-800/50 flex items-center justify-center transition-colors"
+            className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
           >
             {profile.userImage ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -62,26 +70,26 @@ export function Topbar() {
                 className="w-6 h-6 rounded-full object-cover"
               />
             ) : (
-              <User className="h-4 w-4 text-slate-300" />
+              <User className={`h-4 w-4 ${colors.textSecondary}`} />
             )}
           </button>
         </div>
         
         <button
           onClick={() => setShowProfileSettings(true)}
-          className="h-8 w-8 rounded-lg hover:bg-slate-800/50 flex items-center justify-center transition-colors"
+          className={`h-8 w-8 rounded-lg ${colors.sidebarItem} flex items-center justify-center transition-colors`}
         >
-          <Settings className="h-4 w-4 text-slate-300" />
+          <Settings className={`h-4 w-4 ${colors.textSecondary}`} />
         </button>
         
         <button
           onClick={handleLogout}
           className="h-8 w-8 rounded-lg hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-colors"
         >
-          <LogOut className="h-4 w-4 text-slate-300" />
+          <LogOut className={`h-4 w-4 ${colors.textSecondary}`} />
         </button>
         
-        <div className="hidden sm:block text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded-md border border-slate-700/50">
+        <div className={`hidden sm:block text-xs ${colors.textTertiary} ${colors.backgroundTertiary} px-2 py-1 rounded-md border ${colors.border}`}>
           v0.1
         </div>
         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>

@@ -25,9 +25,12 @@ export default function SignupPage() {
   const { login } = useAuth()
 
   const signupMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string }) =>
-      authApi.signup(data.name, data.email, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>,
+    mutationFn: async (data: { name: string; email: string; password: string }) => {
+      console.log('Signup attempt with data:', { email: data.email, display_name: data.name, password: '***' })
+      return authApi.signup(data.email, data.name, data.password) as Promise<{ access_token: string; user: { email: string; display_name: string } }>
+    },
     onSuccess: (res) => {
+      console.log('Signup successful:', res)
       localStorage.setItem('access_token', res.access_token)
       login(res.user.email, res.user.display_name)
       setShowSuccess(true)
@@ -36,6 +39,7 @@ export default function SignupPage() {
       }, 3000)
     },
     onError: (err: Error) => {
+      console.error('Signup error:', err)
       setErrors({ general: err.message || 'Signup failed. Please try again.' })
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 500)

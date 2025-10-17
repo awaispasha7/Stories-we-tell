@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 // import { Separator } from '@/components/ui/separator' // Unused import
 import { api } from '@/lib/api'
 import { useDossierRefresh } from '@/lib/dossier-context'
+import { useTheme, getThemeColors } from '@/lib/theme-context'
 
 interface DossierData {
   title: string
@@ -36,6 +37,8 @@ interface CharacterData {
 
 export function SidebarDossier() {
   const { refreshTrigger } = useDossierRefresh()
+  const { resolvedTheme } = useTheme()
+  const colors = getThemeColors(resolvedTheme)
   
   const { data, error } = useQuery({ 
     queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
@@ -62,12 +65,12 @@ export function SidebarDossier() {
   if (error) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-semibold mb-2">Backend Connection Error</h3>
-          <p className="text-red-600 text-sm">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <h3 className="text-red-800 dark:text-red-400 font-semibold mb-2">Backend Connection Error</h3>
+          <p className="text-red-600 dark:text-red-300 text-sm">
             Unable to connect to the backend server. Please check if the backend is running.
           </p>
-          <p className="text-red-500 text-xs mt-2">
+          <p className="text-red-500 dark:text-red-400 text-xs mt-2">
             Error: {error instanceof Error ? error.message : 'Unknown error'}
           </p>
         </div>
@@ -78,32 +81,32 @@ export function SidebarDossier() {
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
       {/* Header */}
-      <div className="text-center pb-4 border-b-2 border-red-300">
+      <div className={`text-center pb-4 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
         <h2 className="text-xl font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
           Story Dossier
         </h2>
-        <p className="text-sm text-gray-600 mt-1">Your story development hub</p>
+        <p className={`text-sm ${colors.textSecondary} mt-1`}>Your story development hub</p>
       </div>
 
       {/* Story Overview Card */}
       <div>
         <div className="pb-3">
-            <h3 className="text-lg flex items-center gap-2 font-semibold">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               Story Overview
             </h3>
         </div>
-        <div className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg" style={{ padding: '0.75rem' }}>
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`} style={{ padding: '0.75rem' }}>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">Title</div>
+              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide`}>Title</div>
               <div className="font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm">
                 {d.title || 'Untitled Story'}
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">Logline</div>
-              <div className="text-sm leading-relaxed max-w-[70%]">
+              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide`}>Logline</div>
+              <div className={`text-sm leading-relaxed max-w-[70%] ${colors.textSecondary}`}>
                 {d.logline || 'A compelling story waiting to be told...'}
               </div>
             </div>
@@ -114,7 +117,7 @@ export function SidebarDossier() {
                 </span>
               )}
               {d.tone && (
-                <span className="border border-red-300 text-red-700 bg-red-50/50 px-2 py-1 rounded-full text-xs">
+                <span className={`border ${resolvedTheme === 'light' ? 'border-red-300 text-red-700 bg-red-50/50' : 'border-red-600 text-red-300 bg-red-900/30'} px-2 py-1 rounded-full text-xs`}>
                   {d.tone}
                 </span>
               )}
@@ -126,34 +129,34 @@ export function SidebarDossier() {
       {/* Scenes Card */}
       <div>
         <div className="pb-3">
-            <h3 className="text-lg flex items-center gap-2 font-semibold">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               Scene Structure
             </h3>
           </div>
-        <div className="bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 border-2 border-blue-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg">  
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
           <div className="space-y-4 p-4">
             {(d.scenes ?? []).slice(0, 4).map((s: SceneData, index: number) => (
-              <div key={s.scene_id} className="bg-white/70 p-3 rounded-lg border border-blue-200 shadow-sm">
+              <div key={s.scene_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     {index + 1}
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-800 text-sm mb-1">
+                    <div className={`font-semibold ${colors.text} text-sm mb-1`}>
                       {s.one_liner || s.description || 'Scene ' + (index + 1)}
                     </div>
-                    <div className="text-xs text-gray-600 space-y-1">
+                    <div className={`text-xs ${colors.textSecondary} space-y-1`}>
                       <div className="flex gap-2">
-                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">
+                        <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-300'} px-2 py-0.5 rounded-full text-xs`}>
                           {s.time_of_day || 'Day'}
                         </span>
-                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
+                        <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/30 text-blue-300'} px-2 py-0.5 rounded-full text-xs`}>
                           {s.interior_exterior || 'INT'}
                         </span>
                       </div>
                       {s.tone && (
-                        <div className="text-gray-500 italic">Tone: {s.tone}</div>
+                        <div className={`${colors.textTertiary} italic`}>Tone: {s.tone}</div>
                       )}
                     </div>
                   </div>
@@ -161,7 +164,7 @@ export function SidebarDossier() {
               </div>
             ))}
             {(d.scenes ?? []).length === 0 && (
-              <div className="text-center py-6 text-gray-500">
+              <div className={`text-center py-6 ${colors.textTertiary}`}>
                 <div className="text-2xl mb-2">🎬</div>
                 <div className="text-sm">Start chatting to build your scenes</div>
               </div>
@@ -173,26 +176,26 @@ export function SidebarDossier() {
       {/* Characters Card */}
       <div>
         <div className="pb-3">
-            <h3 className="text-lg flex items-center gap-2 font-semibold">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               Characters
             </h3>
         </div>
-        <div className="bg-gradient-to-br from-white via-red-50/50 to-pink-50/30 border-2 border-red-300 shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg" style={{ padding: '0.75rem' }}>
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`} style={{ padding: '0.75rem' }}>
           <div>
             {(d.characters ?? []).length > 0 ? (
               <div className="space-y-3">
                 {d.characters.slice(0, 3).map((char: CharacterData) => (
-                  <div key={char.character_id} className="bg-white/70 p-3 rounded-lg border border-green-200">
-                    <div className="font-semibold text-gray-800">{char.name}</div>
-                    <div className="text-xs text-gray-600 mt-1">{char.description}</div>
+                  <div key={char.character_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                    <div className={`font-semibold ${colors.text}`}>{char.name}</div>
+                    <div className={`text-xs ${colors.textSecondary} mt-1`}>{char.description}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white/70 p-3 rounded-lg border border-green-200">
-                <div className="font-semibold text-gray-800">Protagonist</div>
-                <div className="text-xs text-gray-600 mt-1">Main character with a clear goal</div>
+              <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                <div className={`font-semibold ${colors.text}`}>Protagonist</div>
+                <div className={`text-xs ${colors.textSecondary} mt-1`}>Main character with a clear goal</div>
               </div>
             )}
           </div>

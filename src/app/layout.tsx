@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/QueryProvider'
 import { AuthProvider } from '@/lib/auth-context'
 import { ProfileProvider } from '@/lib/profile-context'
+import { ThemeProvider } from '@/lib/theme-context'
 // import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -16,16 +17,18 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
-      <body className={`${inter.className} bg-slate-950 text-slate-100 antialiased`}>
-        <QueryProvider>
-          <AuthProvider>
-            <ProfileProvider>
-              {children}
-              {/* <Toaster /> */}
-            </ProfileProvider>
-          </AuthProvider>
-        </QueryProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        <ThemeProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <ProfileProvider>
+                {children}
+                {/* <Toaster /> */}
+              </ProfileProvider>
+            </AuthProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

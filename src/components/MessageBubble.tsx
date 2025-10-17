@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 // import { Avatar, AvatarFallback } from '@/components/ui/avatar' // Removed - using custom styling
 import { useProfile } from '@/lib/profile-context'
+import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { ProfileSettings } from './ProfileSettings'
 import Image from 'next/image'
 
@@ -10,6 +11,7 @@ export type BubbleProps = { role: 'user'|'assistant'; content: string }
 export function MessageBubble({ role, content }: BubbleProps) {
   const isUser = role === 'user'
   const { profile, isHydrated } = useProfile()
+  const { resolvedTheme } = useTheme()
   const [showProfileSettings, setShowProfileSettings] = useState(false)
   const [timestamp, setTimestamp] = useState('')
   
@@ -41,7 +43,9 @@ export function MessageBubble({ role, content }: BubbleProps) {
         'max-w-[70%] rounded-xl px-8 py-6 text-sm leading-relaxed transform transition-all duration-200 hover:scale-[1.02]',
         isUser
           ? 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-br-lg shadow-2xl shadow-blue-500/40 border-2 border-blue-400/40'
-          : 'bg-gradient-to-br from-white via-green-100/80 to-green-200/60 backdrop-blur-sm border-2 border-green-300/70 rounded-bl-lg shadow-2xl shadow-gray-400/30'
+          : resolvedTheme === 'light'
+            ? 'bg-gradient-to-br from-gray-100 via-gray-50 to-white text-gray-900 backdrop-blur-sm border-2 border-gray-200 rounded-bl-lg shadow-2xl shadow-gray-300/30'
+            : 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 text-slate-100 backdrop-blur-sm border-2 border-slate-500/70 rounded-bl-lg shadow-2xl shadow-slate-400/30'
       )}>
         <div className="whitespace-pre-wrap leading-relaxed break-words" style={{ 
           marginLeft: '10px',
@@ -51,7 +55,7 @@ export function MessageBubble({ role, content }: BubbleProps) {
         </div>
         <div className={cn(
           'text-xs mt-2 opacity-70 ',
-          isUser ? 'text-white/70' : 'text-gray-500'
+          isUser ? 'text-white/70' : resolvedTheme === 'light' ? 'text-gray-500' : 'text-slate-300'
         )} style={{ 
           marginLeft: '10px',
           marginRight: isUser ? '10px' : '10px'
