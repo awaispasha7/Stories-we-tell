@@ -30,6 +30,11 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [typingMessage, setTypingMessage] = useState('')
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
+  
+  // Local state to track current session and project for this chat
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(_projectId || undefined)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
@@ -56,8 +61,15 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
             content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
           }
         ])
+        // Reset local session tracking for new chat
+        setCurrentSessionId(undefined)
+        setCurrentProjectId(undefined)
         return
       }
+      
+      // Update local state when props change (e.g., switching to existing chat)
+      setCurrentSessionId(_sessionId || undefined)
+      setCurrentProjectId(_projectId || undefined)
 
       // If no session ID or not authenticated, don't load messages
       if (!_sessionId || !isAuthenticated || !user?.user_id) {
@@ -187,12 +199,13 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
-      // For authenticated users, use props directly. For anonymous users, use session info
+      // For authenticated users, use local state (which tracks session across messages)
+      // For anonymous users, use session info from useSession hook
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, use the props passed from parent (from session selection)
-        sessionId = _sessionId && _sessionId !== '' ? _sessionId : undefined
-        projectId = _projectId && _projectId !== '' ? _projectId : undefined
+        // For authenticated users, use local state which persists across messages
+        sessionId = currentSessionId
+        projectId = currentProjectId
       } else {
         // For anonymous users, use session info from useSession hook
         const sessionInfo = getSessionInfo()
@@ -202,6 +215,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       
       console.log(`[DEBUG] Session logic - isAuthenticated: ${isAuthenticated}`)
       console.log(`[DEBUG] ChatPanel props - _sessionId: ${_sessionId}, _projectId: ${_projectId}`)
+      console.log(`[DEBUG] Local state - currentSessionId: ${currentSessionId}, currentProjectId: ${currentProjectId}`)
       console.log(`[DEBUG] Final values - sessionId: ${sessionId}, projectId: ${projectId}`)
       
       console.log(`[DEBUG] Making API call to /api/chat`)
@@ -291,6 +305,17 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                   // console.log('✅ Stream completed with done flag')
                   streamComplete = true
                   break
+                }
+              } else if (data.type === 'metadata') {
+                // Handle metadata chunk - store session_id and project_id for next message
+                console.log('📋 Received metadata:', data.metadata)
+                if (data.metadata?.session_id) {
+                  console.log('💾 Storing session_id from metadata:', data.metadata.session_id)
+                  setCurrentSessionId(data.metadata.session_id)
+                }
+                if (data.metadata?.project_id) {
+                  console.log('💾 Storing project_id from metadata:', data.metadata.project_id)
+                  setCurrentProjectId(data.metadata.project_id)
                 }
               }
             } catch (e) {
