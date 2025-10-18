@@ -144,7 +144,7 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
         },
         body: JSON.stringify({ 
           text,
-          session_id: _sessionId || sessionInfo.sessionId || undefined,
+          session_id: _sessionId && _sessionId !== '' ? _sessionId : (sessionInfo.sessionId || undefined),
           project_id: sessionInfo.projectId || undefined,
           user_id: user?.user_id || undefined
         }),
