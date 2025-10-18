@@ -41,8 +41,15 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
+      console.log('🔄 ChatPanel loadSessionMessages called:', { 
+        _sessionId, 
+        isAuthenticated, 
+        userId: user?.user_id 
+      })
+      
       // If _sessionId is empty string, reset to initial state (new chat)
       if (_sessionId === '') {
+        console.log('🆕 Resetting to new chat state')
         setMessages([
           {
             role: 'assistant',
@@ -54,10 +61,16 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
 
       // If no session ID or not authenticated, don't load messages
       if (!_sessionId || !isAuthenticated || !user?.user_id) {
+        console.log('❌ Skipping message load:', { 
+          hasSessionId: !!_sessionId, 
+          isAuthenticated, 
+          hasUserId: !!user?.user_id 
+        })
         return
       }
 
       try {
+        console.log('📥 Loading messages for session:', _sessionId)
         const { sessionApi } = await import('@/lib/api')
         const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as Array<{
           role: string;
@@ -65,16 +78,21 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
           created_at: string;
         }>
         
+        console.log('📨 Messages received:', messages)
+        
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map(msg => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
             timestamp: msg.created_at
           }))
+          console.log('✅ Setting formatted messages:', formattedMessages)
           setMessages(formattedMessages)
+        } else {
+          console.log('⚠️ No messages found for session')
         }
       } catch (error) {
-        console.error('Failed to load session messages:', error)
+        console.error('❌ Failed to load session messages:', error)
       }
     }
 
