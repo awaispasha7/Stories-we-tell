@@ -14,9 +14,8 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ _sessionId }: ChatPanelProps) {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const { 
-    isAuthenticated, 
     isSessionExpired, 
     getSessionInfo 
   } = useSession()
