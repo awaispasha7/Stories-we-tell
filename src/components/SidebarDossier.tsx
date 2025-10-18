@@ -5,6 +5,28 @@ import { useQuery } from '@tanstack/react-query'
 // import { Badge } from '@/components/ui/badge' // Removed - using custom styling
 // import { Separator } from '@/components/ui/separator' // Unused import
 import { api } from '@/lib/api'
+
+// Import getUserHeaders for debugging
+const getUserHeaders = () => {
+  if (typeof window === 'undefined') return {}
+  
+  try {
+    const user = localStorage.getItem('user')
+    
+    const headers: Record<string, string> = {}
+    
+    if (user) {
+      const userData = JSON.parse(user)
+      headers['X-User-ID'] = userData.user_id
+    }
+    
+    return headers
+  } catch (error) {
+    console.error('Error getting user headers:', error)
+  }
+  
+  return {}
+}
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 
@@ -55,12 +77,19 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
       }
       
       console.log('🔄 Fetching dossier for session:', sessionId, 'project:', projectId)
+      console.log('🔍 API URL will be:', `api/v1/dossiers/${projectId}`)
+      console.log('🔍 Headers being sent:', getUserHeaders())
       try {
         const result = await api.get(`api/v1/dossiers/${projectId}`).json<DossierData>()
         console.log('✅ Dossier fetched successfully:', result)
         return result
       } catch (err) {
         console.error('❌ Error fetching dossier:', err)
+        console.error('❌ Full error details:', {
+          message: err instanceof Error ? err.message : 'Unknown error',
+          status: (err as any)?.response?.status,
+          url: (err as any)?.response?.url
+        })
         // Don't throw error - return null to show empty state
         return null
       }
