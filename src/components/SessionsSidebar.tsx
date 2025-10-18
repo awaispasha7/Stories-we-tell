@@ -32,7 +32,7 @@ interface ChatMessage {
 }
 
 interface SessionsSidebarProps {
-  onSessionSelect: (sessionId: string) => void
+  onSessionSelect: (sessionId: string, projectId?: string) => void
   currentSessionId?: string
   onClose?: () => void
 }
@@ -199,10 +199,10 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             {/* Add New Chat Button */}
             {isAuthenticated && (
               <button
-                onClick={() => {
-                  console.log('🆕 Create New Chat button clicked')
-                  onSessionSelect('')
-                }}
+              onClick={() => {
+                console.log('🆕 Create New Chat button clicked')
+                onSessionSelect('', '')
+              }}
                 className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 title="Start New Chat"
               >
@@ -280,8 +280,8 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   : `${colors.sidebarItem} ${colors.border}`
               }`}
               onClick={() => {
-                console.log('📋 Previous chat clicked:', session.session_id)
-                onSessionSelect(session.session_id)
+                console.log('📋 Previous chat clicked:', session.session_id, 'Project:', session.project_id)
+                onSessionSelect(session.session_id, session.project_id)
               }}
             >
               <div className="flex items-start justify-between">

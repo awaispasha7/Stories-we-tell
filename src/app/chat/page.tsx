@@ -16,6 +16,7 @@ export default function ChatPage() {
   const init = useChatStore(s => s.init)
   const [activeTab, setActiveTab] = useState<'sessions' | 'dossier'>('sessions')
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
+  const [currentProjectId, setCurrentProjectId] = useState<string>('')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -23,9 +24,10 @@ export default function ChatPage() {
   useEffect(() => { init() }, [init])
 
 
-  const handleSessionSelect = (sessionId: string) => {
-    console.log('🔄 Session selected:', sessionId)
+  const handleSessionSelect = (sessionId: string, projectId?: string) => {
+    console.log('🔄 Session selected:', sessionId, 'Project:', projectId)
     setCurrentSessionId(sessionId)
+    setCurrentProjectId(projectId || '')
   }
 
   const handleSidebarClose = () => {
@@ -84,7 +86,10 @@ export default function ChatPage() {
                   onClose={handleSidebarClose}
                 />
               ) : (
-                <SidebarDossier />
+                <SidebarDossier 
+                  sessionId={currentSessionId}
+                  projectId={currentProjectId}
+                />
               )}
             </div>
           </ResizableSidebar>

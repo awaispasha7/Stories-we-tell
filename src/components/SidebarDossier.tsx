@@ -35,43 +35,81 @@ interface CharacterData {
   description: string
 }
 
-export function SidebarDossier() {
+interface SidebarDossierProps {
+  sessionId?: string
+  projectId?: string
+}
+
+export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
   const { refreshTrigger } = useDossierRefresh()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   
-  const { data, error } = useQuery({ 
-    queryKey: ['dossier', refreshTrigger], // Include refreshTrigger in query key
+  const { data, error, isLoading } = useQuery({ 
+    queryKey: ['dossier', sessionId, projectId, refreshTrigger], // Include session and project IDs
     queryFn: async () => {
-      console.log('🔄 Fetching dossier from backend...')
+      // Don't fetch if we don't have a session or project ID
+      if (!sessionId || !projectId) {
+        console.log('⚠️ Skipping dossier fetch - no session or project ID')
+        return null
+      }
+      
+      console.log('🔄 Fetching dossier for session:', sessionId, 'project:', projectId)
       try {
-        const result = await api.get('dossier').json<DossierData>()
+        const result = await api.get(`api/v1/dossiers/${projectId}`).json<DossierData>()
         console.log('✅ Dossier fetched successfully:', result)
         return result
       } catch (err) {
         console.error('❌ Error fetching dossier:', err)
-        throw err
+        // Don't throw error - return null to show empty state
+        return null
       }
     },
     refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus to prevent stale fetches
+    refetchOnWindowFocus: false, // Disable refetch on window focus
     refetchOnMount: true, // Allow initial fetch on mount
-    staleTime: Infinity, // Never consider data stale - only fetch when explicitly triggered
-    enabled: true // Allow initial fetch and triggered fetches
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
+    enabled: !!(sessionId && projectId), // Only fetch if we have both IDs
+    retry: 1, // Only retry once on failure
+    retryDelay: 2000 // Wait 2 seconds before retry
   })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 
-  // Show error state if backend is not accessible
-  if (error) {
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <h3 className="text-red-800 dark:text-red-400 font-semibold mb-2">Backend Connection Error</h3>
-          <p className="text-red-600 dark:text-red-300 text-sm">
-            Unable to connect to the backend server. Please check if the backend is running.
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty state if no session/project ID
+  if (!sessionId || !projectId) {
+    return (
+      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        <div className="text-center py-8">
+          <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Active Session</h3>
+          <p className="text-gray-500 dark:text-gray-500 text-sm">
+            Start a conversation to see your story dossier
           </p>
-          <p className="text-red-500 dark:text-red-400 text-xs mt-2">
-            Error: {error instanceof Error ? error.message : 'Unknown error'}
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty state if no dossier data
+  if (!data) {
+    return (
+      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        <div className="text-center py-8">
+          <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Dossier Yet</h3>
+          <p className="text-gray-500 dark:text-gray-500 text-sm">
+            Your story dossier will appear here as you develop your story
           </p>
         </div>
       </div>
