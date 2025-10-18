@@ -61,7 +61,11 @@ export const sessionApi = {
   // Get user sessions
   getSessions: async (limit = 10) => {
     try {
-      return await api.get('api/v1/sessions', { searchParams: { limit } }).json()
+      const headers = getUserHeaders()
+      return await api.get('api/v1/sessions', { 
+        searchParams: { limit },
+        headers 
+      }).json()
         } catch (error: unknown) {
           if (error && typeof error === 'object' && 'response' in error && 
               error.response && typeof error.response === 'object' && 'status' in error.response &&
@@ -126,8 +130,10 @@ export const sessionApi = {
   },
   
   // Get current user
-  getCurrentUser: () => 
-    api.get('api/v1/users/me').json(),
+  getCurrentUser: () => {
+    const headers = getUserHeaders()
+    return api.get('api/v1/users/me', { headers }).json()
+  },
   
   // Anonymous session management
   createAnonymousSession: () => 
