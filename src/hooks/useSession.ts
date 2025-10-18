@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { sessionApi } from '@/lib/api'
 
 interface AnonymousSession {
@@ -26,6 +26,7 @@ export function useSession() {
   })
   
   const [isInitializing, setIsInitializing] = useState(false)
+  const hasInitialized = useRef(false)
 
   // Check if user is authenticated
   const checkAuthentication = useCallback(() => {
@@ -44,7 +45,6 @@ export function useSession() {
   // Create anonymous session
   const createAnonymousSession = useCallback(async () => {
     try {
-      console.log('🆕 Creating anonymous session...')
       const session = await sessionApi.createAnonymousSession() as AnonymousSession
       
       // Don't store anonymous session in localStorage - keep it ephemeral
@@ -59,7 +59,7 @@ export function useSession() {
         isLoading: false
       }))
       
-      console.log('✅ Anonymous session created (ephemeral):', session.session_id)
+      console.log('✅ Anonymous session created:', session.session_id)
       return session
     } catch (error) {
       console.error('❌ Error creating anonymous session:', error)
@@ -77,25 +77,30 @@ export function useSession() {
   // Initialize session on mount
   useEffect(() => {
     const initializeSession = async () => {
-      // Prevent multiple initializations
+      // Prevent multiple initializations using ref
+      if (hasInitialized.current) {
+        return
+      }
+      
+      // Prevent multiple initializations using state
       if (isInitializing) {
-        console.log('🔄 Session initialization already in progress, skipping...')
         return
       }
       
       // Check if we already have a valid session state
       if (sessionState.sessionId && !sessionState.isLoading) {
-        console.log('🔄 Session already initialized, skipping...')
         return
       }
+      
+      // Mark as initializing
+      hasInitialized.current = true
+      setIsInitializing(true)
       
       // Clear any old anonymous session data from localStorage on page load
       // This ensures anonymous sessions are truly ephemeral
       localStorage.removeItem('anonymous_session_id')
       localStorage.removeItem('anonymous_project_id')
       localStorage.removeItem('anonymous_expires_at')
-      
-      setIsInitializing(true)
       
       try {
         const isAuth = checkAuthentication()
@@ -110,7 +115,7 @@ export function useSession() {
         } else {
           // For anonymous users, always create a new session on page load
           // Anonymous sessions should not persist across page refreshes
-          console.log('🆕 Creating new anonymous session (page refresh detected)...')
+          console.log('🆕 Creating new anonymous session...')
           await createAnonymousSession()
         }
       } finally {
@@ -129,6 +134,9 @@ export function useSession() {
     localStorage.removeItem('anonymous_expires_at')
     localStorage.removeItem('user')
     localStorage.removeItem('access_token')
+    
+    // Reset initialization flag
+    hasInitialized.current = false
     
     setSessionState({
       isAuthenticated: false,

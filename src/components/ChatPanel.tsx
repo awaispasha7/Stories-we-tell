@@ -94,10 +94,17 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   }, [messages])
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim() || isLoading) return
+    console.log(`[DEBUG] handleSendMessage called with text: "${text}"`)
+    console.log(`[DEBUG] isLoading: ${isLoading}, isAuthenticated: ${isAuthenticated}, isSessionExpired: ${isSessionExpired}`)
+    
+    if (!text.trim() || isLoading) {
+      console.log(`[DEBUG] Early return - text empty or loading`)
+      return
+    }
 
     // Check if session is expired for anonymous users
     if (!isAuthenticated && isSessionExpired) {
+      console.log(`[DEBUG] Session expired, showing sign-in prompt`)
       setShowSignInPrompt(true)
       return
     }
@@ -124,7 +131,9 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
       
       // Get session info for the request
       const sessionInfo = getSessionInfo()
+      console.log(`[DEBUG] Session info:`, sessionInfo)
       
+      console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {

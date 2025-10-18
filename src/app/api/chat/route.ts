@@ -4,10 +4,15 @@ export async function POST(req: NextRequest) {
   try {
     const { text, session_id, project_id, user_id } = await req.json()
     
+    // Get headers from the request
+    const xSessionId = req.headers.get('X-Session-ID')
+    const xUserId = req.headers.get('X-User-ID')
+    
     // Get the backend URL from environment variables
     const backendUrl = process.env.BACKEND_URL || 'https://stories-we-tell-backend.vercel.app'
     
     console.log(`Frontend: Attempting to call backend at ${backendUrl}/api/v1/chat`)
+    console.log(`Frontend: Headers - X-Session-ID: ${xSessionId}, X-User-ID: ${xUserId}`)
     
     // Try to call the backend with a timeout
     const controller = new AbortController()
@@ -18,7 +23,8 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-ID': user_id || '', // Include user ID for authentication
+          ...(xUserId && { 'X-User-ID': xUserId }),
+          ...(xSessionId && { 'X-Session-ID': xSessionId }),
         },
         body: JSON.stringify({ text, session_id, project_id }),
         signal: controller.signal,
