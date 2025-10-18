@@ -11,9 +11,10 @@ import { useSession } from '@/hooks/useSession'
 
 interface ChatPanelProps {
   _sessionId?: string
+  _projectId?: string
 }
 
-export function ChatPanel({ _sessionId }: ChatPanelProps) {
+export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const { user, isAuthenticated } = useAuth()
   const { 
     isSessionExpired, 
@@ -189,6 +190,7 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
       // Get session info for the request
       const sessionInfo = getSessionInfo()
       console.log(`[DEBUG] Session info:`, sessionInfo)
+      console.log(`[DEBUG] ChatPanel props - _sessionId: ${_sessionId}, _projectId: ${_projectId}`)
       
       console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
@@ -202,10 +204,17 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
         body: JSON.stringify({ 
           text,
           session_id: _sessionId && _sessionId !== '' ? _sessionId : (sessionInfo.sessionId || undefined),
-          project_id: sessionInfo.projectId || undefined,
+          project_id: _projectId && _projectId !== '' ? _projectId : (sessionInfo.projectId || undefined),
           user_id: user?.user_id || undefined
         }),
         signal: controller.signal,
+      })
+      
+      console.log(`[DEBUG] API call body:`, {
+        text,
+        session_id: _sessionId && _sessionId !== '' ? _sessionId : (sessionInfo.sessionId || undefined),
+        project_id: _projectId && _projectId !== '' ? _projectId : (sessionInfo.projectId || undefined),
+        user_id: user?.user_id || undefined
       })
       
       clearTimeout(timeoutId)

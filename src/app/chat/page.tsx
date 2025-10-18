@@ -97,7 +97,7 @@ export default function ChatPage() {
           {/* Chat Area */}
           <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
             <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-              <ChatPanel _sessionId={currentSessionId} />
+              <ChatPanel _sessionId={currentSessionId} _projectId={currentProjectId} />
             </div>
           </div>
         </div>
