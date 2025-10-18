@@ -47,8 +47,11 @@ export function useSession() {
     try {
       const session = await sessionApi.createAnonymousSession() as AnonymousSession
       
-      // Don't store anonymous session in localStorage - keep it ephemeral
-      // Only store in memory state for the current browser session
+      // Store anonymous session ID in localStorage for potential migration
+      // This will be cleared on page refresh or when user signs up
+      localStorage.setItem('anonymous_session_id', session.session_id)
+      localStorage.setItem('anonymous_project_id', session.project_id)
+      localStorage.setItem('anonymous_session_expires_at', session.expires_at.toString())
       
       setSessionState(prev => ({
         ...prev,
