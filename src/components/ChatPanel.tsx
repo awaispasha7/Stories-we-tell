@@ -35,6 +35,9 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(_projectId || undefined)
   
+  // Track previous session ID to detect changes
+  const prevSessionIdRef = useRef<string | undefined>(_sessionId || undefined)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
@@ -52,6 +55,16 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
         userId: user?.user_id 
       })
       
+      // Only process if _sessionId prop has actually changed
+      const currentPropSessionId = _sessionId || undefined
+      if (currentPropSessionId === prevSessionIdRef.current) {
+        // Session ID hasn't changed, don't reset anything
+        return
+      }
+      
+      // Session ID has changed, update the ref
+      prevSessionIdRef.current = currentPropSessionId
+      
       // If _sessionId is empty string, reset to initial state (new chat)
       if (_sessionId === '') {
         console.log('🆕 Resetting to new chat state')
@@ -61,7 +74,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
             content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
           }
         ])
-        // Reset local session tracking for new chat
+        // Reset local session tracking for new chat  
         setCurrentSessionId(undefined)
         setCurrentProjectId(undefined)
         return
