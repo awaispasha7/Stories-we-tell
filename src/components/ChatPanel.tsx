@@ -17,10 +17,7 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   const { user } = useAuth()
   const { 
     isAuthenticated, 
-    sessionId, 
-    projectId, 
     isSessionExpired, 
-    isLoading: sessionLoading,
     getSessionInfo 
   } = useSession()
   
@@ -50,7 +47,11 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
 
       try {
         const { sessionApi } = await import('@/lib/api')
-        const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as any[]
+        const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as Array<{
+          role: string;
+          content: string;
+          created_at: string;
+        }>
         
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map(msg => ({

@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [convertSupabaseUser])
+  }, [convertSupabaseUser, migrationAttempted])
 
   const login = useCallback(async (email: string, password: string) => {
     try {
@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [convertSupabaseUser])
+  }, [convertSupabaseUser, migrationAttempted])
 
   const signup = useCallback(async (email: string, password: string, displayName: string) => {
     try {
@@ -235,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [migrationAttempted])
 
   const logout = useCallback(async () => {
     try {
