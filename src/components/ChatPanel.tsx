@@ -41,6 +41,33 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Load existing messages when session changes
+  useEffect(() => {
+    const loadSessionMessages = async () => {
+      if (!_sessionId || !isAuthenticated || !user?.user_id) {
+        return
+      }
+
+      try {
+        const { sessionApi } = await import('@/lib/api')
+        const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as any[]
+        
+        if (messages && Array.isArray(messages) && messages.length > 0) {
+          const formattedMessages = messages.map(msg => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+            timestamp: msg.created_at
+          }))
+          setMessages(formattedMessages)
+        }
+      } catch (error) {
+        console.error('Failed to load session messages:', error)
+      }
+    }
+
+    loadSessionMessages()
+  }, [_sessionId, isAuthenticated, user?.user_id])
+
   const getDynamicTypingMessage = (userMessage: string) => {
     const message = userMessage.toLowerCase()
     

@@ -80,8 +80,10 @@ export const sessionApi = {
   // Get session messages
   getSessionMessages: async (sessionId: string, limit = 50, offset = 0) => {
     try {
+      const headers = getUserHeaders()
       return await api.get(`api/v1/sessions/${sessionId}/messages`, { 
-        searchParams: { limit, offset } 
+        searchParams: { limit, offset },
+        headers
       }).json()
         } catch (error: unknown) {
           if (error && typeof error === 'object' && 'response' in error && 

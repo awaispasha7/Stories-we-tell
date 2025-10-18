@@ -28,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [migrationAttempted, setMigrationAttempted] = useState(false)
 
   // Convert Supabase user to our User interface
   const convertSupabaseUser = useCallback((supabaseUser: SupabaseUser | null): User | null => {
@@ -87,9 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
           console.log('✅ User synced to backend on auth state change')
           
-          // Check if there's an anonymous session to migrate
+          // Check if there's an anonymous session to migrate (only once)
           const anonymousSessionId = localStorage.getItem('anonymous_session_id')
-          if (anonymousSessionId) {
+          if (anonymousSessionId && !migrationAttempted) {
+            setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to authenticated user...')
               await sessionApi.migrateAnonymousSession(anonymousSessionId, typedSession.user.id)
@@ -101,7 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem('anonymous_session_expires_at')
             } catch (migrationError) {
               console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
-              // Don't fail the sign-in process if migration fails
+              // Reset flag on failure so it can be retried
+              setMigrationAttempted(false)
             }
           }
         } catch (backendError) {
@@ -142,9 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
           console.log('✅ User synced to backend successfully')
           
-          // Check if there's an anonymous session to migrate
+          // Check if there's an anonymous session to migrate (only once)
           const anonymousSessionId = localStorage.getItem('anonymous_session_id')
-          if (anonymousSessionId) {
+          if (anonymousSessionId && !migrationAttempted) {
+            setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to authenticated user...')
               await sessionApi.migrateAnonymousSession(anonymousSessionId, data.user.id)
@@ -156,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem('anonymous_session_expires_at')
             } catch (migrationError) {
               console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
-              // Don't fail the login process if migration fails
+              setMigrationAttempted(false)
             }
           }
         } catch (backendError) {
@@ -196,9 +200,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
           console.log('✅ User created in backend successfully')
           
-          // Check if there's an anonymous session to migrate
+          // Check if there's an anonymous session to migrate (only once)
           const anonymousSessionId = localStorage.getItem('anonymous_session_id')
-          if (anonymousSessionId) {
+          if (anonymousSessionId && !migrationAttempted) {
+            setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to new authenticated user...')
               await sessionApi.migrateAnonymousSession(anonymousSessionId, response.data.user.id)
@@ -210,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem('anonymous_session_expires_at')
             } catch (migrationError) {
               console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
-              // Don't fail the signup process if migration fails
+              setMigrationAttempted(false)
             }
           }
         } catch (backendError) {
