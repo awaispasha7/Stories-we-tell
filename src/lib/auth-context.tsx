@@ -43,6 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Save user to localStorage whenever user state changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('user')
+    }
+  }, [user])
+
   // Check for existing user on mount and listen to auth changes
   useEffect(() => {
     const initializeAuth = async () => {
