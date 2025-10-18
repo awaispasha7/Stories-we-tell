@@ -67,7 +67,7 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   
-  const { data, error, isLoading } = useQuery({ 
+  const { data, isLoading } = useQuery({ 
     queryKey: ['dossier', sessionId, projectId, refreshTrigger], // Include session and project IDs
     queryFn: async () => {
       // Don't fetch if we don't have a session or project ID
@@ -87,8 +87,8 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
         console.error('❌ Error fetching dossier:', err)
         console.error('❌ Full error details:', {
           message: err instanceof Error ? err.message : 'Unknown error',
-          status: (err as any)?.response?.status,
-          url: (err as any)?.response?.url
+          status: (err as { response?: { status?: number } })?.response?.status,
+          url: (err as { response?: { url?: string } })?.response?.url
         })
         // Don't throw error - return null to show empty state
         return null
