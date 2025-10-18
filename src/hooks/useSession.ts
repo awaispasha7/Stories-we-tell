@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { sessionApi } from '@/lib/api'
+import { useAuth } from '@/lib/auth-context'
 
 interface AnonymousSession {
   session_id: string
@@ -17,6 +18,8 @@ interface SessionState {
 }
 
 export function useSession() {
+  const { user, isAuthenticated } = useAuth()
+  
   const [sessionState, setSessionState] = useState<SessionState>({
     isAuthenticated: false,
     sessionId: null,
@@ -27,20 +30,6 @@ export function useSession() {
   
   const [isInitializing, setIsInitializing] = useState(false)
   const hasInitialized = useRef(false)
-
-  // Check if user is authenticated
-  const checkAuthentication = useCallback(() => {
-    if (typeof window === 'undefined') return false
-    
-    try {
-      const user = localStorage.getItem('user')
-      const token = localStorage.getItem('access_token')
-      return !!(user && token)
-    } catch (error) {
-      console.error('Error checking authentication:', error)
-      return false
-    }
-  }, [])
 
   // Create anonymous session
   const createAnonymousSession = useCallback(async () => {
@@ -106,9 +95,7 @@ export function useSession() {
       localStorage.removeItem('anonymous_expires_at')
       
       try {
-        const isAuth = checkAuthentication()
-        
-        if (isAuth) {
+        if (isAuthenticated && user) {
           // User is authenticated
           setSessionState(prev => ({
             ...prev,
@@ -127,7 +114,7 @@ export function useSession() {
     }
 
     initializeSession()
-  }, [checkAuthentication, createAnonymousSession, isInitializing, sessionState.sessionId, sessionState.isLoading])
+  }, [isAuthenticated, user, createAnonymousSession, isInitializing, sessionState.sessionId, sessionState.isLoading])
 
   // Clear session (for logout)
   const clearSession = useCallback(() => {
@@ -164,8 +151,7 @@ export function useSession() {
     isSessionExpired: isSessionExpired(),
     createAnonymousSession,
     clearSession,
-    getSessionInfo,
-    checkAuthentication
+    getSessionInfo
   }
 }
 
