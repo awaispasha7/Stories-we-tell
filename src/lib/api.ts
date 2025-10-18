@@ -1,17 +1,25 @@
 import ky from 'ky'
 
-// Get user ID from localStorage for API calls
+// Get user ID and session ID from localStorage for API calls
 const getUserHeaders = () => {
   if (typeof window === 'undefined') return {}
   
   try {
     const user = localStorage.getItem('user')
+    const sessionId = localStorage.getItem('anonymous_session_id')
+    
+    const headers: Record<string, string> = {}
+    
     if (user) {
       const userData = JSON.parse(user)
-      return {
-        'X-User-ID': userData.user_id
-      }
+      headers['X-User-ID'] = userData.user_id
     }
+    
+    if (sessionId) {
+      headers['X-Session-ID'] = sessionId
+    }
+    
+    return headers
   } catch (error) {
     console.error('Error getting user headers:', error)
   }
@@ -119,7 +127,14 @@ export const sessionApi = {
   
   // Get current user
   getCurrentUser: () => 
-    api.get('api/v1/users/me').json()
+    api.get('api/v1/users/me').json(),
+  
+  // Anonymous session management
+  createAnonymousSession: () => 
+    api.post('api/v1/anonymous-session').json(),
+  
+  getAnonymousSession: (sessionId: string) => 
+    api.get(`api/v1/anonymous-session/${sessionId}`).json()
 }
 
 // Authentication API

@@ -5,6 +5,7 @@ import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useAuth } from '@/lib/auth-context'
+import { useSession } from '@/hooks/useSession'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -14,6 +15,15 @@ interface ChatPanelProps {
 
 export function ChatPanel({ _sessionId }: ChatPanelProps) {
   const { user } = useAuth()
+  const { 
+    isAuthenticated, 
+    sessionId, 
+    projectId, 
+    isSessionExpired, 
+    isLoading: sessionLoading,
+    getSessionInfo 
+  } = useSession()
+  
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
       role: 'assistant',
@@ -22,6 +32,7 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   ])
   const [isLoading, setIsLoading] = useState(false)
   const [typingMessage, setTypingMessage] = useState('')
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
@@ -85,6 +96,12 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return
 
+    // Check if session is expired for anonymous users
+    if (!isAuthenticated && isSessionExpired) {
+      setShowSignInPrompt(true)
+      return
+    }
+
     // Add user message
     const userMessage: BubbleProps = { role: 'user', content: text }
     setMessages(prev => [...prev, userMessage])
@@ -105,15 +122,21 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
+      // Get session info for the request
+      const sessionInfo = getSessionInfo()
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Add session headers for anonymous users
+          ...(sessionInfo.sessionId && !isAuthenticated && { 'X-Session-ID': sessionInfo.sessionId }),
+          ...(user?.user_id && { 'X-User-ID': user.user_id })
         },
         body: JSON.stringify({ 
           text,
-          session_id: _sessionId || undefined,
-          project_id: undefined, // Let backend generate a new project_id
+          session_id: _sessionId || sessionInfo.sessionId || undefined,
+          project_id: sessionInfo.projectId || undefined,
           user_id: user?.user_id || undefined
         }),
         signal: controller.signal,
@@ -253,6 +276,43 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
               </p>
               <div className="mt-6 text-sm text-gray-500">
                 Share your story idea to get started
+              </div>
+            </div>
+          )}
+
+          {/* Sign-in Prompt for Anonymous Users */}
+          {showSignInPrompt && (
+            <div className="flex items-start gap-3 mb-6 animate-in slide-in-from-bottom-2 duration-300">
+              <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 mt-1 ml-4">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber-800">⏰</span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4 max-w-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-sm font-semibold text-amber-700">Session Expired</span>
+                </div>
+                <p className="text-sm text-amber-800 mb-3">
+                  Your anonymous session has expired. Sign in to save your chats and continue your story development.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowSignInPrompt(false)}
+                    className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors"
+                  >
+                    Continue Anonymously
+                  </button>
+                  <button
+                    onClick={() => {
+                      // TODO: Navigate to sign-in page
+                      console.log('Navigate to sign-in')
+                    }}
+                    className="px-3 py-1 text-xs bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </div>
               </div>
             </div>
           )}
