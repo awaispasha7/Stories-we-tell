@@ -187,24 +187,36 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
-      // Get session info for the request
-      const sessionInfo = getSessionInfo()
-      console.log(`[DEBUG] Session info:`, sessionInfo)
+      // For authenticated users, use props directly. For anonymous users, use session info
+      let sessionId, projectId
+      if (isAuthenticated) {
+        // For authenticated users, use the props passed from parent (from session selection)
+        sessionId = _sessionId && _sessionId !== '' ? _sessionId : undefined
+        projectId = _projectId && _projectId !== '' ? _projectId : undefined
+      } else {
+        // For anonymous users, use session info from useSession hook
+        const sessionInfo = getSessionInfo()
+        sessionId = sessionInfo.sessionId
+        projectId = sessionInfo.projectId
+      }
+      
+      console.log(`[DEBUG] Session logic - isAuthenticated: ${isAuthenticated}`)
       console.log(`[DEBUG] ChatPanel props - _sessionId: ${_sessionId}, _projectId: ${_projectId}`)
+      console.log(`[DEBUG] Final values - sessionId: ${sessionId}, projectId: ${projectId}`)
       
       console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add session headers for anonymous users
-          ...(sessionInfo.sessionId && !isAuthenticated && { 'X-Session-ID': sessionInfo.sessionId }),
+          // Add session headers for anonymous users only
+          ...(sessionId && !isAuthenticated && { 'X-Session-ID': sessionId }),
           ...(user?.user_id && { 'X-User-ID': user.user_id })
         },
         body: JSON.stringify({ 
           text,
-          session_id: _sessionId && _sessionId !== '' ? _sessionId : (sessionInfo.sessionId || undefined),
-          project_id: _projectId && _projectId !== '' ? _projectId : (sessionInfo.projectId || undefined),
+          session_id: sessionId,
+          project_id: projectId,
           user_id: user?.user_id || undefined
         }),
         signal: controller.signal,
@@ -212,8 +224,8 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       
       console.log(`[DEBUG] API call body:`, {
         text,
-        session_id: _sessionId && _sessionId !== '' ? _sessionId : (sessionInfo.sessionId || undefined),
-        project_id: _projectId && _projectId !== '' ? _projectId : (sessionInfo.projectId || undefined),
+        session_id: sessionId,
+        project_id: projectId,
         user_id: user?.user_id || undefined
       })
       
