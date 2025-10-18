@@ -77,6 +77,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             avatar_url: typedSession.user.user_metadata?.avatar_url
           })
           console.log('✅ User synced to backend on auth state change')
+          
+          // Check if there's an anonymous session to migrate
+          const anonymousSessionId = localStorage.getItem('anonymous_session_id')
+          if (anonymousSessionId) {
+            try {
+              console.log('🔄 Migrating anonymous session to authenticated user...')
+              await sessionApi.migrateAnonymousSession(anonymousSessionId, typedSession.user.id)
+              console.log('✅ Anonymous session migrated successfully')
+              
+              // Clear the anonymous session from localStorage
+              localStorage.removeItem('anonymous_session_id')
+              localStorage.removeItem('anonymous_project_id')
+              localStorage.removeItem('anonymous_session_expires_at')
+            } catch (migrationError) {
+              console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
+              // Don't fail the sign-in process if migration fails
+            }
+          }
         } catch (backendError) {
           console.warn('⚠️ Failed to sync user to backend on auth state change:', backendError)
         }
@@ -114,6 +132,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             avatar_url: data.user.user_metadata?.avatar_url
           })
           console.log('✅ User synced to backend successfully')
+          
+          // Check if there's an anonymous session to migrate
+          const anonymousSessionId = localStorage.getItem('anonymous_session_id')
+          if (anonymousSessionId) {
+            try {
+              console.log('🔄 Migrating anonymous session to authenticated user...')
+              await sessionApi.migrateAnonymousSession(anonymousSessionId, data.user.id)
+              console.log('✅ Anonymous session migrated successfully')
+              
+              // Clear the anonymous session from localStorage
+              localStorage.removeItem('anonymous_session_id')
+              localStorage.removeItem('anonymous_project_id')
+              localStorage.removeItem('anonymous_session_expires_at')
+            } catch (migrationError) {
+              console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
+              // Don't fail the login process if migration fails
+            }
+          }
         } catch (backendError) {
           console.warn('⚠️ Failed to sync user to backend:', backendError)
           // Don't throw here - the user can still log in
@@ -150,6 +186,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             avatar_url: response.data.user.user_metadata?.avatar_url
           })
           console.log('✅ User created in backend successfully')
+          
+          // Check if there's an anonymous session to migrate
+          const anonymousSessionId = localStorage.getItem('anonymous_session_id')
+          if (anonymousSessionId) {
+            try {
+              console.log('🔄 Migrating anonymous session to new authenticated user...')
+              await sessionApi.migrateAnonymousSession(anonymousSessionId, response.data.user.id)
+              console.log('✅ Anonymous session migrated successfully')
+              
+              // Clear the anonymous session from localStorage
+              localStorage.removeItem('anonymous_session_id')
+              localStorage.removeItem('anonymous_project_id')
+              localStorage.removeItem('anonymous_session_expires_at')
+            } catch (migrationError) {
+              console.warn('⚠️ Failed to migrate anonymous session:', migrationError)
+              // Don't fail the signup process if migration fails
+            }
+          }
         } catch (backendError) {
           console.warn('⚠️ Failed to create user in backend:', backendError)
           // Don't throw here - the user was created in Supabase auth, which is the main thing

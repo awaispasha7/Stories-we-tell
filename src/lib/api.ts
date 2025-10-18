@@ -134,7 +134,16 @@ export const sessionApi = {
     api.post('api/v1/anonymous-session').json(),
   
   getAnonymousSession: (sessionId: string) => 
-    api.get(`api/v1/anonymous-session/${sessionId}`).json()
+    api.get(`api/v1/anonymous-session/${sessionId}`).json(),
+  
+  // Migrate anonymous session to authenticated user
+  migrateAnonymousSession: (anonymousSessionId: string, userId: string) =>
+    api.post('api/v1/migrate-anonymous-session', {
+      json: { 
+        anonymous_session_id: anonymousSessionId,
+        user_id: userId 
+      }
+    }).json()
 }
 
 // Authentication API
