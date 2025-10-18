@@ -110,7 +110,16 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
   })
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+    const confirmed = confirm(
+      '⚠️ DANGER ZONE ⚠️\n\n' +
+      '🗑️ You are about to PERMANENTLY DELETE this chat session!\n\n' +
+      '🔥 This action CANNOT be undone!\n' +
+      '💥 All messages and story progress will be lost forever!\n\n' +
+      'Are you absolutely sure you want to proceed?\n\n' +
+      'Type "DELETE" to confirm (just kidding, click OK to proceed)'
+    )
+    
+    if (confirmed) {
       try {
         await deleteSessionMutation.mutateAsync(sessionId)
         if (currentSessionId === sessionId) {
@@ -118,6 +127,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         }
       } catch (error) {
         console.error('Error deleting session:', error)
+        alert('❌ Failed to delete session. Please try again.')
       }
     }
   }
@@ -312,10 +322,29 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                     e.stopPropagation()
                     handleDeleteSession(session.session_id)
                   }}
-                  className={`${colors.textMuted} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity`}
-                  title="Delete session"
+                  className={`
+                    relative overflow-hidden
+                    ${colors.textMuted} 
+                    hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600
+                    dark:hover:from-red-600 dark:hover:to-red-700
+                    p-2 rounded-lg 
+                    opacity-0 group-hover:opacity-100 
+                    transition-all duration-300 ease-out
+                    hover:scale-110 hover:shadow-lg hover:shadow-red-500/25
+                    active:scale-95 active:shadow-inner
+                    border border-transparent hover:border-red-300 dark:hover:border-red-600
+                    hover:animate-pulse
+                  `}
+                  title="⚠️ Delete session permanently"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <div className="relative z-10">
+                    <Trash2 className="h-3 w-3" />
+                  </div>
+                  {/* Animated background effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-600 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                  {/* Danger sparkle effect */}
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full opacity-0 hover:opacity-100 animate-ping"></div>
+                  <div className="absolute -bottom-1 -left-1 w-1 h-1 bg-red-400 rounded-full opacity-0 hover:opacity-100 animate-ping" style={{ animationDelay: '0.5s' }}></div>
                 </button>
               </div>
             </div>
