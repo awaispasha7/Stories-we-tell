@@ -18,7 +18,7 @@ interface SessionState {
 }
 
 export function useSession() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   
   const [sessionState, setSessionState] = useState<SessionState>({
     isAuthenticated: false,
@@ -95,6 +95,16 @@ export function useSession() {
       localStorage.removeItem('anonymous_expires_at')
       
       try {
+        // Wait for auth context to finish loading
+        if (authLoading) {
+          // Auth is still loading, don't create any sessions yet
+          setSessionState(prev => ({
+            ...prev,
+            isLoading: true
+          }))
+          return
+        }
+        
         if (isAuthenticated && user) {
           // User is authenticated
           setSessionState(prev => ({
@@ -114,7 +124,7 @@ export function useSession() {
     }
 
     initializeSession()
-  }, [isAuthenticated, user, createAnonymousSession, isInitializing, sessionState.sessionId, sessionState.isLoading])
+  }, [isAuthenticated, user, authLoading, createAnonymousSession, isInitializing, sessionState.sessionId, sessionState.isLoading])
 
   // Clear session (for logout)
   const clearSession = useCallback(() => {
