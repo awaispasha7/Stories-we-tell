@@ -284,7 +284,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
-              // console.log('📦 Parsed data:', data)
+              console.log('📦 Parsed data:', data)
               
               if (data.type === 'content') {
                 assistantContent += data.content
