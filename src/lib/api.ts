@@ -1,22 +1,17 @@
 import ky from 'ky'
 
-// Get user ID and session ID from localStorage for API calls
+// Get user ID from localStorage for API calls
 const getUserHeaders = () => {
   if (typeof window === 'undefined') return {}
   
   try {
     const user = localStorage.getItem('user')
-    const sessionId = localStorage.getItem('anonymous_session_id')
     
     const headers: Record<string, string> = {}
     
     if (user) {
       const userData = JSON.parse(user)
       headers['X-User-ID'] = userData.user_id
-    }
-    
-    if (sessionId) {
-      headers['X-Session-ID'] = sessionId
     }
     
     return headers

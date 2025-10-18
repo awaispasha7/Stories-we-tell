@@ -41,6 +41,18 @@ export function ChatPanel({ _sessionId }: ChatPanelProps) {
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
+      // If _sessionId is empty string, reset to initial state (new chat)
+      if (_sessionId === '') {
+        setMessages([
+          {
+            role: 'assistant',
+            content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+          }
+        ])
+        return
+      }
+
+      // If no session ID or not authenticated, don't load messages
       if (!_sessionId || !isAuthenticated || !user?.user_id) {
         return
       }
