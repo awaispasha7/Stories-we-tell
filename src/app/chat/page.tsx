@@ -24,6 +24,7 @@ export default function ChatPage() {
 
 
   const handleSessionSelect = (sessionId: string) => {
+    console.log('🔄 Session selected:', sessionId)
     setCurrentSessionId(sessionId)
   }
 

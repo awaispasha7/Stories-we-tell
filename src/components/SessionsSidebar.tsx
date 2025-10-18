@@ -48,7 +48,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
       const { data: sessions = [], isLoading, error } = useQuery({
         queryKey: ['sessions'],
         queryFn: async () => {
-          console.log('🔄 Fetching sessions...')
+          console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
           
           // Try to ensure user exists in backend first
           if (user) {
@@ -199,7 +199,10 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             {/* Add New Chat Button */}
             {isAuthenticated && (
               <button
-                onClick={() => onSessionSelect('')}
+                onClick={() => {
+                  console.log('🆕 Create New Chat button clicked')
+                  onSessionSelect('')
+                }}
                 className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 title="Start New Chat"
               >
@@ -276,7 +279,10 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : `${colors.sidebarItem} ${colors.border}`
               }`}
-              onClick={() => onSessionSelect(session.session_id)}
+              onClick={() => {
+                console.log('📋 Previous chat clicked:', session.session_id)
+                onSessionSelect(session.session_id)
+              }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
