@@ -15,7 +15,6 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [time, setTime] = useState(0)
-  const [isTranscribing, setIsTranscribing] = useState(false)
 
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -126,7 +125,6 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     playSound('/sounds/send.mp3')
     
     // Show transcription feedback
-    setIsTranscribing(true)
     setState('transcribing')
     
     try {
@@ -150,7 +148,6 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
       console.error('Transcription error:', error)
       onAudioData(audioBlob, `Error transcribing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
-      setIsTranscribing(false)
       cleanup()
       onClose()
     }
@@ -171,10 +168,8 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
 
   useEffect(() => {
     startRecording()
-    return () => {
-      cleanup()
-    }
-  }, [startRecording])
+    return cleanup
+  }, [startRecording, cleanup])
 
   const fmt = (t: number) =>
     `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
