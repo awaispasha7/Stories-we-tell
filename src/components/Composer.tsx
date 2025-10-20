@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 // import { Textarea } from '@/components/ui/textarea' // Removed - using custom styling
-import { Send, Loader2, Mic, Square } from 'lucide-react'
+import { Send, Loader2, Mic } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
 import { AudioRecorder } from './AudioRecorder'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -53,11 +53,11 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   }
 
   const handleAudioData = (audioBlob: Blob, transcript: string) => {
-    setText(transcript)
     setShowAudioRecorder(false)
-    // Auto-send the transcribed text
+    // Auto-send the transcribed text and clear the input
     if (transcript.trim()) {
       onSend(transcript)
+      setText('') // Clear the text area after sending
     }
   }
 

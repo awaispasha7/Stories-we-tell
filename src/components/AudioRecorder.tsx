@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Pause, Play, Check, Trash2, X } from 'lucide-react'
+import { Pause, Play, Check, Trash2 } from 'lucide-react'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 
 interface AudioRecorderProps {
@@ -10,11 +10,12 @@ interface AudioRecorderProps {
 }
 
 export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
-  const [state, setState] = useState<'recording' | 'paused' | 'accepting'>('recording')
+  const [state, setState] = useState<'recording' | 'paused' | 'accepting' | 'transcribing'>('recording')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [time, setTime] = useState(0)
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -124,6 +125,10 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     if (!audioBlob) return
     playSound('/sounds/send.mp3')
     
+    // Show transcription feedback
+    setIsTranscribing(true)
+    setState('transcribing')
+    
     try {
       // Send audio to backend for transcription
       const formData = new FormData()
@@ -144,10 +149,11 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     } catch (error) {
       console.error('Transcription error:', error)
       onAudioData(audioBlob, `Error transcribing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsTranscribing(false)
+      cleanup()
+      onClose()
     }
-    
-    cleanup()
-    onClose()
   }
 
   const handleDelete = () => {
@@ -165,7 +171,9 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
 
   useEffect(() => {
     startRecording()
-    return cleanup
+    return () => {
+      cleanup()
+    }
   }, [startRecording])
 
   const fmt = (t: number) =>
@@ -193,6 +201,8 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
           state === 'paused' && 'text-yellow-600 dark:text-yellow-400'
         } ${
           state === 'accepting' && 'text-green-600 dark:text-green-400'
+        } ${
+          state === 'transcribing' && 'text-blue-600 dark:text-blue-400'
         }`}>
           {state === 'recording' && (
             <>
@@ -202,6 +212,12 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
           )}
           {state === 'paused' && 'Paused'}
           {state === 'accepting' && 'Recorded'}
+          {state === 'transcribing' && (
+            <>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              Transcribing...
+            </>
+          )}
         </div>
       </div>
 

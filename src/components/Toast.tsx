@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle, HelpCircle } from 'lucide-react'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 
@@ -27,13 +27,19 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const { resolvedTheme } = useTheme()
-  const colors = getThemeColors(resolvedTheme)
 
   useEffect(() => {
     // Animate in
     const timer = setTimeout(() => setIsVisible(true), 10)
     return () => clearTimeout(timer)
   }, [])
+
+  const handleRemove = useCallback(() => {
+    setIsLeaving(true)
+    setTimeout(() => {
+      onRemove(toast.id)
+    }, 300)
+  }, [onRemove, toast.id])
 
   useEffect(() => {
     if (toast.duration && toast.duration > 0) {
@@ -42,14 +48,8 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
       }, toast.duration)
       return () => clearTimeout(timer)
     }
-  }, [toast.duration])
+  }, [toast.duration, handleRemove])
 
-  const handleRemove = () => {
-    setIsLeaving(true)
-    setTimeout(() => {
-      onRemove(toast.id)
-    }, 300)
-  }
 
   const getToastStyles = () => {
     const baseStyles = "relative flex items-start gap-3 p-4 rounded-xl shadow-xl transition-all duration-300 ease-in-out"
