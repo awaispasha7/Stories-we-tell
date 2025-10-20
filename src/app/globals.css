@@ -120,6 +120,17 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@keyframes pop {
+  0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+  60% { opacity: 1; transform: scale(1.05) translateY(-4px); }
+  100% { transform: scale(1) translateY(-100px); }
+}
+
+.animate-pop {
+  animation: pop 0.4s ease-out forwards;
+}
+
+
 @layer base {
   /* Keep base minimal to avoid overriding component spacing */
   body {
@@ -144,45 +155,7 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 }
 
 /* Fix double cursor issue only for composer textarea */
-.composer-textarea {
-  caret-color: #3b82f6 !important;
-  caret-shape: block !important;
-  text-shadow: none !important;
-  -webkit-text-stroke: none !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  line-height: 1.2 !important;
-  padding-top: 1rem !important;
-  padding-bottom: 1rem !important;
-  padding-left: 0.75rem !important;
-  padding-right: 0.75rem !important;
-  vertical-align: middle !important;
-  height: 56px !important;
-  display: flex !important;
-  align-items: center !important;
-  background: transparent !important;
-}
-
-.composer-textarea:focus {
-  caret-color: #3b82f6 !important;
-  caret-shape: block !important;
-  text-shadow: none !important;
-  -webkit-text-stroke: none !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  line-height: 1.2 !important;
-  padding-top: 1rem !important;
-  padding-bottom: 1rem !important;
-  padding-left: 0.75rem !important;
-  padding-right: 0.75rem !important;
-  vertical-align: middle !important;
-  height: 56px !important;
-  display: flex !important;
-  align-items: center !important;
-  background: transparent !important;
-}
+/* Composer textarea styles - using Tailwind classes instead of !important overrides */
 
 /* Sidebar animations */
 @keyframes slideInRight {
@@ -220,7 +193,7 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 
 .sidebar-toggle-btn:hover {
   transform: translateY(-50%) scale(1.08);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-toggle-btn:active {
@@ -421,79 +394,10 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   scrollbar-color: #93c5fd rgba(147, 197, 253, 0.1);
 }
 
-/* Auth button styles for Topbar and Sidebar - Enhanced specificity */
-button.auth-button-signin,
-.auth-button-signin {
-  padding: 0.5rem 1rem !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  color: white !important;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6) !important;
-  border-radius: 0.5rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  transition: all 0.2s ease-in-out !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-  cursor: pointer !important;
-  text-decoration: none !important;
-  outline: none !important;
-}
-
-button.auth-button-signin:hover,
-.auth-button-signin:hover {
-  background: linear-gradient(to right, #2563eb, #7c3aed) !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  transform: translateY(-1px) !important;
-  color: white !important;
-}
-
-button.auth-button-signin:active,
-.auth-button-signin:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-button.auth-button-signup,
-.auth-button-signup {
-  padding: 0.5rem 1rem !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  color: white !important;
-  background: linear-gradient(to right, #10b981, #14b8a6) !important;
-  border-radius: 0.5rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  transition: all 0.2s ease-in-out !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-  cursor: pointer !important;
-  text-decoration: none !important;
-  outline: none !important;
-}
-
-button.auth-button-signup:hover,
-.auth-button-signup:hover {
-  background: linear-gradient(to right, #059669, #0d9488) !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  transform: translateY(-1px) !important;
-  color: white !important;
-}
-
-button.auth-button-signup:active,
-.auth-button-signup:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
+/* Auth button styles - moved to component-specific classes to avoid global interference */
 
 
-/* Enhanced Sidebar Switch Styles */
+/* Enhanced Sidebar Switch Styles - Made more specific to avoid interference */
 .sidebar-switch-container {
   display: flex;
   background: rgba(255, 255, 255, 0.05);
@@ -599,6 +503,8 @@ button.auth-button-signup:active,
   color: rgba(0, 0, 0, 0.9);
   background: rgba(0, 0, 0, 0.05);
 }
+
+/* Theme-specific styles moved to component classes to avoid global interference */
 
 /* Line clamp utility for text truncation */
 .line-clamp-2 {

@@ -1,121 +1,133 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { Mic, Square, Play, Pause } from 'lucide-react'
-// import { Button } from '@/components/ui/button' // Removed - using custom styling
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Pause, Play, Check, Trash2, X } from 'lucide-react'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
-import { cn } from '@/lib/utils'
 
 interface AudioRecorderProps {
   onAudioData: (audioBlob: Blob, transcript: string) => void
-  disabled?: boolean
+  onClose: () => void
 }
 
-export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderProps) {
-  const [isRecording, setIsRecording] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
+export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
+  const [state, setState] = useState<'recording' | 'paused' | 'accepting'>('recording')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [transcript, setTranscript] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [transcriptionProgress, setTranscriptionProgress] = useState('')
+  const [time, setTime] = useState(0)
+
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const timerRef = useRef<number | null>(null)
+  
+
+  /** --- sound helpers --- */
+  const playSound = (file: string) => {
+    const s = new Audio(file)
+    s.volume = 0.6
+    s.play().catch(() => {})
+  }
+
+  /** --- timer --- */
+  const startTimer = () => {
+    if (timerRef.current) return
+    timerRef.current = window.setInterval(() => setTime((t) => t + 1), 1000)
+  }
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+  }
 
   const startRecording = useCallback(async () => {
     try {
+      // Ask for permission once
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
+  
+      // Delay state updates to avoid race condition that causes flicker
+      setTimeout(() => {
+        const recorder = new MediaRecorder(stream)
+        mediaRecorderRef.current = recorder
+        audioChunksRef.current = []
+        setTime(0)
+  
+        recorder.ondataavailable = (e) => e.data.size > 0 && audioChunksRef.current.push(e.data)
+        recorder.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+          setAudioBlob(blob)
+          setAudioUrl(URL.createObjectURL(blob))
+          stream.getTracks().forEach((t) => t.stop())
         }
-      }
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
-        setAudioBlob(audioBlob)
-        setAudioUrl(URL.createObjectURL(audioBlob))
-        stream.getTracks().forEach(track => track.stop())
-      }
-
-      mediaRecorder.start()
-      setIsRecording(true)
-      setIsPaused(false)
-    } catch (error) {
-      console.error('Error starting recording:', error)
-      alert('Could not access microphone. Please check permissions.')
+  
+        recorder.start()
+        setState('recording')
+        startTimer()
+        playSound('/sounds/start.mp3')
+      }, 100) // small delay fixes instant unmount issue
+    } catch (err) {
+      console.error('🎤 Mic access failed:', err)
+      alert('Please allow microphone access and try again.')
+      // Do NOT call onClose() immediately here — let user retry
     }
   }, [])
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-      setIsPaused(false)
-    }
-  }, [isRecording])
-
-  const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      if (isPaused) {
-        mediaRecorderRef.current.resume()
-        setIsPaused(false)
-      } else {
-        mediaRecorderRef.current.pause()
-        setIsPaused(true)
+  useEffect(() => {
+    startRecording()
+    return () => {
+      stopTimer()
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop()
       }
     }
-  }, [isRecording, isPaused])
-
-  const playAudio = useCallback(() => {
-    if (audioUrl && audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
-        setIsPlaying(false)
-      } else {
-        audioRef.current.play()
-        setIsPlaying(true)
-      }
+  }, [startRecording])
+  
+  
+  const togglePause = () => {
+    const rec = mediaRecorderRef.current
+    if (!rec) return
+    if (state === 'recording') {
+      rec.pause()
+      stopTimer()
+      setState('paused')
+    } else {
+      rec.resume()
+      startTimer()
+      setState('recording')
     }
-  }, [audioUrl, isPlaying])
+  }
 
-  const processAudio = useCallback(async () => {
+  const stopRecording = () => {
+    if (!mediaRecorderRef.current) return
+    stopTimer()
+    mediaRecorderRef.current.stop()
+    setState('accepting')
+    playSound('/sounds/stop.mp3')
+  }
+
+  const togglePlay = () => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current.play()
+      setIsPlaying(true)
+    }
+  }
+
+  const handleSend = async () => {
     if (!audioBlob) return
-
-    setIsProcessing(true)
-    setTranscriptionProgress('Preparing audio for transcription...')
+    playSound('/sounds/send.mp3')
     
     try {
-      console.log('🎤 Processing audio for transcription...')
-      
-      // Simulate progress steps
-      const progressSteps = [
-        'Uploading audio file...',
-        'Processing with OpenAI Whisper...',
-        'Converting speech to text...',
-        'Finalizing transcription...'
-      ]
-      
-      // Show progress steps
-      for (let i = 0; i < progressSteps.length; i++) {
-        setTranscriptionProgress(progressSteps[i])
-        await new Promise(resolve => setTimeout(resolve, 800)) // Simulate processing time
-      }
-      
       // Send audio to backend for transcription
       const formData = new FormData()
-      formData.append('audio_file', audioBlob, 'recording.wav')
-      
-      setTranscriptionProgress('Sending to transcription service...')
+      formData.append('audio_file', audioBlob, 'recording.webm')
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -124,178 +136,145 @@ export function AudioRecorder({ onAudioData, disabled = false }: AudioRecorderPr
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Transcription successful:', data)
-        setTranscriptionProgress('Transcription complete!')
-        setTranscript(data.transcript)
-        onAudioData(audioBlob, data.transcript)
-        
-        // Clear progress after a moment
-        setTimeout(() => {
-          setTranscriptionProgress('')
-        }, 2000)
+        onAudioData(audioBlob, data.transcript || 'Audio transcription failed')
       } else {
         const errorData = await response.json()
-        console.error('❌ Transcription failed:', errorData)
-        setTranscriptionProgress('')
-        setTranscript('') // Clear any previous transcript
-        setTranscript(`Transcription failed: ${errorData.detail || 'Unknown error'}`)
+        onAudioData(audioBlob, `Transcription failed: ${errorData.detail || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('❌ Error processing audio:', error)
-      setTranscriptionProgress('')
-      setTranscript('') // Clear any previous transcript
-      setTranscript(`Error processing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsProcessing(false)
+      console.error('Transcription error:', error)
+      onAudioData(audioBlob, `Error transcribing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [audioBlob, onAudioData])
+    
+    cleanup()
+    onClose()
+  }
 
-  const resetRecording = useCallback(() => {
+  const handleDelete = () => {
+    cleanup()
+    onClose()
+  }
+
+  const cleanup = () => {
+    stopTimer()
+    setTime(0)
+    setIsPlaying(false)
     setAudioBlob(null)
     setAudioUrl(null)
-    setTranscript('')
-    setTranscriptionProgress('')
-    setIsPlaying(false)
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-    }
-  }, [])
+  }
+
+  useEffect(() => {
+    startRecording()
+    return cleanup
+  }, [startRecording])
+
+  const fmt = (t: number) =>
+    `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+
+  console.log('🎤 AudioRecorder rendering - state:', state, 'time:', time)
 
   return (
-    <div className={`flex flex-col items-center gap-3 p-4 ${colors.glassBackground} rounded-xl border ${colors.glassBorder}`}>
-      {/* Recording Controls */}
-      <div className="flex items-center gap-2">
-        {!isRecording && !audioBlob && (
-          <button
-            onClick={startRecording}
-            disabled={disabled}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center disabled:opacity-50"
-          >
-            <Mic className="w-4 h-4 mr-2" />
-            Start Recording
-          </button>
-        )}
-
-        {isRecording && (
-          <>
-            <button
-              onClick={pauseRecording}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center"
-            >
-              {isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
-              {isPaused ? 'Resume' : 'Pause'}
-            </button>
-            <button
-              onClick={stopRecording}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center"
-            >
-              <Square className="w-4 h-4 mr-2" />
-              Stop
-            </button>
-          </>
-        )}
+    <div
+      className={`flex items-center gap-3 px-3 py-2 rounded-xl border shadow-lg backdrop-blur-sm ${colors.glassBackground} ${colors.glassBorder}`}
+      style={{ 
+        backgroundColor: 'white',
+        border: '2px solid #e5e7eb',
+        minWidth: '200px'
+      }}
+    >
+      {/* Timer and State */}
+      <div className="flex flex-col items-center min-w-[4rem]">
+        <div className="text-xs font-mono text-gray-800 dark:text-gray-100">
+          {fmt(time)}
+        </div>
+        <div className={`text-xs font-medium flex items-center gap-1 ${
+          state === 'recording' && 'text-red-600 dark:text-red-400'
+        } ${
+          state === 'paused' && 'text-yellow-600 dark:text-yellow-400'
+        } ${
+          state === 'accepting' && 'text-green-600 dark:text-green-400'
+        }`}>
+          {state === 'recording' && (
+            <>
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              Recording
+            </>
+          )}
+          {state === 'paused' && 'Paused'}
+          {state === 'accepting' && 'Recorded'}
+        </div>
       </div>
 
-      {/* Recording Status */}
-      {isRecording && (
-        <div className="flex items-center gap-2 text-red-500">
-          <div className={cn(
-            "w-3 h-3 rounded-full bg-red-500 animate-pulse",
-            isPaused && "bg-yellow-500"
-          )} />
-          <span className="text-sm font-medium">
-            {isPaused ? 'Paused' : 'Recording...'}
-          </span>
-        </div>
+      {/* RECORDING/PAUSED STATE */}
+      {(state === 'recording' || state === 'paused') && (
+        <>
+          {/* Delete Button */}
+          <button
+            onClick={handleDelete}
+            className="w-9 h-9 bg-red-500 hover:bg-red-600 rounded-full text-white flex items-center justify-center transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+
+          {/* Pause/Play Button */}
+          <button
+            onClick={togglePause}
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-white transition-all ${
+              state === 'paused'
+                ? 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-red-500 hover:bg-red-600'
+            }`}
+          >
+            {state === 'paused' ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+          </button>
+
+          {/* Accept Button */}
+          <button
+            onClick={stopRecording}
+            className="w-9 h-9 bg-green-500 hover:bg-green-600 rounded-full text-white flex items-center justify-center transition-all"
+          >
+            <Check className="w-4 h-4" />
+          </button>
+        </>
       )}
 
-      {/* Transcription Progress */}
-      {transcriptionProgress && (
-        <div className="flex flex-col items-center gap-2 w-full">
-          <div className="flex items-center gap-2 text-blue-600">
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm font-medium">{transcriptionProgress}</span>
-          </div>
-          {isProcessing && (
-            <div className={`w-full ${colors.backgroundTertiary} rounded-full h-2`}>
-              <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
-            </div>
-          )}
-        </div>
+      {/* ACCEPTING STATE */}
+      {state === 'accepting' && (
+        <>
+          {/* Delete Button */}
+          <button
+            onClick={handleDelete}
+            className="w-9 h-9 bg-red-500 hover:bg-red-600 rounded-full text-white flex items-center justify-center transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+
+          {/* Play/Pause Button */}
+          <button
+            onClick={togglePlay}
+            className="w-9 h-9 bg-blue-500 hover:bg-blue-600 rounded-full text-white flex items-center justify-center transition-all"
+          >
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+          
+          {/* Accept/Send Button */}
+          <button
+            onClick={handleSend}
+            className="w-9 h-9 bg-green-500 hover:bg-green-600 rounded-full text-white flex items-center justify-center transition-all"
+          >
+            <Check className="w-4 h-4" />
+          </button>
+        </>
       )}
 
-      {/* Audio Playback */}
-      {audioBlob && audioUrl && (
-        <div className="flex flex-col items-center gap-2 w-full">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={playAudio}
-              className={`border ${colors.border} ${colors.buttonGhost} px-3 py-1.5 rounded-lg text-sm flex items-center`}
-            >
-              {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-              {isPlaying ? 'Pause' : 'Play'}
-            </button>
-            <button
-              onClick={processAudio}
-              disabled={isProcessing}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm disabled:opacity-50"
-            >
-              {isProcessing ? 'Processing...' : 'Transcribe'}
-            </button>
-            <button
-              onClick={resetRecording}
-              className={`border ${colors.border} ${colors.buttonGhost} px-3 py-1.5 rounded-lg text-sm`}
-            >
-              Reset
-            </button>
-          </div>
-
-          {/* Audio Element */}
-          <audio
-            ref={audioRef}
-            src={audioUrl}
-            onEnded={() => setIsPlaying(false)}
-            className="w-full max-w-xs"
-          />
-
-          {/* Transcript Display */}
-          {transcript && !isProcessing && (() => {
-            const isError = transcript.startsWith('Transcription failed') || transcript.startsWith('Error processing')
-            return (
-              <div className={`w-full p-4 rounded-lg border ${
-                isError
-                  ? resolvedTheme === 'light' 
-                    ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
-                    : 'bg-gradient-to-r from-red-900/20 to-orange-900/20 border-red-800'
-                  : resolvedTheme === 'light'
-                    ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200'
-                    : 'bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-800'
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full animate-pulse ${
-                    isError ? 'bg-red-500' : 'bg-green-500'
-                  }`} />
-                  <span className={`text-sm font-semibold ${
-                    isError ? resolvedTheme === 'light' ? 'text-red-700' : 'text-red-400' : resolvedTheme === 'light' ? 'text-green-700' : 'text-green-400'
-                  }`}>
-                    {isError ? 'Transcription Failed' : 'Transcription Complete'}
-                  </span>
-                </div>
-                <p className={`text-sm ${colors.text} leading-relaxed`}>
-                  {transcript}
-                </p>
-                {!isError && (
-                  <div className={`mt-2 text-xs ${colors.textTertiary}`}>
-                    This text will be sent to the chat automatically
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-        </div>
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onEnded={() => setIsPlaying(false)}
+          className="hidden"
+        />
       )}
     </div>
   )
 }
-

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 // import { Textarea } from '@/components/ui/textarea' // Removed - using custom styling
-import { Send, Loader2, Mic } from 'lucide-react'
+import { Send, Loader2, Mic, Square } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
 import { AudioRecorder } from './AudioRecorder'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -71,46 +71,65 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
 
   return (
     <div className="p-2 sm:p-3">
-        {/* Audio Recorder */}
-        {showAudioRecorder && (
-          <div className="mb-2 sm:mb-3">
-            <AudioRecorder 
-              onAudioData={handleAudioData}
-              disabled={disabled}
-            />
-          </div>
-        )}
-        
-        <div className={`flex items-center gap-1 sm:gap-2 md:gap-3 ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`}>
+        <div className={`flex items-center ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`}>
           <UploadDropzone />
-          <button
-            type="button"
-            onClick={() => setShowAudioRecorder(!showAudioRecorder)}
-            disabled={disabled}
-            className={cn(
-              "h-8 w-8 sm:h-10 sm:w-10 md:h-[56px] md:w-[56px] rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0",
-              showAudioRecorder 
-                ? "bg-blue-500 text-white shadow-lg" 
-                : resolvedTheme === 'light'
-                  ? "bg-white/70 hover:bg-blue-50 border-2 border-dashed border-gray-300 hover:border-blue-400"
-                  : "bg-slate-700/70 hover:bg-slate-600 border-2 border-dashed border-slate-500 hover:border-sky-400"
+          <div className="relative">
+            {!showAudioRecorder ? (
+              // Initial state - just the mic button
+              <button
+                type="button"
+                onClick={() => setShowAudioRecorder(true)}
+                disabled={disabled}
+                className={cn(
+                  "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm flex-shrink-0 border-gray-400 bg-white hover:border-blue-500 hover:bg-gray-50",
+                  disabled && "opacity-50 cursor-not-allowed"
+                )}
+                style={{
+                  backgroundColor: 'white',
+                  borderColor: '#9ca3af',
+                  minWidth: '40px',
+                  minHeight: '40px'
+                }}
+              >
+                <Mic 
+                  className="h-4 w-4 sm:h-5 sm:w-5 transition-colors"
+                  style={{
+                    color: '#374151',
+                    strokeWidth: 2
+                  }}
+                />
+              </button>
+            ) : (
+              // Recording state - show the full AudioRecorder inline
+              <AudioRecorder
+                onAudioData={handleAudioData}
+                onClose={() => setShowAudioRecorder(false)}
+              />
             )}
-          >
-            <Mic className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 ${showAudioRecorder ? 'text-white' : resolvedTheme === 'light' ? 'text-gray-600' : 'text-slate-300'}`} />
-          </button>
-          <textarea
+          </div>
+            <div className="w-2"></div>
+            <textarea
             ref={textareaRef}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isSmallScreen ? "Take me to the mo…" : "Take me to the moment your story begins…"}
             className={cn(
-              `composer-textarea flex-1 min-w-0 max-h-32 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-lg sm:rounded-xl transition-all duration-200 text-xs sm:text-sm md:text-base ${colors.text} px-2 sm:px-3 py-2 sm:py-3`,
+              `composer-textarea flex-1 min-w-0 h-10 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-lg sm:rounded-xl transition-all duration-200 text-xs sm:text-sm md:text-base ${colors.text} px-2 sm:px-3 py-2 sm:py-3`,
               resolvedTheme === 'light' 
                 ? 'placeholder-gray-500 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base' 
                 : 'placeholder-slate-300 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base',
               disabled && "opacity-50 cursor-not-allowed"
             )}
+            style={{
+              caretColor: '#3b82f6',
+              cursor: 'text',
+              outline: 'none',
+              textAlign: 'left',
+              lineHeight: '1.4',
+              paddingTop: '0.875rem',
+              height: '100%',
+            }}
             disabled={disabled}
           />
           <button

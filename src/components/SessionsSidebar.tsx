@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
+import { useToastContext } from '@/components/ToastProvider'
 import { MessageSquare, Trash2, LogIn, UserPlus, ChevronLeft, Plus } from 'lucide-react'
 
 interface Session {
@@ -43,55 +44,75 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { isAuthenticated, user } = useAuth()
+  const toast = useToastContext()
 
       // Fetch user sessions only if authenticated
       const { data: sessions = [], isLoading, error } = useQuery({
         queryKey: ['sessions'],
         queryFn: async () => {
-          console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
-          
-          // Try to ensure user exists in backend first
-          if (user) {
-            try {
-              await sessionApi.createUser({
-                user_id: user.user_id, // Pass the Supabase auth user ID
-                email: user.email,
-                display_name: user.display_name,
-                avatar_url: user.avatar_url
-              })
-              console.log('✅ User synced to backend during session fetch')
-            } catch (error) {
-              console.warn('⚠️ Failed to sync user during session fetch:', error)
-              // Continue anyway - user might already exist
-            }
-          }
-          
-          const result = await sessionApi.getSessions(20)
-          console.log('✅ Sessions fetched:', result)
-          
-          // Fetch first message for each session to show as preview
-          const sessionsWithFirstMessage = await Promise.all(
-            (result as Session[]).map(async (session) => {
+          try {
+            console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
+            
+            // Try to ensure user exists in backend first
+            if (user) {
               try {
-                const messages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
-                const firstMessage = messages.length > 0 ? messages[0].content : undefined
-                return {
-                  ...session,
-                  first_message: firstMessage,
-                  message_count: messages.length
-                }
+                await sessionApi.createUser({
+                  user_id: user.user_id, // Pass the Supabase auth user ID
+                  email: user.email,
+                  display_name: user.display_name,
+                  avatar_url: user.avatar_url
+                })
+                console.log('✅ User synced to backend during session fetch')
               } catch (error) {
-                console.warn(`Failed to fetch first message for session ${session.session_id}:`, error)
-                return {
-                  ...session,
-                  first_message: undefined,
-                  message_count: 0
-                }
+                console.warn('⚠️ Failed to sync user during session fetch:', error)
+                // Continue anyway - user might already exist
               }
-            })
-          )
-          
-          return sessionsWithFirstMessage
+            }
+            
+            const result = await sessionApi.getSessions(20)
+            console.log('✅ Sessions fetched:', result)
+            
+            // Show info toast if no sessions found
+            if (Array.isArray(result) && result.length === 0) {
+              toast.info(
+                'No Chat History',
+                'You don\'t have any previous chat sessions yet.',
+                3000
+              )
+            }
+            
+            // Fetch first message for each session to show as preview
+            const sessionsWithFirstMessage = await Promise.all(
+              (result as Session[]).map(async (session) => {
+                try {
+                  const messages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
+                  const firstMessage = messages.length > 0 ? messages[0].content : undefined
+                  return {
+                    ...session,
+                    first_message: firstMessage,
+                    message_count: messages.length
+                  }
+                } catch (error) {
+                  console.warn(`Failed to fetch first message for session ${session.session_id}:`, error)
+                  return {
+                    ...session,
+                    first_message: undefined,
+                    message_count: 0
+                  }
+                }
+              })
+            )
+            
+            return sessionsWithFirstMessage
+          } catch (error) {
+            console.error('❌ Error fetching sessions:', error)
+            toast.error(
+              'Load Failed',
+              'Failed to load your chat sessions. Please try again.',
+              4000
+            )
+            return []
+          }
         },
         refetchInterval: false, // No automatic refresh
         refetchOnWindowFocus: false, // Don't refetch on window focus
@@ -106,30 +127,51 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
     mutationFn: (sessionId: string) => sessionApi.deleteSession(sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
+    },
+    onError: (error) => {
+      console.error('Delete session mutation error:', error)
+      toast.error(
+        'Delete Failed',
+        'An unexpected error occurred while deleting the session.',
+        5000
+      )
     }
   })
 
   const handleDeleteSession = async (sessionId: string) => {
-    const confirmed = confirm(
-      '⚠️ DANGER ZONE ⚠️\n\n' +
-      '🗑️ You are about to PERMANENTLY DELETE this chat session!\n\n' +
-      '🔥 This action CANNOT be undone!\n' +
-      '💥 All messages and story progress will be lost forever!\n\n' +
-      'Are you absolutely sure you want to proceed?\n\n' +
-      'Type "DELETE" to confirm (just kidding, click OK to proceed)'
-    )
-    
-    if (confirmed) {
-      try {
-        await deleteSessionMutation.mutateAsync(sessionId)
-        if (currentSessionId === sessionId) {
-          onSessionSelect('')
+    toast.confirm(
+      'Attention!',
+      'You are about to PERMANENTLY DELETE this chat session!\n\nThis action CANNOT be undone!\nAll messages and story progress will be lost forever!\n\nAre you absolutely sure you want to proceed?',
+      async () => {
+        try {
+          await deleteSessionMutation.mutateAsync(sessionId)
+          
+          toast.success(
+            'Session Deleted',
+            'The chat session has been permanently deleted.',
+            4000
+          )
+          
+          if (currentSessionId === sessionId) {
+            onSessionSelect('')
+          }
+        } catch (error) {
+          console.error('Error deleting session:', error)
+          
+          toast.error(
+            'Delete Failed',
+            'Failed to delete the session. Please try again.',
+            5000
+          )
         }
-      } catch (error) {
-        console.error('Error deleting session:', error)
-        alert('❌ Failed to delete session. Please try again.')
-      }
-    }
+      },
+      () => {
+        // Cancel action - no need to do anything
+        console.log('Session deletion cancelled')
+      },
+      'Delete Forever',
+      'Cancel'
+    )
   }
 
   // const handleCreateNewSession = () => {
@@ -197,7 +239,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
       }
 
   return (
-    <div className="h-full flex flex-col gap-8">
+    <div className="h-full flex flex-col gap-8" style={{ padding: '0.2rem 0.8rem' }}>
       {/* Header */}
       <div className={`p-6 border-b ${colors.border}`}>
         <div className="flex items-center justify-between mb-6">
@@ -213,8 +255,9 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                 console.log('🆕 Create New Chat button clicked')
                 onSessionSelect('', '')
               }}
-                className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
                 title="Start New Chat"
+                
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -284,27 +327,31 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
           (sessions as Session[]).map((session: Session) => (
             <div
               key={session.session_id}
-              className={`group cursor-pointer transition-all duration-200 hover:shadow-md rounded-lg border p-3 ${
+              className={`group cursor-pointer transition-all duration-200 hover:shadow-md rounded-lg border ${
                 currentSessionId === session.session_id
                   ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : `${colors.sidebarItem} ${colors.border}`
               }`}
+              style={{ 
+                padding: '0.5rem 1rem',
+                margin: '0.3rem'
+              }}
               onClick={() => {
                 console.log('📋 Previous chat clicked:', session.session_id, 'Project:', session.project_id)
                 onSessionSelect(session.session_id, session.project_id)
               }}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between" style={{ alignItems: 'center' }}>
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-medium ${colors.text} truncate mb-1 text-sm`}>
                     {session.title || 'New Chat'}
                   </h3>
                   
-                  {session.first_message && (
+                  {/* {session.first_message && (
                     <p className={`text-xs ${colors.textTertiary} line-clamp-2 mb-2 leading-relaxed`}>
                       {session.first_message}
                     </p>
-                  )}
+                  )} */}
                   
                   <div className={`flex items-center gap-2 text-xs ${colors.textTertiary}`}>
                     <span>{formatDate(session.last_message_at)}</span>
@@ -325,7 +372,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   className={`
                     relative overflow-hidden
                     ${colors.textMuted} 
-                    hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600
+                    text-black hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600
                     dark:hover:from-red-600 dark:hover:to-red-700
                     p-2 rounded-lg 
                     opacity-0 group-hover:opacity-100 
@@ -333,8 +380,14 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                     hover:scale-110 hover:shadow-lg hover:shadow-red-500/25
                     active:scale-95 active:shadow-inner
                     border border-transparent hover:border-red-300 dark:hover:border-red-600
-                    hover:animate-pulse
+                    hover:animate-pulse hover:cursor-pointer mr-8
                   `}
+                  style={{
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                  }}
                   title="⚠️ Delete session permanently"
                 >
                   <div className="relative z-10">

@@ -6,7 +6,7 @@ import { QueryProvider } from '@/components/QueryProvider'
 import { AuthProvider } from '@/lib/auth-context'
 import { ProfileProvider } from '@/lib/profile-context'
 import { ThemeProvider } from '@/lib/theme-context'
-// import { Toaster } from '@/components/ui/toaster'
+import { ToastProvider } from '@/components/ToastProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,8 +23,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <QueryProvider>
             <AuthProvider>
               <ProfileProvider>
-                {children}
-                {/* <Toaster /> */}
+                <ToastProvider>
+                  {children}
+                </ToastProvider>
               </ProfileProvider>
             </AuthProvider>
           </QueryProvider>
