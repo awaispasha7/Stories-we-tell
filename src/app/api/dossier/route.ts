@@ -12,7 +12,10 @@ export async function GET() {
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
     
     try {
-      const response = await fetch(`${backendUrl}/dossier`, {
+      // Use the new session-aware dossier endpoint
+      // For now, use a default project ID since this route doesn't have session context
+      const defaultProjectId = '00000000-0000-0000-0000-000000000000'
+      const response = await fetch(`${backendUrl}/api/v1/dossiers/${defaultProjectId}`, {
         method: 'GET',
         signal: controller.signal,
         headers: {

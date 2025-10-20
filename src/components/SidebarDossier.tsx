@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft } from 'lucide-react'
 // import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card' // Removed - using custom styling
 // import { Badge } from '@/components/ui/badge' // Removed - using custom styling
 // import { Separator } from '@/components/ui/separator' // Unused import
@@ -60,9 +61,10 @@ interface CharacterData {
 interface SidebarDossierProps {
   sessionId?: string
   projectId?: string
+  onClose?: () => void
 }
 
-export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
+export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossierProps) {
   const { refreshTrigger } = useDossierRefresh()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -108,6 +110,19 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
   if (isLoading) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        {onClose && (
+          <div className="sm:hidden mb-2">
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              aria-label="Back"
+              title="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span>Back</span>
+            </button>
+          </div>
+        )}
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
@@ -121,6 +136,19 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
   if (!sessionId || !projectId) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        {onClose && (
+          <div className="sm:hidden mb-2">
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              aria-label="Back"
+              title="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span>Back</span>
+            </button>
+          </div>
+        )}
         <div className="text-center py-8">
           <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Active Session</h3>
           <p className="text-gray-500 dark:text-gray-500 text-sm">
@@ -135,6 +163,19 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
   if (!data) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+        {onClose && (
+          <div className="sm:hidden mb-2">
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              aria-label="Back"
+              title="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span>Back</span>
+            </button>
+          </div>
+        )}
         <div className="text-center py-8">
           <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Dossier Yet</h3>
           <p className="text-gray-500 dark:text-gray-500 text-sm">
@@ -147,6 +188,19 @@ export function SidebarDossier({ sessionId, projectId }: SidebarDossierProps) {
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+      {onClose && (
+        <div className="sm:hidden mb-2">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            aria-label="Back"
+            title="Back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span>Back</span>
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className={`text-center pb-4 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
         <h2 className="text-xl font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">

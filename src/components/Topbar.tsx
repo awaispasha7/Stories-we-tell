@@ -40,19 +40,22 @@ export function Topbar() {
     setShowProfileDropdown(false)
   }
 
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'chat' | 'account'>('chat')
   const handleProfileClick = () => {
-    router.push('/profile')
+    setSettingsInitialTab('account')
+    setShowProfileSettings(true)
     setShowProfileDropdown(false)
   }
 
   const handleSettingsClick = () => {
+    setSettingsInitialTab('chat')
     setShowProfileSettings(true)
     setShowProfileDropdown(false)
   }
 
   return (
     <>
-        <header className={`flex items-center justify-between px-3 sm:px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0 relative z-50`}>
+        <header className={`flex items-center justify-evenly sm:px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0 relative z-50`}>
           {/* Left side - Logo and Text */}
           <div className={`flex items-center gap-2 sm:gap-3 ${colors.textSecondary}`}>
             <div className="p-1.5 sm:p-2 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-lg sm:rounded-xl shadow-lg shadow-sky-500/30">
@@ -70,7 +73,7 @@ export function Topbar() {
           </div>
 
           {/* Right side - Auth buttons and Theme */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-3">
             {/* Theme Selector */}
             <ThemeSelector />
             
@@ -116,7 +119,7 @@ export function Topbar() {
                 {showProfileDropdown && (
                   <div className={`absolute right-0 top-full mt-2 w-64 ${colors.backgroundSecondary} border ${colors.border} rounded-xl shadow-xl backdrop-blur-xl z-50 overflow-hidden`}>
                     {/* Header */}
-                    <div className={`px-4 py-3 border-b ${colors.border} ${colors.backgroundTertiary}`}>
+                    {/* <div className={`px-4 py-3 border-b ${colors.border} ${colors.backgroundTertiary}`}>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           {profile.userImage ? (
@@ -141,7 +144,7 @@ export function Topbar() {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Menu Items */}
                     <div className="py-2">
@@ -201,6 +204,7 @@ export function Topbar() {
     <ProfileSettings 
       isOpen={showProfileSettings} 
       onClose={() => setShowProfileSettings(false)} 
+      initialTab={settingsInitialTab}
     />
     </>
   )

@@ -89,6 +89,7 @@ export default function ChatPage() {
                 <SidebarDossier 
                   sessionId={currentSessionId}
                   projectId={currentProjectId}
+                  onClose={handleSidebarClose}
                 />
               )}
             </div>
