@@ -53,9 +53,11 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   }
 
   const handleAudioData = (audioBlob: Blob, transcript: string) => {
+    console.log('[AUDIO] handleAudioData called with transcript:', transcript)
     setShowAudioRecorder(false)
     // Auto-send the transcribed text and clear the input
     if (transcript.trim()) {
+      console.log('[AUDIO] Sending audio transcript via onSend')
       onSend(transcript)
       setText('') // Clear the text area after sending
     }

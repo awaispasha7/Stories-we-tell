@@ -80,21 +80,18 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
               )
             }
             
-            // Fetch first message and message count for each session
+            // Fetch first message and message count for each session (optimized)
             const sessionsWithFirstMessage = await Promise.all(
               (result as Session[]).map(async (session) => {
                 try {
-                  // Get first message for preview
-                  const firstMessages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
-                  const firstMessage = firstMessages.length > 0 ? firstMessages[0].content : undefined
-                  
-                  // Get total message count (fetch a larger number to get accurate count)
-                  const allMessages = await sessionApi.getSessionMessages(session.session_id, 100, 0) as ChatMessage[]
+                  // Get messages with a single call - fetch 10 messages to get both first message and count
+                  const messages = await sessionApi.getSessionMessages(session.session_id, 10, 0) as ChatMessage[]
+                  const firstMessage = messages.length > 0 ? messages[0].content : undefined
                   
                   return {
                     ...session,
                     first_message: firstMessage,
-                    message_count: allMessages.length
+                    message_count: messages.length
                   }
                 } catch (error) {
                   console.warn(`Failed to fetch messages for session ${session.session_id}:`, error)
@@ -301,13 +298,38 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   Sign up to save your conversations and access your story development history
                 </p>
                 
-                {/* Auth buttons after welcome text */}
+                {/* Beautiful Auth buttons in single line */}
                 <div className="flex gap-3 w-full mt-8 px-4 justify-center items-center">
                   <button
                     onClick={() => router.push('/auth/login')}
-                    className="auth-button-signin px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 mt-8"
+                    style={{
+                      background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+                      color: 'white',
+                      fontWeight: '600',
+                      padding: '8px 16px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      fontSize: '13px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #2563eb, #1d4ed8)'
+                      e.currentTarget.style.transform = 'scale(1.05)'
+                      e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #2563eb)'
+                      e.currentTarget.style.transform = 'scale(1)'
+                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }}
                   >
-                    <LogIn className="h-4 w-4" />
+                    <LogIn style={{ width: '16px', height: '16px' }} />
                     <span>Sign In</span>
                   </button>
                   
@@ -318,9 +340,34 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   
                   <button
                     onClick={() => router.push('/auth/signup')}
-                    className="auth-button-signup px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 mt-8"
+                    style={{
+                      background: 'linear-gradient(to right, #10b981, #059669)',
+                      color: 'white',
+                      fontWeight: '600',
+                      padding: '8px 16px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      fontSize: '13px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #059669, #047857)'
+                      e.currentTarget.style.transform = 'scale(1.05)'
+                      e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #10b981, #059669)'
+                      e.currentTarget.style.transform = 'scale(1)'
+                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }}
                   >
-                    <UserPlus className="h-4 w-4" />
+                    <UserPlus style={{ width: '16px', height: '16px' }} />
                     <span>Sign Up</span>
                   </button>
                 </div>

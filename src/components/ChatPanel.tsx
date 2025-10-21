@@ -39,6 +39,9 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   // Track previous session ID to detect changes
   const prevSessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   
+  // Use ref to store session ID for immediate access (bypasses React state async updates)
+  const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
@@ -84,6 +87,16 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       // Update local state when props change (e.g., switching to existing chat)
       setCurrentSessionId(_sessionId || undefined)
       setCurrentProjectId(_projectId || undefined)
+      
+      // For authenticated users with no session ID, create one immediately
+      if (isAuthenticated && user && !_sessionId) {
+        console.log('🆕 Creating new session ID for authenticated user')
+        const newSessionId = crypto.randomUUID()
+        setCurrentSessionId(newSessionId)
+        sessionIdRef.current = newSessionId
+        console.log('🆕 Generated session ID:', newSessionId)
+        console.log('🆕 sessionIdRef.current set to:', sessionIdRef.current)
+      }
 
       // If no session ID or not authenticated, don't load messages
       if (!_sessionId || !isAuthenticated || !user?.user_id) {
@@ -181,8 +194,8 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
     console.log(`[DEBUG] handleSendMessage called with text: "${text}"`)
     console.log(`[DEBUG] isLoading: ${isLoading}, isAuthenticated: ${isAuthenticated}, isSessionExpired: ${isSessionExpired}`)
     
-    if (!text.trim() || isLoading || isProcessingMessage) {
-      console.log(`[DEBUG] Early return - text empty, loading, or processing`)
+    if (!text.trim() || isLoading) {
+      console.log(`[DEBUG] Early return - text empty or loading`)
       return
     }
     
@@ -219,10 +232,10 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       // For anonymous users, use session info from useSession hook
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, use local state which persists across messages
-        // If no current session ID, let backend create one and we'll capture it from metadata
-        sessionId = currentSessionId
+        // For authenticated users, use ref for immediate access (bypasses React state async updates)
+        sessionId = sessionIdRef.current || currentSessionId
         projectId = currentProjectId
+        console.log(`[DEBUG] Using sessionId from ref: ${sessionIdRef.current}, state: ${currentSessionId}`)
       } else {
         // For anonymous users, use session info from useSession hook
         const sessionInfo = getSessionInfo()
@@ -235,6 +248,9 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       console.log(`[DEBUG] Local state - currentSessionId: ${currentSessionId}, currentProjectId: ${currentProjectId}`)
       console.log(`[DEBUG] Final values - sessionId: ${sessionId}, projectId: ${projectId}`)
       console.log(`[DEBUG] Message type: ${text.length > 50 ? 'long text' : 'short text/audio'}`)
+      console.log(`[DEBUG] Message content preview: "${text.substring(0, 50)}..."`)
+      console.log(`[DEBUG] Current timestamp: ${new Date().toISOString()}`)
+      console.log(`[DEBUG] ===== SENDING MESSAGE WITH SESSION ID: ${sessionId} =====`)
       
       console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
@@ -327,11 +343,20 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
               } else if (data.type === 'metadata') {
                 // Handle metadata chunk - store session_id and project_id for next message
                 console.log('📋 Received metadata:', data.metadata)
+                console.log('📋 Metadata received at:', new Date().toISOString())
                 if (data.metadata?.session_id) {
                   console.log('💾 Storing session_id from metadata:', data.metadata.session_id)
+                  console.log('🔄 Previous currentSessionId was:', currentSessionId)
+                  console.log('🔄 Previous sessionIdRef was:', sessionIdRef.current)
+                  
+                  // Update both state and ref immediately
                   setCurrentSessionId(data.metadata.session_id)
+                  sessionIdRef.current = data.metadata.session_id
+                  
                   // Immediately update the session ID for any pending messages
                   console.log('🔄 Session ID updated, ready for next message')
+                  console.log('🔄 New session ID set at:', new Date().toISOString())
+                  console.log('🔄 sessionIdRef.current is now:', sessionIdRef.current)
                 }
                 if (data.metadata?.project_id) {
                   console.log('💾 Storing project_id from metadata:', data.metadata.project_id)
