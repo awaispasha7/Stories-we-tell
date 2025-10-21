@@ -84,7 +84,7 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
         mediaRecorderRef.current.stop()
       }
     }
-  }, [startRecording])
+  }, []) // Empty dependency array - only run once on mount
   
   
   const togglePause = () => {
@@ -166,10 +166,6 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     setAudioUrl(null)
   }
 
-  useEffect(() => {
-    startRecording()
-    return cleanup
-  }, [startRecording, cleanup])
 
   const fmt = (t: number) =>
     `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`

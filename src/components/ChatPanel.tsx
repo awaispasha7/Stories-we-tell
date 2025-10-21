@@ -330,6 +330,15 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                   console.log('💾 Storing project_id from metadata:', data.metadata.project_id)
                   setCurrentProjectId(data.metadata.project_id)
                 }
+                
+                // Trigger a refresh of the sessions list to update message counts
+                // This will be handled by the parent component
+                window.dispatchEvent(new CustomEvent('sessionUpdated', { 
+                  detail: { 
+                    sessionId: data.metadata?.session_id,
+                    projectId: data.metadata?.project_id 
+                  } 
+                }))
               }
             } catch (e) {
               console.error('❌ Error parsing streaming data:', e, 'Line:', line)

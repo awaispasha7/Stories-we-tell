@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
@@ -46,6 +47,17 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
   const { isAuthenticated, user } = useAuth()
   const toast = useToastContext()
 
+  // Listen for session updates to refresh the sessions list
+  useEffect(() => {
+    const handleSessionUpdate = () => {
+      console.log('🔄 Session updated, refreshing sessions list')
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+    }
+
+    window.addEventListener('sessionUpdated', handleSessionUpdate)
+    return () => window.removeEventListener('sessionUpdated', handleSessionUpdate)
+  }, [queryClient])
+
       // Fetch user sessions only if authenticated
       const { data: sessions = [], isLoading, error } = useQuery({
         queryKey: ['sessions'],
@@ -81,19 +93,24 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
               )
             }
             
-            // Fetch first message for each session to show as preview
+            // Fetch first message and message count for each session
             const sessionsWithFirstMessage = await Promise.all(
               (result as Session[]).map(async (session) => {
                 try {
-                  const messages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
-                  const firstMessage = messages.length > 0 ? messages[0].content : undefined
+                  // Get first message for preview
+                  const firstMessages = await sessionApi.getSessionMessages(session.session_id, 1, 0) as ChatMessage[]
+                  const firstMessage = firstMessages.length > 0 ? firstMessages[0].content : undefined
+                  
+                  // Get total message count (fetch a larger number to get accurate count)
+                  const allMessages = await sessionApi.getSessionMessages(session.session_id, 100, 0) as ChatMessage[]
+                  
                   return {
                     ...session,
                     first_message: firstMessage,
-                    message_count: messages.length
+                    message_count: allMessages.length
                   }
                 } catch (error) {
-                  console.warn(`Failed to fetch first message for session ${session.session_id}:`, error)
+                  console.warn(`Failed to fetch messages for session ${session.session_id}:`, error)
                   return {
                     ...session,
                     first_message: undefined,
