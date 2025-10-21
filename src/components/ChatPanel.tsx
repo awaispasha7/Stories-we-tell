@@ -30,6 +30,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [typingMessage, setTypingMessage] = useState('')
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
+  const [isProcessingMessage, setIsProcessingMessage] = useState(false)
   
   // Local state to track current session and project for this chat
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
@@ -180,10 +181,12 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
     console.log(`[DEBUG] handleSendMessage called with text: "${text}"`)
     console.log(`[DEBUG] isLoading: ${isLoading}, isAuthenticated: ${isAuthenticated}, isSessionExpired: ${isSessionExpired}`)
     
-    if (!text.trim() || isLoading) {
-      console.log(`[DEBUG] Early return - text empty or loading`)
+    if (!text.trim() || isLoading || isProcessingMessage) {
+      console.log(`[DEBUG] Early return - text empty, loading, or processing`)
       return
     }
+    
+    setIsProcessingMessage(true)
 
     // Check if session is expired for anonymous users
     if (!isAuthenticated && isSessionExpired) {
@@ -217,6 +220,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       let sessionId, projectId
       if (isAuthenticated) {
         // For authenticated users, use local state which persists across messages
+        // If no current session ID, let backend create one and we'll capture it from metadata
         sessionId = currentSessionId
         projectId = currentProjectId
       } else {
@@ -326,6 +330,8 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                 if (data.metadata?.session_id) {
                   console.log('💾 Storing session_id from metadata:', data.metadata.session_id)
                   setCurrentSessionId(data.metadata.session_id)
+                  // Immediately update the session ID for any pending messages
+                  console.log('🔄 Session ID updated, ready for next message')
                 }
                 if (data.metadata?.project_id) {
                   console.log('💾 Storing project_id from metadata:', data.metadata.project_id)
@@ -377,6 +383,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       })
     } finally {
       setIsLoading(false)
+      setIsProcessingMessage(false)
       setTypingMessage('')
       
       // Trigger dossier refresh after AI response completes
@@ -489,7 +496,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
               {/* Enhanced Composer - Fixed at bottom */}
               <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
                 <div className="w-full overflow-hidden">
-                  <Composer onSend={handleSendMessage} disabled={isLoading} />
+                  <Composer onSend={handleSendMessage} disabled={isLoading || isProcessingMessage} />
                 </div>
               </div>
     </div>

@@ -65,21 +65,8 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
           try {
             console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
             
-            // Try to ensure user exists in backend first
-            if (user) {
-              try {
-                await sessionApi.createUser({
-                  user_id: user.user_id, // Pass the Supabase auth user ID
-                  email: user.email,
-                  display_name: user.display_name,
-                  avatar_url: user.avatar_url
-                })
-                console.log('✅ User synced to backend during session fetch')
-              } catch (error) {
-                console.warn('⚠️ Failed to sync user during session fetch:', error)
-                // Continue anyway - user might already exist
-              }
-            }
+            // User creation is handled by the backend when needed
+            // No need to create user here as it can interfere with session management
             
             const result = await sessionApi.getSessions(20)
             console.log('✅ Sessions fetched:', result)
