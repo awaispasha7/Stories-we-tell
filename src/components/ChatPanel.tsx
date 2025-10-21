@@ -230,6 +230,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       console.log(`[DEBUG] ChatPanel props - _sessionId: ${_sessionId}, _projectId: ${_projectId}`)
       console.log(`[DEBUG] Local state - currentSessionId: ${currentSessionId}, currentProjectId: ${currentProjectId}`)
       console.log(`[DEBUG] Final values - sessionId: ${sessionId}, projectId: ${projectId}`)
+      console.log(`[DEBUG] Message type: ${text.length > 50 ? 'long text' : 'short text/audio'}`)
       
       console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
