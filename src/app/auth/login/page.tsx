@@ -90,6 +90,16 @@ export default function LoginPage() {
   const handleSocialLogin = (provider: string) => {
     console.log(`Connecting to ${provider}...`)
     // Add your social login logic here
+    if (provider === 'Facebook') {
+      // TODO: Implement Facebook OAuth
+      console.log('Facebook login not yet implemented')
+    } else if (provider === 'X') {
+      // TODO: Implement X (Twitter) OAuth
+      console.log('X login not yet implemented')
+    } else if (provider === 'Google') {
+      // TODO: Implement Google OAuth
+      console.log('Google login not yet implemented')
+    }
   }
 
   const handleForgotPassword = (e: React.MouseEvent) => {
@@ -226,19 +236,33 @@ export default function LoginPage() {
               <div className="auth-social-login">
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('Google')}
-                  className="auth-social-btn"
+                  onClick={() => handleSocialLogin('Facebook')}
+                  className="auth-social-btn auth-social-btn-disabled"
+                  disabled
+                  title="Coming soon"
                 >
-                  <span className="auth-social-icon auth-google-icon"></span>
-                  Google
+                  <span className="auth-social-icon auth-facebook-icon"></span>
+                  Facebook
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('GitHub')}
-                  className="auth-social-btn"
+                  onClick={() => handleSocialLogin('X')}
+                  className="auth-social-btn auth-social-btn-disabled"
+                  disabled
+                  title="Coming soon"
                 >
-                  <span className="auth-social-icon auth-github-icon"></span>
-                  GitHub
+                  <span className="auth-social-icon auth-x-icon"></span>
+                  X
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSocialLogin('Google')}
+                  className="auth-social-btn auth-social-btn-disabled"
+                  disabled
+                  title="Coming soon"
+                >
+                  <span className="auth-social-icon auth-google-icon"></span>
+                  Google
                 </button>
               </div>
 
