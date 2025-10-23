@@ -17,9 +17,13 @@ interface ChatPanelProps {
 export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const { user, isAuthenticated } = useAuth()
   const { 
+    sessionId: hookSessionId, 
+    projectId: hookProjectId,
+    isLoading: sessionLoading,
     isSessionExpired, 
     getSessionInfo 
-  } = useSession()
+  } = useSession(_sessionId, _projectId)
+  
   
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
@@ -53,12 +57,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
-      console.log('🔄 ChatPanel loadSessionMessages called:', { 
-        _sessionId, 
-        isAuthenticated, 
-        userId: user?.user_id 
-      })
-      
       // Only process if _sessionId prop has actually changed
       const currentPropSessionId = _sessionId || undefined
       if (currentPropSessionId === prevSessionIdRef.current) {
@@ -71,7 +69,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       
       // If _sessionId is empty string, reset to initial state (new chat)
       if (_sessionId === '') {
-        console.log('🆕 Resetting to new chat state')
         setMessages([
           {
             role: 'assistant',
@@ -90,26 +87,17 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       
       // For authenticated users with no session ID, create one immediately
       if (isAuthenticated && user && !_sessionId) {
-        console.log('🆕 Creating new session ID for authenticated user')
         const newSessionId = crypto.randomUUID()
         setCurrentSessionId(newSessionId)
         sessionIdRef.current = newSessionId
-        console.log('🆕 Generated session ID:', newSessionId)
-        console.log('🆕 sessionIdRef.current set to:', sessionIdRef.current)
       }
 
-      // If no session ID or not authenticated, don't load messages
-      if (!_sessionId || !isAuthenticated || !user?.user_id) {
-        console.log('❌ Skipping message load:', { 
-          hasSessionId: !!_sessionId, 
-          isAuthenticated, 
-          hasUserId: !!user?.user_id 
-        })
+      // If no session ID, don't load messages
+      if (!_sessionId) {
         return
       }
 
       try {
-        console.log('📥 Loading messages for session:', _sessionId)
         const { sessionApi } = await import('@/lib/api')
         const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as Array<{
           role: string;
@@ -117,26 +105,52 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
           created_at: string;
         }>
         
-        console.log('📨 Messages received:', messages)
-        
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map(msg => ({
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
             timestamp: msg.created_at
           }))
-          console.log('✅ Setting formatted messages:', formattedMessages)
           setMessages(formattedMessages)
-        } else {
-          console.log('⚠️ No messages found for session')
         }
       } catch (error) {
-        console.error('❌ Failed to load session messages:', error)
+        console.error('Failed to load session messages:', error)
+        
+        // If it's a 403 Forbidden error, the session belongs to a different user
+        // Clear the session from localStorage and state
+        if (error && typeof error === 'object' && 'response' in error && 
+            error.response && typeof error.response === 'object' && 'status' in error.response &&
+            error.response.status === 403) {
+          console.log('🚨 Session access denied - clearing invalid session')
+          
+          // Clear session from localStorage
+          try {
+            localStorage.removeItem('stories_we_tell_session')
+          } catch (e) {
+            console.error('Failed to clear session from localStorage:', e)
+          }
+          
+          // Clear session state
+          setCurrentSessionId('')
+          sessionIdRef.current = ''
+          
+          // Clear messages
+          setMessages([])
+        }
       }
     }
 
     loadSessionMessages()
   }, [_sessionId, isAuthenticated, user?.user_id])
+
+  // Sync hook session values with local state
+  useEffect(() => {
+    if (hookSessionId && hookProjectId) {
+      setCurrentSessionId(hookSessionId)
+      setCurrentProjectId(hookProjectId)
+      sessionIdRef.current = hookSessionId
+    }
+  }, [hookSessionId, hookProjectId])
 
   const getDynamicTypingMessage = (userMessage: string) => {
     const message = userMessage.toLowerCase()
@@ -191,11 +205,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   }, [messages])
 
   const handleSendMessage = async (text: string) => {
-    console.log(`[DEBUG] handleSendMessage called with text: "${text}"`)
-    console.log(`[DEBUG] isLoading: ${isLoading}, isAuthenticated: ${isAuthenticated}, isSessionExpired: ${isSessionExpired}`)
-    
     if (!text.trim() || isLoading) {
-      console.log(`[DEBUG] Early return - text empty or loading`)
       return
     }
     
@@ -203,7 +213,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
 
     // Check if session is expired for anonymous users
     if (!isAuthenticated && isSessionExpired) {
-      console.log(`[DEBUG] Session expired, showing sign-in prompt`)
       setShowSignInPrompt(true)
       return
     }
@@ -216,7 +225,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
     
     // Set dynamic typing message
     const dynamicMessage = getDynamicTypingMessage(text)
-    // console.log(`🎭 Selected typing message: "${dynamicMessage}"`)
     setTypingMessage(dynamicMessage)
 
     // Add empty assistant message that we'll stream into
@@ -228,63 +236,49 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
-      // For authenticated users, use local state (which tracks session across messages)
-      // For anonymous users, use session info from useSession hook
+      // Use session info from useSession hook for both authenticated and anonymous users
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, use ref for immediate access (bypasses React state async updates)
-        sessionId = sessionIdRef.current || currentSessionId
-        projectId = currentProjectId
-        console.log(`[DEBUG] Using sessionId from ref: ${sessionIdRef.current}, state: ${currentSessionId}`)
+        // For authenticated users, use hook values first, then fallback to local state, then localStorage
+        sessionId = hookSessionId || sessionIdRef.current || currentSessionId || localStorage.getItem('anonymous_session_id')
+        projectId = hookProjectId || currentProjectId || localStorage.getItem('anonymous_project_id')
       } else {
         // For anonymous users, use session info from useSession hook
         const sessionInfo = getSessionInfo()
         sessionId = sessionInfo.sessionId
         projectId = sessionInfo.projectId
       }
+      // Get headers for the request
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
       
-      console.log(`[DEBUG] Session logic - isAuthenticated: ${isAuthenticated}`)
-      console.log(`[DEBUG] ChatPanel props - _sessionId: ${_sessionId}, _projectId: ${_projectId}`)
-      console.log(`[DEBUG] Local state - currentSessionId: ${currentSessionId}, currentProjectId: ${currentProjectId}`)
-      console.log(`[DEBUG] Final values - sessionId: ${sessionId}, projectId: ${projectId}`)
-      console.log(`[DEBUG] Message type: ${text.length > 50 ? 'long text' : 'short text/audio'}`)
-      console.log(`[DEBUG] Message content preview: "${text.substring(0, 50)}..."`)
-      console.log(`[DEBUG] Current timestamp: ${new Date().toISOString()}`)
-      console.log(`[DEBUG] ===== SENDING MESSAGE WITH SESSION ID: ${sessionId} =====`)
+      // Add session headers
+      if (sessionId) {
+        headers['X-Session-ID'] = sessionId
+      }
+      if (projectId) {
+        headers['X-Project-ID'] = projectId
+      }
+      if (user?.user_id) {
+        headers['X-User-ID'] = user.user_id
+      }
       
-      console.log(`[DEBUG] Making API call to /api/chat`)
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add session headers for anonymous users only
-          ...(sessionId && !isAuthenticated && { 'X-Session-ID': sessionId }),
-          ...(user?.user_id && { 'X-User-ID': user.user_id })
-        },
+        headers,
         body: JSON.stringify({ 
           text,
           session_id: sessionId,
-          project_id: projectId,
-          user_id: user?.user_id || undefined
+          project_id: projectId
         }),
         signal: controller.signal,
       })
       
-      console.log(`[DEBUG] API call body:`, {
-        text,
-        session_id: sessionId,
-        project_id: projectId,
-        user_id: user?.user_id || undefined
-      })
-      
       clearTimeout(timeoutId)
-
-      // console.log('🔍 Response status:', response.status)
-      // console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ Response error:', errorText)
         throw new Error(`Failed to get response from server: ${response.status} - ${errorText}`)
       }
 
@@ -295,22 +289,16 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
 
       const decoder = new TextDecoder()
       let assistantContent = ''
-      // let chunkCount = 0
       let streamComplete = false
-
-      // console.log('🟢 Starting to read stream...')
 
       while (!streamComplete) {
         const { done, value } = await reader.read()
         
         if (done) {
-          // console.log('🔚 Stream reading completed')
           break
         }
 
-        // chunkCount++
         const chunk = decoder.decode(value)
-        // console.log(`📥 Received chunk:`, chunk)
         
         const lines = chunk.split('\n')
 
@@ -318,11 +306,9 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
-              // console.log('📦 Parsed data:', data)
               
               if (data.type === 'content') {
                 assistantContent += data.content
-                // console.log(`📝 Content so far: "${assistantContent}"`)
                 
                 // Update the last message (assistant message) with new content
                 setMessages(prev => {
@@ -336,30 +322,29 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                 
                 // Check if this is the final chunk
                 if (data.done) {
-                  // console.log('✅ Stream completed with done flag')
                   streamComplete = true
                   break
                 }
               } else if (data.type === 'metadata') {
                 // Handle metadata chunk - store session_id and project_id for next message
-                console.log('📋 Received metadata:', data.metadata)
-                console.log('📋 Metadata received at:', new Date().toISOString())
                 if (data.metadata?.session_id) {
-                  console.log('💾 Storing session_id from metadata:', data.metadata.session_id)
-                  console.log('🔄 Previous currentSessionId was:', currentSessionId)
-                  console.log('🔄 Previous sessionIdRef was:', sessionIdRef.current)
-                  
                   // Update both state and ref immediately
                   setCurrentSessionId(data.metadata.session_id)
                   sessionIdRef.current = data.metadata.session_id
                   
-                  // Immediately update the session ID for any pending messages
-                  console.log('🔄 Session ID updated, ready for next message')
-                  console.log('🔄 New session ID set at:', new Date().toISOString())
-                  console.log('🔄 sessionIdRef.current is now:', sessionIdRef.current)
+                  // Persist session to localStorage
+                  try {
+                    localStorage.setItem('stories_we_tell_session', JSON.stringify({
+                      sessionId: data.metadata.session_id,
+                      projectId: data.metadata?.project_id,
+                      isAuthenticated: isAuthenticated
+                    }))
+                    console.log('💾 Session persisted to localStorage:', data.metadata.session_id)
+                  } catch (error) {
+                    console.error('Failed to persist session:', error)
+                  }
                 }
                 if (data.metadata?.project_id) {
-                  console.log('💾 Storing project_id from metadata:', data.metadata.project_id)
                   setCurrentProjectId(data.metadata.project_id)
                 }
                 
@@ -373,13 +358,11 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                 }))
               }
             } catch (e) {
-              console.error('❌ Error parsing streaming data:', e, 'Line:', line)
+              // Error parsing streaming data
             }
           }
         }
       }
-      
-      // console.log(`🎯 Final assistant content: "${assistantContent}"`)
       
       // Check if we received any content - if not, show error message
       if (assistantContent.trim() === '') {
@@ -396,7 +379,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       // Ensure loading state is cleared
       setIsLoading(false)
     } catch (error) {
-      console.error('Chat error:', error)
       const errorMessage: BubbleProps = {
         role: 'assistant',
         content: "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."
@@ -473,7 +455,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                   <button
                     onClick={() => {
                       // TODO: Navigate to sign-in page
-                      console.log('Navigate to sign-in')
                     }}
                     className="px-3 py-1 text-xs bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors"
                   >
@@ -521,7 +502,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
               {/* Enhanced Composer - Fixed at bottom */}
               <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
                 <div className="w-full overflow-hidden">
-                  <Composer onSend={handleSendMessage} disabled={isLoading || isProcessingMessage} />
+                  <Composer onSend={handleSendMessage} disabled={isLoading || isProcessingMessage} sessionId={hookSessionId || undefined} projectId={hookProjectId || undefined} />
                 </div>
               </div>
     </div>

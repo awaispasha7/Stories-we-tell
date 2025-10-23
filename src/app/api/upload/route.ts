@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`📤 Received ${files.length} file(s) for upload`)
 
-    // Get the backend URL from environment variables
-    const backendUrl = process.env.BACKEND_URL || 'https://stories-we-tell-backend.vercel.app'
+    // Get the backend URL from environment variables (use local for development)
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
     // Forward files to backend
     const backendFormData = new FormData()
@@ -23,11 +23,24 @@ export async function POST(req: NextRequest) {
       backendFormData.append('files', file)
     })
 
-    console.log(`🔄 Forwarding to backend: ${backendUrl}/upload`)
+    console.log(`🔄 Forwarding to backend: ${backendUrl}/api/v1/upload`)
 
-    const response = await fetch(`${backendUrl}/upload`, {
+    // Forward session headers from the request
+    const headers: Record<string, string> = {}
+    const sessionId = req.headers.get('X-Session-ID')
+    const projectId = req.headers.get('X-Project-ID')
+    const userId = req.headers.get('X-User-ID')
+    
+    if (sessionId) headers['X-Session-ID'] = sessionId
+    if (projectId) headers['X-Project-ID'] = projectId
+    if (userId) headers['X-User-ID'] = userId
+    
+    console.log('🔄 Forwarding headers:', headers)
+
+    const response = await fetch(`${backendUrl}/api/v1/upload`, {
       method: 'POST',
       body: backendFormData,
+      headers,
     })
 
     if (!response.ok) {

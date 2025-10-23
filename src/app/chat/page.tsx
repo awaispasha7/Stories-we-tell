@@ -23,9 +23,46 @@ export default function ChatPage() {
 
   useEffect(() => { init() }, [init])
 
+  // Restore session from localStorage on page load
+  useEffect(() => {
+    const restoreSession = () => {
+      try {
+        const stored = localStorage.getItem('stories_we_tell_session')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.sessionId) {
+            // Check if the session belongs to the current user
+            const currentUser = localStorage.getItem('user')
+            if (currentUser) {
+              const userData = JSON.parse(currentUser)
+              const currentUserId = userData.user_id
+              const sessionUserId = parsed.userId
+              
+              // If user IDs don't match, clear the invalid session
+              if (sessionUserId && sessionUserId !== currentUserId) {
+                console.log('🚨 Session belongs to different user, clearing invalid session')
+                localStorage.removeItem('stories_we_tell_session')
+                return
+              }
+            }
+            
+            console.log('🔄 Restoring session from localStorage:', parsed.sessionId)
+            setCurrentSessionId(parsed.sessionId)
+            if (parsed.projectId) {
+              setCurrentProjectId(parsed.projectId)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to restore session from localStorage:', error)
+      }
+    }
+
+    restoreSession()
+  }, [])
+
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
-    console.log('🔄 Session selected:', sessionId, 'Project:', projectId)
     setCurrentSessionId(sessionId)
     setCurrentProjectId(projectId || '')
   }

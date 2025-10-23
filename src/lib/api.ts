@@ -1,29 +1,47 @@
 import ky from 'ky'
 
-// Get user ID from localStorage for API calls
+// Get user ID and session info from localStorage for API calls
 const getUserHeaders = () => {
   if (typeof window === 'undefined') return {}
   
   try {
     const user = localStorage.getItem('user')
+    const session = localStorage.getItem('stories_we_tell_session')
+    
+    console.log('🔍 getUserHeaders - user from localStorage:', user)
+    console.log('🔍 getUserHeaders - session from localStorage:', session)
     
     const headers: Record<string, string> = {}
     
     if (user) {
       const userData = JSON.parse(user)
       headers['X-User-ID'] = userData.user_id
+      console.log('🔍 getUserHeaders - setting X-User-ID:', userData.user_id)
     }
     
+    if (session) {
+      const sessionData = JSON.parse(session)
+      if (sessionData.sessionId) {
+        headers['X-Session-ID'] = sessionData.sessionId
+        console.log('🔍 getUserHeaders - setting X-Session-ID:', sessionData.sessionId)
+      }
+      if (sessionData.projectId) {
+        headers['X-Project-ID'] = sessionData.projectId
+        console.log('🔍 getUserHeaders - setting X-Project-ID:', sessionData.projectId)
+      }
+    }
+    
+    console.log('🔍 getUserHeaders - final headers:', headers)
     return headers
   } catch (error) {
-    console.error('Error getting user headers:', error)
+    console.error('❌ Error getting user headers:', error)
   }
   
   return {}
 }
 
 export const api = ky.create({
-  prefixUrl: process.env.NEXT_PUBLIC_API_URL || 'https://stories-we-tell-backend.vercel.app',
+  prefixUrl: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
   timeout: 30000,
   retry: 2,
   hooks: {
@@ -31,6 +49,7 @@ export const api = ky.create({
       (request) => {
         // Add user ID header to all requests
         const headers = getUserHeaders()
+        console.log('🔍 beforeRequest hook - setting headers:', headers)
         Object.entries(headers).forEach(([key, value]) => {
           request.headers.set(key, value)
         })
@@ -50,22 +69,28 @@ export const api = ky.create({
 // API endpoints for the new session-based system
 export const sessionApi = {
   // Chat with session support
-  chat: (text: string, sessionId?: string, projectId?: string) => 
-    api.post('api/v1/chat', { json: { text, session_id: sessionId, project_id: projectId } }),
+  chat: (text: string, sessionId?: string, projectId?: string) => {
+    const headers = getUserHeaders()
+    return api.post('api/v1/chat', { 
+      json: { text, session_id: sessionId, project_id: projectId },
+      headers
+    })
+  },
   
   // Get user sessions
   getSessions: async (limit = 10) => {
     try {
-      const headers = getUserHeaders()
-      return await api.get('api/v1/sessions', { 
-        searchParams: { limit },
-        headers 
+      console.log('🔍 getSessions - calling API (headers will be set by beforeRequest hook)')
+      const result = await api.get('api/v1/sessions', { 
+        searchParams: { limit }
       }).json()
+      console.log('🔍 getSessions - result:', result)
+      return result
         } catch (error: unknown) {
+          console.error('❌ getSessions error:', error)
           if (error && typeof error === 'object' && 'response' in error && 
               error.response && typeof error.response === 'object' && 'status' in error.response &&
               error.response.status === 404) {
-            console.warn('Sessions API not available, returning empty array')
             return []
           }
           throw error
@@ -84,7 +109,6 @@ export const sessionApi = {
           if (error && typeof error === 'object' && 'response' in error && 
               error.response && typeof error.response === 'object' && 'status' in error.response &&
               error.response.status === 404) {
-            console.warn('Session messages API not available, returning empty array')
             return []
           }
           throw error
@@ -103,7 +127,20 @@ export const sessionApi = {
           if (error && typeof error === 'object' && 'response' in error && 
               error.response && typeof error.response === 'object' && 'status' in error.response &&
               error.response.status === 404) {
-            console.warn('Delete session API not available')
+            return { success: false, message: 'API not available' }
+          }
+          throw error
+        }
+  },
+
+  // Delete all sessions
+  deleteAllSessions: async () => {
+    try {
+      return await api.delete('api/v1/sessions').json()
+        } catch (error: unknown) {
+          if (error && typeof error === 'object' && 'response' in error && 
+              error.response && typeof error.response === 'object' && 'status' in error.response &&
+              error.response.status === 404) {
             return { success: false, message: 'API not available' }
           }
           throw error
@@ -119,7 +156,6 @@ export const sessionApi = {
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 409) {
         // User already exists, that's fine
-        console.log('User already exists in backend')
         return { message: 'User already exists', user: userData }
       }
       throw error
@@ -132,21 +168,27 @@ export const sessionApi = {
     return api.get('api/v1/users/me', { headers }).json()
   },
   
-  // Anonymous session management
-  createAnonymousSession: () => 
-    api.post('api/v1/anonymous-session').json(),
-  
-  getAnonymousSession: (sessionId: string) => 
-    api.get(`api/v1/anonymous-session/${sessionId}`).json(),
+  // Simplified session management
+  getOrCreateSession: (sessionId?: string, projectId?: string) => 
+    api.post('api/v1/session', {
+      json: { 
+        session_id: sessionId,
+        project_id: projectId 
+      }
+    }).json(),
   
   // Migrate anonymous session to authenticated user
-  migrateAnonymousSession: (anonymousSessionId: string, userId: string) =>
-    api.post('api/v1/migrate-anonymous-session', {
+  migrateSession: (anonymousUserId: string, authenticatedUserId: string) =>
+    api.post('api/v1/migrate-session', {
       json: { 
-        anonymous_session_id: anonymousSessionId,
-        user_id: userId 
+        anonymous_user_id: anonymousUserId,
+        authenticated_user_id: authenticatedUserId 
       }
-    }).json()
+    }).json(),
+  
+  // Cleanup expired sessions
+  cleanupExpiredSessions: () =>
+    api.post('api/v1/cleanup-expired').json()
 }
 
 // Authentication API

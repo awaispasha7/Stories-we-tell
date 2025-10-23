@@ -65,6 +65,16 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
           try {
             console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
             
+            // Wait for user to be loaded before making API call
+            if (!user?.user_id) {
+              console.log('⏳ Waiting for user to be loaded...')
+              // Add a small delay to ensure user data is fully loaded
+              await new Promise(resolve => setTimeout(resolve, 100))
+              if (!user?.user_id) {
+                throw new Error('User not loaded yet')
+              }
+            }
+            
             // User creation is handled by the backend when needed
             // No need to create user here as it can interfere with session management
             
@@ -72,7 +82,8 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             console.log('✅ Sessions fetched:', result)
             
             // Show info toast if no sessions found
-            if (Array.isArray(result) && result.length === 0) {
+            const sessions = (result as any)?.sessions || []
+            if (sessions.length === 0) {
               toast.info(
                 'No Chat History',
                 'You don\'t have any previous chat sessions yet.',
@@ -82,7 +93,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             
             // Fetch first message and message count for each session (optimized)
             const sessionsWithFirstMessage = await Promise.all(
-              (result as Session[]).map(async (session) => {
+              sessions.map(async (session: Session) => {
                 try {
                   // Get messages with a single call - fetch 10 messages to get both first message and count
                   const messages = await sessionApi.getSessionMessages(session.session_id, 10, 0) as ChatMessage[]
@@ -119,7 +130,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         refetchOnWindowFocus: false, // Don't refetch on window focus
         refetchOnMount: true, // Only fetch on component mount
         staleTime: Infinity, // Never consider data stale
-        enabled: isAuthenticated, // Only fetch if user is authenticated
+        enabled: isAuthenticated && !!user?.user_id, // Only fetch if user is authenticated and loaded
         retry: false, // Don't retry on error to avoid repeated calls
       })
 
@@ -134,6 +145,27 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
       toast.error(
         'Delete Failed',
         'An unexpected error occurred while deleting the session.',
+        5000
+      )
+    }
+  })
+
+  // Delete all sessions mutation
+  const deleteAllSessionsMutation = useMutation({
+    mutationFn: () => sessionApi.deleteAllSessions(),
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      toast.success(
+        'All Sessions Deleted',
+        `Successfully deleted ${result.deleted_count || 0} chat sessions.`,
+        4000
+      )
+    },
+    onError: (error) => {
+      console.error('Delete all sessions mutation error:', error)
+      toast.error(
+        'Delete Failed',
+        'An unexpected error occurred while deleting all sessions.',
         5000
       )
     }
@@ -171,6 +203,41 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         console.log('Session deletion cancelled')
       },
       'Delete Forever',
+      'Cancel'
+    )
+  }
+
+  const handleDeleteAllSessions = async () => {
+    const sessionCount = sessions.length
+    if (sessionCount === 0) {
+      toast.info(
+        'No Sessions',
+        'There are no chat sessions to delete.',
+        3000
+      )
+      return
+    }
+
+    toast.confirm(
+      'DANGER ZONE!',
+      `You are about to PERMANENTLY DELETE ALL ${sessionCount} chat sessions!\n\nThis action CANNOT be undone!\nAll messages, story progress, and conversations will be lost forever!\n\nThis is a destructive action that will clear your entire chat history!\n\nAre you absolutely certain you want to proceed?`,
+      async () => {
+        try {
+          await deleteAllSessionsMutation.mutateAsync()
+          
+          // Clear current session if it exists
+          if (currentSessionId) {
+            onSessionSelect('')
+          }
+        } catch (error) {
+          console.error('Error deleting all sessions:', error)
+        }
+      },
+      () => {
+        // Cancel action - no need to do anything
+        console.log('Delete all sessions cancelled')
+      },
+      'Delete All',
       'Cancel'
     )
   }
@@ -249,6 +316,18 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             Previous Chats
           </h2>
           <div className="flex items-center gap-2">
+            {/* Delete All Sessions Button */}
+            {isAuthenticated && sessions.length > 0 && (
+              <button
+                onClick={handleDeleteAllSessions}
+                disabled={deleteAllSessionsMutation.isPending}
+                className="p-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                title="Delete All Chats"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            
             {/* Add New Chat Button */}
             {isAuthenticated && (
               <button

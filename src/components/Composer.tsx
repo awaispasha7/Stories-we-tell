@@ -11,9 +11,11 @@ import { cn } from '@/lib/utils'
 interface ComposerProps {
   onSend: (message: string) => void
   disabled?: boolean
+  sessionId?: string
+  projectId?: string
 }
 
-export function Composer({ onSend, disabled = false }: ComposerProps) {
+export function Composer({ onSend, disabled = false, sessionId, projectId }: ComposerProps) {
   const [text, setText] = useState('')
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
@@ -54,6 +56,7 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
 
   const handleAudioData = (audioBlob: Blob, transcript: string) => {
     console.log('[AUDIO] handleAudioData called with transcript:', transcript)
+    console.log('[AUDIO] Current showAudioRecorder state:', showAudioRecorder)
     setShowAudioRecorder(false)
     // Auto-send the transcribed text and clear the input
     if (transcript.trim()) {
@@ -74,13 +77,16 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   return (
     <div className="p-2 sm:p-3">
         <div className={`flex items-center ${colors.glassBackground} backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`}>
-          <UploadDropzone />
+          <UploadDropzone sessionId={sessionId} projectId={projectId} />
           <div className="relative">
             {!showAudioRecorder ? (
               // Initial state - just the mic button
               <button
                 type="button"
-                onClick={() => setShowAudioRecorder(true)}
+                onClick={() => {
+                  console.log('[AUDIO] Starting audio recording, current showAudioRecorder:', showAudioRecorder)
+                  setShowAudioRecorder(true)
+                }}
                 disabled={disabled}
                 className={cn(
                   "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm flex-shrink-0 border-gray-400 bg-white hover:border-blue-500 hover:bg-gray-50",

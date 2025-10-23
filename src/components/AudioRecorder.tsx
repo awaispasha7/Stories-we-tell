@@ -171,6 +171,7 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
 
   console.log('🎤 AudioRecorder rendering - state:', state, 'time:', time)
+  console.log('🎤 AudioRecorder props - onAudioData:', typeof onAudioData, 'onClose:', typeof onClose)
 
   return (
     <div
