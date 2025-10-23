@@ -65,13 +65,13 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
     }
   }
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
-  }, [text])
+  // Auto-resize textarea - DISABLED to maintain fixed height
+  // useEffect(() => {
+  //   if (textareaRef.current) {
+  //     textareaRef.current.style.height = 'auto'
+  //     textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+  //   }
+  // }, [text])
 
   return (
     <div className="p-2 sm:p-3">
@@ -153,9 +153,12 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
               lineHeight: '1.4',
               height: isLargeScreen ? '56px' : '40px', // sm:h-[56px] equivalent
               minHeight: isLargeScreen ? '56px' : '40px',
+              maxHeight: isLargeScreen ? '56px' : '40px',
               paddingTop: isLargeScreen ? '16px' : '12px',
               paddingBottom: isLargeScreen ? '16px' : '12px',
               boxSizing: 'border-box',
+              overflow: 'hidden',
+              resize: 'none',
             }}
             disabled={disabled}
           />
