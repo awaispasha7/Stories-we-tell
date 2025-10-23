@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { Paperclip, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 // import { Button } from '@/components/ui/button' // Removed - using custom styling
 import { useTheme } from '@/lib/theme-context'
@@ -18,7 +18,19 @@ export function UploadDropzone() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isLargeScreen, setIsLargeScreen] = useState(false)
   const { resolvedTheme } = useTheme()
+
+  // Check screen size for responsive height
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 640) // sm breakpoint
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -103,14 +115,18 @@ export function UploadDropzone() {
       >
         <button
           className={cn(
-            "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
+            "hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
             isDragging 
               ? "border-blue-500 bg-blue-50/80 dark:bg-blue-900/20" 
               : resolvedTheme === 'light'
                 ? "border-gray-300 bg-white/50 hover:border-blue-400 hover:bg-white/80"
-                : "border-slate-500 bg-slate-700/50 hover:border-sky-400 hover:bg-slate-600/80",
+                : "border-slate-500 bg-[rgb(83,93,108)]/50 hover:border-sky-400 hover:bg-[rgb(83,93,108)]/80",
             uploading && "opacity-50 cursor-not-allowed"
           )}
+          style={{
+            width: isLargeScreen ? '56px' : '40px',
+            height: isLargeScreen ? '56px' : '40px',
+          }}
           onClick={() => !uploading && document.getElementById('file-upload')?.click()}
           disabled={uploading}
         >
