@@ -176,24 +176,24 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
     <div
       className={`flex items-center gap-3 px-3 py-2 rounded-xl border shadow-lg backdrop-blur-sm ${colors.glassBackground} ${colors.glassBorder}`}
       style={{ 
-        backgroundColor: 'white',
-        border: '2px solid #e5e7eb',
+        backgroundColor: resolvedTheme === 'light' ? 'white' : 'rgb(83, 93, 108)',
+        border: resolvedTheme === 'light' ? '2px solid #e5e7eb' : '2px solid #64748b',
         minWidth: '200px'
       }}
     >
       {/* Timer and State */}
       <div className="flex flex-col items-center min-w-[4rem]">
-        <div className="text-xs font-mono text-gray-800 dark:text-gray-100">
+        <div className={`text-xs font-mono ${resolvedTheme === 'light' ? 'text-gray-800' : 'text-gray-100'}`}>
           {fmt(time)}
         </div>
         <div className={`text-xs font-medium flex items-center gap-1 ${
-          state === 'recording' && 'text-red-600 dark:text-red-400'
+          state === 'recording' && (resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400')
         } ${
-          state === 'paused' && 'text-yellow-600 dark:text-yellow-400'
+          state === 'paused' && (resolvedTheme === 'light' ? 'text-yellow-600' : 'text-yellow-400')
         } ${
-          state === 'accepting' && 'text-green-600 dark:text-green-400'
+          state === 'accepting' && (resolvedTheme === 'light' ? 'text-green-600' : 'text-green-400')
         } ${
-          state === 'transcribing' && 'text-blue-600 dark:text-blue-400'
+          state === 'transcribing' && (resolvedTheme === 'light' ? 'text-blue-600' : 'text-blue-400')
         }`}>
           {state === 'recording' && (
             <>

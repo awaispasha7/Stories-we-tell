@@ -167,7 +167,7 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
             onClick={handleSend}
             disabled={!text.trim() || disabled}
               className={cn(
-                "send-button-shine rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative overflow-visible",
+                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative",
                 !text.trim() || disabled
                   ? resolvedTheme === 'light' 
                     ? "bg-white cursor-not-allowed shadow-sky-200/50"
