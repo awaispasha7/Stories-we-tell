@@ -103,17 +103,22 @@ class SessionSyncManager {
       // Try to fetch session messages (this validates the session exists and user has access)
       // We don't care if the session is empty - we just want to know if it exists and is accessible
       try {
+        console.log(`🔍 [SYNC] Attempting to validate session: ${session.sessionId}`)
         await sessionApi.getSessionMessages(session.sessionId, 1, 0)
+        console.log(`✅ [SYNC] Session validation successful: ${session.sessionId}`)
         return {
           isValid: true,
           session
         }
       } catch (error) {
+        console.log(`❌ [SYNC] Session validation failed for ${session.sessionId}:`, error)
         // If we get a 404 or 403, the session doesn't exist or user doesn't have access
         if (error && typeof error === 'object' && 'response' in error &&
             error.response && typeof error.response === 'object' && 'status' in error.response) {
           const status = error.response.status
+          console.log(`🔍 [SYNC] Error status: ${status}`)
           if (status === 403 || status === 404) {
+            console.log(`❌ [SYNC] Session not found (${status}): ${session.sessionId}`)
             return {
               isValid: false,
               reason: `session_not_found_${status}`,
@@ -122,15 +127,18 @@ class SessionSyncManager {
           }
         }
         // For other errors, assume session is valid (network issues, etc.)
+        console.log(`⚠️ [SYNC] Assuming session is valid due to network error: ${session.sessionId}`)
         return {
           isValid: true,
           session
         }
       }
     } catch (error: unknown) {
+      console.log(`❌ [SYNC] Outer catch block triggered for ${session.sessionId}:`, error)
       if (error && typeof error === 'object' && 'response' in error &&
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 404) {
+        console.log(`❌ [SYNC] Outer catch: Session not found (404): ${session.sessionId}`)
         return {
           isValid: false,
           reason: 'not_found',
@@ -139,12 +147,14 @@ class SessionSyncManager {
       } else if (error && typeof error === 'object' && 'response' in error &&
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 403) {
+        console.log(`❌ [SYNC] Outer catch: Access denied (403): ${session.sessionId}`)
         return {
           isValid: false,
           reason: 'access_denied',
           session
         }
       } else {
+        console.log(`❌ [SYNC] Outer catch: Corrupted session: ${session.sessionId}`)
         return {
           isValid: false,
           reason: 'corrupted',
