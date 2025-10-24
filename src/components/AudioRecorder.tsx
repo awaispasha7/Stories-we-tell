@@ -7,9 +7,11 @@ import { useTheme, getThemeColors } from '@/lib/theme-context'
 interface AudioRecorderProps {
   onAudioData: (audioBlob: Blob, transcript: string) => void
   onClose: () => void
+  sessionId?: string
+  projectId?: string
 }
 
-export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
+export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: AudioRecorderProps) {
   const [state, setState] = useState<'recording' | 'paused' | 'accepting' | 'transcribing'>('recording')
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -27,9 +29,44 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
 
   /** --- sound helpers --- */
   const playSound = (file: string) => {
-    const s = new Audio(file)
-    s.volume = 0.6
-    s.play().catch(() => {})
+    try {
+      const s = new Audio(file)
+      s.volume = 0.6
+      s.play().catch((error) => {
+        console.warn(`Could not play sound ${file}:`, error)
+        // Only use system beep for start/stop sounds, not for send
+        if (file.includes('start') || file.includes('stop')) {
+          playSystemBeep()
+        }
+      })
+    } catch (error) {
+      console.warn(`Could not create audio for ${file}:`, error)
+      // Only use system beep for start/stop sounds, not for send
+      if (file.includes('start') || file.includes('stop')) {
+        playSystemBeep()
+      }
+    }
+  }
+
+  const playSystemBeep = () => {
+    // Fallback: create a simple beep using Web Audio API
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+      
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+      
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.1)
+    } catch (error) {
+      console.warn('Could not play system beep:', error)
+    }
   }
 
   /** --- timer --- */
@@ -122,7 +159,11 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
 
   const handleSend = async () => {
     if (!audioBlob) return
-    playSound('/sounds/send.mp3')
+    console.log('🎤 [AUDIO] handleSend called - starting transcription')
+    console.log('🎤 [AUDIO] Current sessionId:', sessionId, 'projectId:', projectId)
+    
+    // Play send sound - use system beep since send.mp3 doesn't exist
+    playSystemBeep()
     
     // Show transcription feedback
     setState('transcribing')
@@ -132,6 +173,7 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
       const formData = new FormData()
       formData.append('audio_file', audioBlob, 'recording.webm')
       
+      console.log('🎤 [AUDIO] Sending to /api/transcribe')
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -139,15 +181,18 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('🎤 [AUDIO] Transcription successful:', data.transcript?.substring(0, 50) + '...')
         onAudioData(audioBlob, data.transcript || 'Audio transcription failed')
       } else {
         const errorData = await response.json()
+        console.error('🎤 [AUDIO] Transcription failed:', errorData)
         onAudioData(audioBlob, `Transcription failed: ${errorData.detail || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Transcription error:', error)
+      console.error('🎤 [AUDIO] Transcription error:', error)
       onAudioData(audioBlob, `Error transcribing audio: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
+      console.log('🎤 [AUDIO] Cleaning up and closing')
       cleanup()
       onClose()
     }
@@ -170,7 +215,6 @@ export function AudioRecorder({ onAudioData, onClose }: AudioRecorderProps) {
   const fmt = (t: number) =>
     `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
 
-  console.log('🎤 AudioRecorder rendering - state:', state, 'time:', time)
 
   return (
     <div

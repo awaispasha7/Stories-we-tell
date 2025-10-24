@@ -18,6 +18,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="grammarly-disable-extension" content="true" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider>
           <QueryProvider>

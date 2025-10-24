@@ -8,7 +8,6 @@ interface ChatStore {
 export const useChatStore = create<ChatStore>(() => ({
   init: () => {
     // Initialize chat store
-    console.log('Chat store initialized')
   },
   send: (message: string) => {
     // Send message logic

@@ -9,6 +9,7 @@ import { ResizableSidebar } from '@/components/ResizableSidebar'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { sessionSyncManager } from '@/lib/session-sync'
 import { MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,9 +24,64 @@ export default function ChatPage() {
 
   useEffect(() => { init() }, [init])
 
+  // Initialize session sync and restore session
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        // Initialize the session sync manager
+        await sessionSyncManager.initialize()
+        
+        // Restore session from localStorage (after sync validation)
+        const stored = localStorage.getItem('stories_we_tell_session')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.sessionId) {
+            setCurrentSessionId(parsed.sessionId)
+            if (parsed.projectId) {
+              setCurrentProjectId(parsed.projectId)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize session:', error)
+      }
+    }
+
+    initializeSession()
+  }, [])
+
+  // Listen for session cleared and updated events
+  useEffect(() => {
+    const handleSessionCleared = (event: CustomEvent) => {
+      console.log('🔄 Session cleared event received:', event.detail.reason)
+      setCurrentSessionId('')
+      setCurrentProjectId('')
+    }
+
+    const handleSessionUpdated = (event: CustomEvent) => {
+      console.log('🔄 Session updated event received:', event.detail)
+      const { sessionId: newSessionId, projectId: newProjectId } = event.detail || {}
+      
+      if (newSessionId && newSessionId !== currentSessionId) {
+        console.log('🔄 Updating current session from event:', newSessionId)
+        setCurrentSessionId(newSessionId)
+        if (newProjectId) {
+          setCurrentProjectId(newProjectId)
+        }
+      }
+    }
+
+    window.addEventListener('sessionCleared', handleSessionCleared as EventListener)
+    window.addEventListener('sessionUpdated', handleSessionUpdated as EventListener)
+    
+    return () => {
+      window.removeEventListener('sessionCleared', handleSessionCleared as EventListener)
+      window.removeEventListener('sessionUpdated', handleSessionUpdated as EventListener)
+    }
+  }, [currentSessionId])
+
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
-    console.log('🔄 Session selected:', sessionId, 'Project:', projectId)
     setCurrentSessionId(sessionId)
     setCurrentProjectId(projectId || '')
   }
@@ -98,7 +154,17 @@ export default function ChatPage() {
           {/* Chat Area */}
           <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
             <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-              <ChatPanel _sessionId={currentSessionId} _projectId={currentProjectId} />
+              <ChatPanel 
+                _sessionId={currentSessionId} 
+                _projectId={currentProjectId} 
+                onSessionUpdate={(sessionId, projectId) => {
+                  console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
+                  setCurrentSessionId(sessionId)
+                  if (projectId) {
+                    setCurrentProjectId(projectId)
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
@@ -106,3 +172,4 @@ export default function ChatPage() {
     </DossierProvider>
   )
 }
+

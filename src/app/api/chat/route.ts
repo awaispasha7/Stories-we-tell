@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const xUserId = req.headers.get('X-User-ID')
     
     // Get the backend URL from environment variables
-    const backendUrl = process.env.BACKEND_URL || 'https://stories-we-tell-backend.vercel.app'
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
     
     console.log(`Frontend: Attempting to call backend at ${backendUrl}/api/v1/chat`)
     console.log(`Frontend: Headers - X-Session-ID: ${xSessionId}, X-User-ID: ${xUserId}`)

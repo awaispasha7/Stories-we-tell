@@ -11,9 +11,11 @@ import { cn } from '@/lib/utils'
 interface ComposerProps {
   onSend: (message: string) => void
   disabled?: boolean
+  sessionId?: string
+  projectId?: string
 }
 
-export function Composer({ onSend, disabled = false }: ComposerProps) {
+export function Composer({ onSend, disabled = false, sessionId, projectId }: ComposerProps) {
   const [text, setText] = useState('')
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
@@ -55,13 +57,17 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
   }
 
   const handleAudioData = (audioBlob: Blob, transcript: string) => {
-    console.log('[AUDIO] handleAudioData called with transcript:', transcript)
+    console.log('🎤 [COMPOSER] handleAudioData called with transcript:', transcript.substring(0, 50) + '...')
+    console.log('🎤 [COMPOSER] Current sessionId:', sessionId, 'projectId:', projectId)
     setShowAudioRecorder(false)
     // Auto-send the transcribed text and clear the input
     if (transcript.trim()) {
-      console.log('[AUDIO] Sending audio transcript via onSend')
-      onSend(transcript)
-      setText('') // Clear the text area after sending
+      console.log('🎤 [COMPOSER] Calling onSend with transcript - ensuring session context is maintained')
+      // Add a small delay to ensure session state is stable
+      setTimeout(() => {
+        onSend(transcript)
+        setText('') // Clear the text area after sending
+      }, 100)
     }
   }
 
@@ -82,7 +88,9 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
               // Initial state - just the mic button
               <button
                 type="button"
-                onClick={() => setShowAudioRecorder(true)}
+                onClick={() => {
+                  setShowAudioRecorder(true)
+                }}
                 disabled={disabled}
                 className={cn(
                   "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm flex-shrink-0",
@@ -128,6 +136,8 @@ export function Composer({ onSend, disabled = false }: ComposerProps) {
               <AudioRecorder
                 onAudioData={handleAudioData}
                 onClose={() => setShowAudioRecorder(false)}
+                sessionId={sessionId}
+                projectId={projectId}
               />
             )}
           </div>

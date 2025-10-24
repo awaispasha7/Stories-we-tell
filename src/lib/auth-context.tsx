@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [migrationAttempted, setMigrationAttempted] = useState(false)
+  const [userSynced, setUserSynced] = useState(false)
 
   // Convert Supabase user to our User interface
   const convertSupabaseUser = useCallback((supabaseUser: SupabaseUser | null): User | null => {
@@ -74,19 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen to auth state changes
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
       const typedSession = session as Session | null
-      console.log('Auth state changed:', event, typedSession?.user?.email)
       
       if (event === 'SIGNED_IN' && typedSession?.user) {
-        // Ensure user exists in backend
-        try {
-          const { sessionApi } = await import('./api')
-          await sessionApi.createUser({
-            user_id: typedSession.user.id, // Pass the Supabase auth user ID
-            email: typedSession.user.email,
-            display_name: typedSession.user.user_metadata?.display_name || typedSession.user.email?.split('@')[0],
-            avatar_url: typedSession.user.user_metadata?.avatar_url
-          })
-          console.log('✅ User synced to backend on auth state change')
+        // Ensure user exists in backend (only sync once per session)
+        if (!userSynced) {
+          try {
+            const { sessionApi } = await import('./api')
+            await sessionApi.createUser({
+              user_id: typedSession.user.id, // Pass the Supabase auth user ID
+              email: typedSession.user.email,
+              display_name: typedSession.user.user_metadata?.display_name || typedSession.user.email?.split('@')[0],
+              avatar_url: typedSession.user.user_metadata?.avatar_url
+            })
+            setUserSynced(true)
           
           // Check if there's an anonymous session to migrate (only once)
           const anonymousSessionId = localStorage.getItem('anonymous_session_id')
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to authenticated user...')
-              await sessionApi.migrateAnonymousSession(anonymousSessionId, typedSession.user.id)
+              await sessionApi.migrateSession(anonymousSessionId, typedSession.user.id)
               console.log('✅ Anonymous session migrated successfully')
               
               // Clear the anonymous session from localStorage
@@ -109,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (backendError) {
           console.warn('⚠️ Failed to sync user to backend on auth state change:', backendError)
+        }
         }
         
         setUser(convertSupabaseUser(typedSession.user))
@@ -143,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             display_name: data.user.user_metadata?.display_name || data.user.email?.split('@')[0],
             avatar_url: data.user.user_metadata?.avatar_url
           })
-          console.log('✅ User synced to backend successfully')
           
           // Check if there's an anonymous session to migrate (only once)
           const anonymousSessionId = localStorage.getItem('anonymous_session_id')
@@ -151,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to authenticated user...')
-              await sessionApi.migrateAnonymousSession(anonymousSessionId, data.user.id)
+              await sessionApi.migrateSession(anonymousSessionId, data.user.id)
               console.log('✅ Anonymous session migrated successfully')
               
               // Clear the anonymous session from localStorage
@@ -206,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setMigrationAttempted(true)
             try {
               console.log('🔄 Migrating anonymous session to new authenticated user...')
-              await sessionApi.migrateAnonymousSession(anonymousSessionId, response.data.user.id)
+              await sessionApi.migrateSession(anonymousSessionId, response.data.user.id)
               console.log('✅ Anonymous session migrated successfully')
               
               // Clear the anonymous session from localStorage

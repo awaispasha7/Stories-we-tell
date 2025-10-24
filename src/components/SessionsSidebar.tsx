@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
+import { sessionSyncManager } from '@/lib/session-sync'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
 import { useToastContext } from '@/components/ToastProvider'
@@ -63,16 +64,25 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         queryKey: ['sessions'],
         queryFn: async () => {
           try {
-            console.log('🔄 Fetching sessions...', { isAuthenticated, user: user?.user_id })
+            // Wait for user to be loaded before making API call
+            if (!user?.user_id) {
+              // Add a small delay to ensure user data is fully loaded
+              await new Promise(resolve => setTimeout(resolve, 100))
+              if (!user?.user_id) {
+                throw new Error('User not loaded yet')
+              }
+            }
             
             // User creation is handled by the backend when needed
             // No need to create user here as it can interfere with session management
             
             const result = await sessionApi.getSessions(20)
-            console.log('✅ Sessions fetched:', result)
+            console.log('📋 Raw sessions result:', result)
             
             // Show info toast if no sessions found
-            if (Array.isArray(result) && result.length === 0) {
+            const sessions = (result as any)?.sessions || []
+            console.log('📋 Sessions array:', sessions)
+            if (sessions.length === 0) {
               toast.info(
                 'No Chat History',
                 'You don\'t have any previous chat sessions yet.',
@@ -82,11 +92,17 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             
             // Fetch first message and message count for each session (optimized)
             const sessionsWithFirstMessage = await Promise.all(
-              (result as Session[]).map(async (session) => {
+              sessions.map(async (session: Session) => {
                 try {
                   // Get messages with a single call - fetch 10 messages to get both first message and count
-                  const messages = await sessionApi.getSessionMessages(session.session_id, 10, 0) as ChatMessage[]
+                  const messagesResponse = await sessionApi.getSessionMessages(session.session_id, 10, 0)
+                  console.log(`📋 Session ${session.session_id} raw messages response:`, messagesResponse)
+                  
+                  // Handle backend response structure: { success: true, messages: [...] }
+                  const messages = (messagesResponse as any)?.messages || []
                   const firstMessage = messages.length > 0 ? messages[0].content : undefined
+                  
+                  console.log(`📋 Session ${session.session_id} processed messages:`, messages.length, 'First message:', firstMessage)
                   
                   return {
                     ...session,
@@ -104,7 +120,15 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
               })
             )
             
-            return sessionsWithFirstMessage
+            console.log('📋 Final sessions with first message:', sessionsWithFirstMessage)
+            
+            // Filter out empty sessions (sessions with 0 messages)
+            const nonEmptySessions = sessionsWithFirstMessage.filter(session => 
+              session.message_count && session.message_count > 0
+            )
+            
+            console.log('📋 Non-empty sessions:', nonEmptySessions.length, 'out of', sessionsWithFirstMessage.length)
+            return nonEmptySessions
           } catch (error) {
             console.error('❌ Error fetching sessions:', error)
             toast.error(
@@ -118,22 +142,84 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         refetchInterval: false, // No automatic refresh
         refetchOnWindowFocus: false, // Don't refetch on window focus
         refetchOnMount: true, // Only fetch on component mount
-        staleTime: Infinity, // Never consider data stale
-        enabled: isAuthenticated, // Only fetch if user is authenticated
+        staleTime: 0, // Always consider data stale to ensure fresh data after mutations
+        enabled: isAuthenticated && !!user?.user_id, // Only fetch if user is authenticated and loaded
         retry: false, // Don't retry on error to avoid repeated calls
       })
 
   // Delete session mutation
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionApi.deleteSession(sessionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+    onMutate: async (sessionId: string) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['sessions'] })
+      
+      // Snapshot the previous value
+      const previousSessions = queryClient.getQueryData(['sessions'])
+      
+      // Optimistically update to remove the session
+      queryClient.setQueryData(['sessions'], (old: any) => {
+        if (!old) return old
+        return old.filter((session: any) => session.session_id !== sessionId)
+      })
+      
+      // Return a context object with the snapshotted value
+      return { previousSessions }
     },
-    onError: (error) => {
+    onSuccess: () => {
+      // Invalidate and immediately refetch sessions to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      queryClient.refetchQueries({ queryKey: ['sessions'] })
+    },
+    onError: (error, sessionId, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousSessions) {
+        queryClient.setQueryData(['sessions'], context.previousSessions)
+      }
       console.error('Delete session mutation error:', error)
       toast.error(
         'Delete Failed',
         'An unexpected error occurred while deleting the session.',
+        5000
+      )
+    }
+  })
+
+  // Delete all sessions mutation
+  const deleteAllSessionsMutation = useMutation({
+    mutationFn: () => sessionApi.deleteAllSessions(),
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['sessions'] })
+      
+      // Snapshot the previous value
+      const previousSessions = queryClient.getQueryData(['sessions'])
+      
+      // Optimistically update to clear all sessions
+      queryClient.setQueryData(['sessions'], [])
+      
+      // Return a context object with the snapshotted value
+      return { previousSessions }
+    },
+    onSuccess: (result: any) => {
+      // Invalidate and immediately refetch sessions to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      queryClient.refetchQueries({ queryKey: ['sessions'] })
+      toast.success(
+        'All Sessions Deleted',
+        `Successfully deleted ${result.deleted_count || 0} chat sessions.`,
+        4000
+      )
+    },
+    onError: (error, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousSessions) {
+        queryClient.setQueryData(['sessions'], context.previousSessions)
+      }
+      console.error('Delete all sessions mutation error:', error)
+      toast.error(
+        'Delete Failed',
+        'An unexpected error occurred while deleting all sessions.',
         5000
       )
     }
@@ -171,6 +257,41 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
         console.log('Session deletion cancelled')
       },
       'Delete Forever',
+      'Cancel'
+    )
+  }
+
+  const handleDeleteAllSessions = async () => {
+    const sessionCount = sessions.length
+    if (sessionCount === 0) {
+      toast.info(
+        'No Sessions',
+        'There are no chat sessions to delete.',
+        3000
+      )
+      return
+    }
+
+    toast.confirm(
+      'DANGER ZONE!',
+      `You are about to PERMANENTLY DELETE ALL ${sessionCount} chat sessions!\n\nThis action CANNOT be undone!\nAll messages, story progress, and conversations will be lost forever!\n\nThis is a destructive action that will clear your entire chat history!\n\nAre you absolutely certain you want to proceed?`,
+      async () => {
+        try {
+          await deleteAllSessionsMutation.mutateAsync()
+          
+          // Clear current session if it exists
+          if (currentSessionId) {
+            onSessionSelect('')
+          }
+        } catch (error) {
+          console.error('Error deleting all sessions:', error)
+        }
+      },
+      () => {
+        // Cancel action - no need to do anything
+        console.log('Delete all sessions cancelled')
+      },
+      'Delete All',
       'Cancel'
     )
   }
@@ -249,11 +370,24 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             Previous Chats
           </h2>
           <div className="flex items-center gap-2">
+            {/* Delete All Sessions Button */}
+            {isAuthenticated && sessions.length > 0 && (
+              <button
+                onClick={handleDeleteAllSessions}
+                disabled={deleteAllSessionsMutation.isPending}
+                className="p-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                title="Delete All Chats"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            
             {/* Add New Chat Button */}
             {isAuthenticated && (
               <button
               onClick={() => {
                 console.log('🆕 Create New Chat button clicked')
+                toast.info('Creating New Chat', 'Starting a new conversation...', 2000)
                 onSessionSelect('', '')
               }}
                 className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
@@ -263,6 +397,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                 <Plus className="h-4 w-4" />
               </button>
             )}
+
             
             {/* Back Button for mobile/tablet */}
             {onClose && (
@@ -389,20 +524,17 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
               }}
               onClick={() => {
                 console.log('📋 Previous chat clicked:', session.session_id, 'Project:', session.project_id)
+                toast.info('Loading Session', 'Switching to selected chat session...', 2000)
                 onSessionSelect(session.session_id, session.project_id)
               }}
             >
               <div className="flex items-start justify-between" style={{ alignItems: 'center' }}>
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-medium ${colors.text} truncate mb-1 text-sm`}>
-                    {session.title || 'New Chat'}
+                    {session.title && session.title !== 'New Chat' ? session.title : 
+                     session.first_message ? session.first_message.substring(0, 50) + (session.first_message.length > 50 ? '...' : '') : 
+                     'New Chat'}
                   </h3>
-                  
-                  {/* {session.first_message && (
-                    <p className={`text-xs ${colors.textTertiary} line-clamp-2 mb-2 leading-relaxed`}>
-                      {session.first_message}
-                    </p>
-                  )} */}
                   
                   <div className={`flex items-center gap-2 text-xs ${colors.textTertiary}`}>
                     <span>{formatDate(session.last_message_at)}</span>
