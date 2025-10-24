@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     console.log(`📤 Received ${files.length} file(s) for upload`)
 
     // Get the backend URL from environment variables (use local for development)
-    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
 
     // Forward files to backend
     const backendFormData = new FormData()
