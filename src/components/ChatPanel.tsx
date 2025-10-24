@@ -69,16 +69,23 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           const parsed = JSON.parse(stored)
           if (parsed.sessionId) {
             console.log('🔄 [CHAT] Found session in localStorage:', parsed.sessionId)
-            setCurrentSessionId(parsed.sessionId)
-            sessionIdRef.current = parsed.sessionId
-            if (parsed.projectId) {
-              setCurrentProjectId(parsed.projectId)
-            }
             
-            // Notify parent component about the restored session
-            if (onSessionUpdate) {
-              console.log('🔄 [CHAT] Notifying parent about restored session:', parsed.sessionId)
-              onSessionUpdate(parsed.sessionId, parsed.projectId)
+            // Only use localStorage session if no specific session was provided via props
+            // This prevents overriding when user clicks on a previous chat
+            if (!_sessionId) {
+              setCurrentSessionId(parsed.sessionId)
+              sessionIdRef.current = parsed.sessionId
+              if (parsed.projectId) {
+                setCurrentProjectId(parsed.projectId)
+              }
+              
+              // Notify parent component about the restored session
+              if (onSessionUpdate) {
+                console.log('🔄 [CHAT] Notifying parent about restored session:', parsed.sessionId)
+                onSessionUpdate(parsed.sessionId, parsed.projectId)
+              }
+            } else {
+              console.log('🔄 [CHAT] Skipping localStorage session because specific session provided via props:', _sessionId)
             }
           }
         }
@@ -336,9 +343,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       // Use session info from useSession hook for both authenticated and anonymous users
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, use hook values first, then fallback to local state, then localStorage
-        sessionId = hookSessionId || sessionIdRef.current || currentSessionId || localStorage.getItem('anonymous_session_id')
-        projectId = hookProjectId || currentProjectId || localStorage.getItem('anonymous_project_id')
+        // For authenticated users, prioritize currentSessionId (from selected chat) over hook values
+        // This ensures that when a user clicks on a previous chat, messages are sent to that chat
+        sessionId = currentSessionId || hookSessionId || sessionIdRef.current || localStorage.getItem('anonymous_session_id')
+        projectId = currentProjectId || hookProjectId || localStorage.getItem('anonymous_project_id')
       } else {
         // For anonymous users, use session info from useSession hook
         const sessionInfo = getSessionInfo()
