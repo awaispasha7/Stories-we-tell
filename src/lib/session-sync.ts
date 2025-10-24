@@ -110,7 +110,7 @@ class SessionSyncManager {
         }
       } catch (error) {
         // If we get a 404 or 403, the session doesn't exist or user doesn't have access
-        if (error && typeof error === 'object' && 'response' in error && 
+        if (error && typeof error === 'object' && 'response' in error &&
             error.response && typeof error.response === 'object' && 'status' in error.response) {
           const status = error.response.status
           if (status === 403 || status === 404) {
@@ -128,23 +128,15 @@ class SessionSyncManager {
         }
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && 
+      if (error && typeof error === 'object' && 'response' in error &&
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 404) {
-        // Clear the invalid session from localStorage immediately
-        try {
-          localStorage.removeItem('stories_we_tell_session')
-          console.log('🧹 [SYNC] Cleared invalid session from localStorage (404 error)')
-        } catch (e) {
-          console.error('Failed to clear invalid session from localStorage:', e)
-        }
-        
         return {
           isValid: false,
           reason: 'not_found',
           session
         }
-      } else if (error && typeof error === 'object' && 'response' in error && 
+      } else if (error && typeof error === 'object' && 'response' in error &&
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 403) {
         return {
