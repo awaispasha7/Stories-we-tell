@@ -23,6 +23,7 @@ export function useSession(sessionId?: string, projectId?: string) {
   // Try to restore session from localStorage if no sessionId provided
   const getInitialSession = () => {
     if (sessionId && sessionId.trim()) {
+      console.log('🔄 [SESSION] Using provided sessionId:', sessionId)
       return {
         sessionId: sessionId,
         projectId: projectId && projectId.trim() ? projectId : null,
@@ -39,7 +40,9 @@ export function useSession(sessionId?: string, projectId?: string) {
         if (stored) {
           const parsed = JSON.parse(stored)
           // Sessions don't expire in the new system, so just restore if we have a sessionId
-          if (parsed.sessionId) {
+          if (parsed.sessionId && parsed.sessionId.trim()) {
+            console.log('🔄 [SESSION] Restoring session from localStorage:', parsed.sessionId)
+            
             // Check if the session belongs to the current user
             const currentUser = localStorage.getItem('user')
             if (currentUser) {
@@ -52,8 +55,8 @@ export function useSession(sessionId?: string, projectId?: string) {
                 console.log('🚨 Session belongs to different user, clearing invalid session')
                 localStorage.removeItem(SESSION_STORAGE_KEY)
                 return {
-                  sessionId: '',
-                  projectId: '',
+                  sessionId: null,
+                  projectId: null,
                   isAuthenticated: false,
                   expiresAt: null,
                   isLoading: false
@@ -76,6 +79,7 @@ export function useSession(sessionId?: string, projectId?: string) {
       }
     }
     
+    console.log('🔄 [SESSION] No session found, will create new one')
     return {
       sessionId: null,
       projectId: null,
@@ -277,12 +281,17 @@ export function useSession(sessionId?: string, projectId?: string) {
       return
     }
     
+    // Don't create session if we already have a session in state
+    if (sessionState.sessionId && sessionState.sessionId.trim()) {
+      console.log('🔄 [SESSION] useEffect check: Session already exists in state, skipping creation check')
+      return
+    }
+    
     const shouldCreateSession = (
       !authLoading && 
       !sessionState.isLoading && 
       !sessionCreationInProgress.current &&
-      !globalSessionCreationInProgress &&
-      !sessionState.sessionId // Don't create if we already have a session
+      !globalSessionCreationInProgress
     )
     
     console.log('🔄 [SESSION] useEffect check:', {

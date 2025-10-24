@@ -16,8 +16,8 @@ import { cn } from '@/lib/utils'
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
   const [activeTab, setActiveTab] = useState<'sessions' | 'dossier'>('sessions')
-  const [currentSessionId, setCurrentSessionId] = useState<string>('')
-  const [currentProjectId, setCurrentProjectId] = useState<string>('')
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(undefined)
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -54,8 +54,8 @@ export default function ChatPage() {
   useEffect(() => {
     const handleSessionCleared = (event: CustomEvent) => {
       console.log('🔄 Session cleared event received:', event.detail.reason)
-      setCurrentSessionId('')
-      setCurrentProjectId('')
+      setCurrentSessionId(undefined)
+      setCurrentProjectId(undefined)
     }
 
     const handleSessionUpdated = (event: CustomEvent) => {
@@ -83,7 +83,7 @@ export default function ChatPage() {
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
     setCurrentSessionId(sessionId)
-    setCurrentProjectId(projectId || '')
+    setCurrentProjectId(projectId || undefined)
   }
 
   const handleSidebarClose = () => {
