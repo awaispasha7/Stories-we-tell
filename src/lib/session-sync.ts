@@ -131,6 +131,14 @@ class SessionSyncManager {
       if (error && typeof error === 'object' && 'response' in error && 
           error.response && typeof error.response === 'object' && 'status' in error.response &&
           error.response.status === 404) {
+        // Clear the invalid session from localStorage immediately
+        try {
+          localStorage.removeItem('stories_we_tell_session')
+          console.log('🧹 [SYNC] Cleared invalid session from localStorage (404 error)')
+        } catch (e) {
+          console.error('Failed to clear invalid session from localStorage:', e)
+        }
+        
         return {
           isValid: false,
           reason: 'not_found',
