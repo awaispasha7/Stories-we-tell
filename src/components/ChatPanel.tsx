@@ -72,7 +72,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
             
             // Only use localStorage session if no specific session was provided via props
             // This prevents overriding when user clicks on a previous chat
-            if (!_sessionId) {
+            if (!_sessionId || _sessionId.trim() === '') {
               setCurrentSessionId(parsed.sessionId)
               sessionIdRef.current = parsed.sessionId
               if (parsed.projectId) {
@@ -100,7 +100,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     // Listen for localStorage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'stories_we_tell_session') {
-        checkLocalStorageSession()
+        // Only respond to storage changes if no specific session is provided via props
+        if (!_sessionId || _sessionId.trim() === '') {
+          checkLocalStorageSession()
+        }
       }
     }
 
