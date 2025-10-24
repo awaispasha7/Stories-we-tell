@@ -73,7 +73,7 @@ class SessionSyncManager {
       } else {
         console.log('✅ Stored session is valid')
         // Update last validated timestamp
-        this.updateSessionValidation(storedSession.sessionId)
+        this.updateSessionValidation()
       }
       
       // Clean up empty sessions periodically
@@ -127,14 +127,18 @@ class SessionSyncManager {
           session
         }
       }
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'status' in error.response &&
+          error.response.status === 404) {
         return {
           isValid: false,
           reason: 'not_found',
           session
         }
-      } else if (error?.response?.status === 403) {
+      } else if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'status' in error.response &&
+          error.response.status === 403) {
         return {
           isValid: false,
           reason: 'access_denied',
@@ -183,7 +187,7 @@ class SessionSyncManager {
       // Get all sessions for the current user
       const { sessionApi } = await import('./api')
       const result = await sessionApi.getSessions(100) // Get more sessions for cleanup
-      const sessions = (result as any)?.sessions || []
+      const sessions = (result as { sessions?: unknown[] })?.sessions || []
       
       if (sessions.length === 0) {
         console.log('📝 No sessions to clean up')
@@ -193,37 +197,40 @@ class SessionSyncManager {
       // Check each session for messages
       const emptySessions = []
       for (const session of sessions) {
-        console.log(`🔍 Checking session: ${session.session_id} (current: ${currentSessionId})`)
+        const sessionData = session as { session_id?: string; created_at?: string }
+        console.log(`🔍 Checking session: ${sessionData.session_id} (current: ${currentSessionId})`)
         
         // Skip the currently active session - don't delete it even if it appears empty
-        if (currentSessionId && session.session_id === currentSessionId) {
-          console.log(`🔒 Skipping cleanup for active session: ${session.session_id}`)
+        if (currentSessionId && sessionData.session_id === currentSessionId) {
+          console.log(`🔒 Skipping cleanup for active session: ${sessionData.session_id}`)
           continue
         }
         
         // Skip sessions that are very recent (less than 5 minutes old) to avoid deleting sessions that might be in use
-        const sessionAge = Date.now() - new Date(session.created_at).getTime()
+        const sessionAge = Date.now() - new Date(sessionData.created_at || '').getTime()
         const fiveMinutes = 5 * 60 * 1000
         if (sessionAge < fiveMinutes) {
-          console.log(`⏰ Skipping recent session (${Math.round(sessionAge / 1000)}s old): ${session.session_id}`)
+          console.log(`⏰ Skipping recent session (${Math.round(sessionAge / 1000)}s old): ${sessionData.session_id}`)
           continue
         }
         
         try {
-          const messagesResponse = await sessionApi.getSessionMessages(session.session_id, 1, 0)
-          const messages = (messagesResponse as any)?.messages || []
+          const messagesResponse = await sessionApi.getSessionMessages(sessionData.session_id || '', 1, 0)
+          const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
           
-          if (messages.length === 0) {
-            emptySessions.push(session.session_id)
+          if (messages.length === 0 && sessionData.session_id) {
+            emptySessions.push(sessionData.session_id)
           }
         } catch (error) {
           // If getSessionMessages returns 404, it's also an empty/invalid session
           if (error && typeof error === 'object' && 'response' in error && 
               error.response && typeof error.response === 'object' && 'status' in error.response &&
               (error.response.status === 403 || error.response.status === 404)) {
-            emptySessions.push(session.session_id);
+            if (sessionData.session_id) {
+              emptySessions.push(sessionData.session_id);
+            }
           } else {
-            console.warn(`Failed to check messages for session ${session.session_id}:`, error)
+            console.warn(`Failed to check messages for session ${sessionData.session_id}:`, error)
           }
         }
       }
@@ -300,7 +307,7 @@ class SessionSyncManager {
   /**
    * Update session validation timestamp
    */
-  private updateSessionValidation(sessionId: string): void {
+  private updateSessionValidation(): void {
     try {
       const stored = localStorage.getItem(SESSION_STORAGE_KEY)
       if (stored) {
@@ -336,7 +343,7 @@ class SessionSyncManager {
           console.log(`❌ Session validation failed: ${validation.reason}`)
           await this.cleanupInvalidSession(validation.reason || 'unknown')
         } else {
-          this.updateSessionValidation(storedSession.sessionId)
+          this.updateSessionValidation()
         }
       } catch (error) {
         console.error('❌ Error during periodic validation:', error)

@@ -28,7 +28,7 @@ export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: Au
   
 
   /** --- sound helpers --- */
-  const playSound = (file: string) => {
+  const playSound = useCallback((file: string) => {
     try {
       const s = new Audio(file)
       s.volume = 0.6
@@ -46,12 +46,12 @@ export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: Au
         playSystemBeep()
       }
     }
-  }
+  }, [])
 
   const playSystemBeep = () => {
     // Fallback: create a simple beep using Web Audio API
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+       const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
       
@@ -111,7 +111,7 @@ export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: Au
       alert('Please allow microphone access and try again.')
       // Do NOT call onClose() immediately here — let user retry
     }
-  }, [])
+  }, [playSound])
 
   useEffect(() => {
     startRecording()
@@ -121,7 +121,7 @@ export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: Au
         mediaRecorderRef.current.stop()
       }
     }
-  }, []) // Empty dependency array - only run once on mount
+  }, [startRecording]) // Include startRecording dependency
   
   
   const togglePause = () => {

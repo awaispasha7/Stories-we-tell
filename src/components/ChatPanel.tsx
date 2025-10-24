@@ -21,7 +21,6 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const { 
     sessionId: hookSessionId, 
     projectId: hookProjectId,
-    isLoading: sessionLoading,
     isSessionExpired, 
     getSessionInfo 
   } = useSession(_sessionId, _projectId)
@@ -173,14 +172,17 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         console.log('📋 ChatPanel messages response:', messagesResponse)
         
         // Handle backend response structure: { success: true, messages: [...] }
-        const messages = (messagesResponse as any)?.messages || []
+        const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
         
         if (messages && Array.isArray(messages) && messages.length > 0) {
-          const formattedMessages = messages.map(msg => ({
-            role: msg.role as 'user' | 'assistant',
-            content: msg.content,
-            timestamp: msg.created_at
-          }))
+          const formattedMessages = messages.map((msg: unknown) => {
+            const message = msg as { role?: string; content?: string; created_at?: string }
+            return {
+              role: message.role as 'user' | 'assistant',
+              content: message.content || '',
+              timestamp: message.created_at
+            }
+          })
           setMessages(formattedMessages)
         }
       } catch (error) {
@@ -224,7 +226,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     }
 
     loadSessionMessages()
-  }, [_sessionId, isAuthenticated, user?.user_id])
+  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, user])
 
   // Sync hook session values with local state
   useEffect(() => {
@@ -484,7 +486,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                   setCurrentProjectId(data.metadata.project_id)
                 }
               }
-            } catch (e) {
+            } catch {
               // Error parsing streaming data
             }
           }

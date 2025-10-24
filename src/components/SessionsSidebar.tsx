@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { sessionApi } from '@/lib/api'
-import { sessionSyncManager } from '@/lib/session-sync'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
 import { useToastContext } from '@/components/ToastProvider'
@@ -23,16 +22,6 @@ interface Session {
   message_count?: number
 }
 
-interface ChatMessage {
-  message_id: string
-  session_id: string
-  turn_id?: string
-  role: string
-  content: string
-  metadata?: Record<string, unknown>
-  created_at: string
-  updated_at: string
-}
 
 interface SessionsSidebarProps {
   onSessionSelect: (sessionId: string, projectId?: string) => void
@@ -80,7 +69,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             console.log('📋 Raw sessions result:', result)
             
             // Show info toast if no sessions found
-            const sessions = (result as any)?.sessions || []
+            const sessions = (result as { sessions?: Session[] })?.sessions || []
             console.log('📋 Sessions array:', sessions)
             if (sessions.length === 0) {
               toast.info(
@@ -99,8 +88,8 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
                   console.log(`📋 Session ${session.session_id} raw messages response:`, messagesResponse)
                   
                   // Handle backend response structure: { success: true, messages: [...] }
-                  const messages = (messagesResponse as any)?.messages || []
-                  const firstMessage = messages.length > 0 ? messages[0].content : undefined
+                  const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
+                  const firstMessage = messages.length > 0 ? (messages[0] as { content?: string }).content : undefined
                   
                   console.log(`📋 Session ${session.session_id} processed messages:`, messages.length, 'First message:', firstMessage)
                   
@@ -158,9 +147,9 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
       const previousSessions = queryClient.getQueryData(['sessions'])
       
       // Optimistically update to remove the session
-      queryClient.setQueryData(['sessions'], (old: any) => {
+      queryClient.setQueryData(['sessions'], (old: unknown) => {
         if (!old) return old
-        return old.filter((session: any) => session.session_id !== sessionId)
+        return (old as Session[]).filter((session: Session) => session.session_id !== sessionId)
       })
       
       // Return a context object with the snapshotted value
@@ -187,7 +176,10 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
 
   // Delete all sessions mutation
   const deleteAllSessionsMutation = useMutation({
-    mutationFn: () => sessionApi.deleteAllSessions(),
+    mutationFn: async () => {
+      const result = await sessionApi.deleteAllSessions()
+      return result as { deleted_count?: number }
+    },
     onMutate: async () => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['sessions'] })
@@ -201,7 +193,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
       // Return a context object with the snapshotted value
       return { previousSessions }
     },
-    onSuccess: (result: any) => {
+    onSuccess: (result: { deleted_count?: number }) => {
       // Invalidate and immediately refetch sessions to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       queryClient.refetchQueries({ queryKey: ['sessions'] })

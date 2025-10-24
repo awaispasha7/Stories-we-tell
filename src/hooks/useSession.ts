@@ -18,7 +18,7 @@ interface SessionState {
 
 // Simple session hook that works with props from parent components
 export function useSession(sessionId?: string, projectId?: string) {
-  const { isAuthenticated, user, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   
   // Try to restore session from localStorage if no sessionId provided
   const getInitialSession = () => {
@@ -130,14 +130,20 @@ export function useSession(sessionId?: string, projectId?: string) {
 
     try {
       console.log('🔄 [SESSION] Calling sessionApi.getOrCreateSession()')
-      const response = await sessionApi.getOrCreateSession() as any
+      const response = await sessionApi.getOrCreateSession() as { 
+        success?: boolean; 
+        session_id?: string; 
+        project_id?: string;
+        is_authenticated?: boolean;
+        user_id?: string;
+      }
       
       // The backend returns the session data in a success wrapper
       if (response && response.success && response.session_id) {
         const newSessionState = {
           sessionId: response.session_id,
-          projectId: response.project_id,
-          isAuthenticated: response.is_authenticated,
+          projectId: response.project_id || null,
+          isAuthenticated: response.is_authenticated || false,
           expiresAt: null, // Sessions don't expire in the new system
           isLoading: false
         }
@@ -167,7 +173,7 @@ export function useSession(sessionId?: string, projectId?: string) {
       sessionCreationInProgress.current = false
       globalSessionCreationInProgress = false
     }
-  }, [sessionId, isAuthenticated])
+  }, [sessionId, sessionState.sessionId])
 
   // Listen for session updates from other components
   useEffect(() => {
@@ -261,7 +267,7 @@ export function useSession(sessionId?: string, projectId?: string) {
       window.removeEventListener('sessionUpdated', handleSessionUpdate as EventListener)
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, []) // Empty dependency array to run only on mount
+  }, [sessionState.sessionId, sessionState.isAuthenticated]) // Include dependencies used in the effect
 
   // Auto-create session if none provided and auth is ready
   useEffect(() => {
@@ -293,7 +299,7 @@ export function useSession(sessionId?: string, projectId?: string) {
       console.log('🔄 [SESSION] Triggering session creation from useEffect')
       createSession()
     }
-  }, [sessionId, authLoading, sessionState.isLoading, sessionState.sessionId, createSession, isAuthenticated])
+  }, [sessionId, authLoading, sessionState.isLoading, sessionState.sessionId, sessionState.isAuthenticated, createSession, isAuthenticated])
 
   // Check if session is expired
   const isSessionExpired = useCallback(() => {
