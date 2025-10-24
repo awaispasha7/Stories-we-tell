@@ -95,14 +95,11 @@ export const sessionApi = {
         searchParams: { limit, offset },
         headers
       }).json()
-        } catch (error: unknown) {
-          if (error && typeof error === 'object' && 'response' in error && 
-              error.response && typeof error.response === 'object' && 'status' in error.response &&
-              error.response.status === 404) {
-            return []
-          }
-          throw error
-        }
+    } catch (error: unknown) {
+      // For session validation, we need 404s to be thrown as errors
+      // so the validation can detect invalid sessions
+      throw error
+    }
   },
   
   // Update session title
