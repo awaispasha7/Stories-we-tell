@@ -112,6 +112,10 @@ class SessionSyncManager {
         }
       } catch (error) {
         console.log(`❌ [SYNC] Session validation failed for ${session.sessionId}:`, error)
+        console.log(`🔍 [SYNC] Error type:`, typeof error)
+        console.log(`🔍 [SYNC] Error constructor:`, error?.constructor?.name)
+        console.log(`🔍 [SYNC] Error keys:`, error ? Object.keys(error) : 'no keys')
+        
         // If we get a 404 or 403, the session doesn't exist or user doesn't have access
         if (error && typeof error === 'object' && 'response' in error &&
             error.response && typeof error.response === 'object' && 'status' in error.response) {
