@@ -9,6 +9,7 @@ import { ResizableSidebar } from '@/components/ResizableSidebar'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { sessionSyncManager } from '@/lib/session-sync'
 import { MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,30 +24,18 @@ export default function ChatPage() {
 
   useEffect(() => { init() }, [init])
 
-  // Restore session from localStorage on page load
+  // Initialize session sync and restore session
   useEffect(() => {
-    const restoreSession = () => {
+    const initializeSession = async () => {
       try {
+        // Initialize the session sync manager
+        await sessionSyncManager.initialize()
+        
+        // Restore session from localStorage (after sync validation)
         const stored = localStorage.getItem('stories_we_tell_session')
         if (stored) {
           const parsed = JSON.parse(stored)
           if (parsed.sessionId) {
-            // Check if the session belongs to the current user
-            const currentUser = localStorage.getItem('user')
-            if (currentUser) {
-              const userData = JSON.parse(currentUser)
-              const currentUserId = userData.user_id
-              const sessionUserId = parsed.userId
-              
-              // If user IDs don't match, clear the invalid session
-              if (sessionUserId && sessionUserId !== currentUserId) {
-                console.log('🚨 Session belongs to different user, clearing invalid session')
-                localStorage.removeItem('stories_we_tell_session')
-                return
-              }
-            }
-            
-            console.log('🔄 Restoring session from localStorage:', parsed.sessionId)
             setCurrentSessionId(parsed.sessionId)
             if (parsed.projectId) {
               setCurrentProjectId(parsed.projectId)
@@ -54,12 +43,42 @@ export default function ChatPage() {
           }
         }
       } catch (error) {
-        console.error('Failed to restore session from localStorage:', error)
+        console.error('Failed to initialize session:', error)
       }
     }
 
-    restoreSession()
+    initializeSession()
   }, [])
+
+  // Listen for session cleared and updated events
+  useEffect(() => {
+    const handleSessionCleared = (event: CustomEvent) => {
+      console.log('🔄 Session cleared event received:', event.detail.reason)
+      setCurrentSessionId('')
+      setCurrentProjectId('')
+    }
+
+    const handleSessionUpdated = (event: CustomEvent) => {
+      console.log('🔄 Session updated event received:', event.detail)
+      const { sessionId: newSessionId, projectId: newProjectId } = event.detail || {}
+      
+      if (newSessionId && newSessionId !== currentSessionId) {
+        console.log('🔄 Updating current session from event:', newSessionId)
+        setCurrentSessionId(newSessionId)
+        if (newProjectId) {
+          setCurrentProjectId(newProjectId)
+        }
+      }
+    }
+
+    window.addEventListener('sessionCleared', handleSessionCleared as EventListener)
+    window.addEventListener('sessionUpdated', handleSessionUpdated as EventListener)
+    
+    return () => {
+      window.removeEventListener('sessionCleared', handleSessionCleared as EventListener)
+      window.removeEventListener('sessionUpdated', handleSessionUpdated as EventListener)
+    }
+  }, [currentSessionId])
 
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
@@ -135,7 +154,17 @@ export default function ChatPage() {
           {/* Chat Area */}
           <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
             <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-              <ChatPanel _sessionId={currentSessionId} _projectId={currentProjectId} />
+              <ChatPanel 
+                _sessionId={currentSessionId} 
+                _projectId={currentProjectId} 
+                onSessionUpdate={(sessionId, projectId) => {
+                  console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
+                  setCurrentSessionId(sessionId)
+                  if (projectId) {
+                    setCurrentProjectId(projectId)
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
@@ -143,3 +172,4 @@ export default function ChatPage() {
     </DossierProvider>
   )
 }
+

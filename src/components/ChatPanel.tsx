@@ -6,15 +6,17 @@ import { Composer } from './Composer'
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useAuth } from '@/lib/auth-context'
 import { useSession } from '@/hooks/useSession'
+import { sessionSyncManager } from '@/lib/session-sync'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
 interface ChatPanelProps {
   _sessionId?: string
   _projectId?: string
+  onSessionUpdate?: (sessionId: string, projectId?: string) => void
 }
 
-export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
+export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanelProps) {
   const { user, isAuthenticated } = useAuth()
   const { 
     sessionId: hookSessionId, 
@@ -46,6 +48,73 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   // Use ref to store session ID for immediate access (bypasses React state async updates)
   const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   
+  // Sync local state with props when they change
+  useEffect(() => {
+    if (_sessionId !== currentSessionId) {
+      console.log('🔄 [CHAT] Syncing sessionId from props:', _sessionId)
+      setCurrentSessionId(_sessionId)
+      sessionIdRef.current = _sessionId
+    }
+    if (_projectId !== currentProjectId) {
+      console.log('🔄 [CHAT] Syncing projectId from props:', _projectId)
+      setCurrentProjectId(_projectId)
+    }
+  }, [_sessionId, _projectId, currentSessionId, currentProjectId])
+
+  // Sync local state with localStorage session changes
+  useEffect(() => {
+    const checkLocalStorageSession = () => {
+      try {
+        const stored = localStorage.getItem('stories_we_tell_session')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.sessionId) {
+            console.log('🔄 [CHAT] Found session in localStorage:', parsed.sessionId)
+            setCurrentSessionId(parsed.sessionId)
+            sessionIdRef.current = parsed.sessionId
+            if (parsed.projectId) {
+              setCurrentProjectId(parsed.projectId)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check localStorage session:', error)
+      }
+    }
+
+    // Check localStorage on mount
+    checkLocalStorageSession()
+
+    // Listen for localStorage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'stories_we_tell_session') {
+        checkLocalStorageSession()
+      }
+    }
+
+    // Listen for custom session update events
+    const handleSessionUpdate = (event: CustomEvent) => {
+      console.log('🔄 [CHAT] Received session update event:', event.detail)
+      const { sessionId: newSessionId, projectId: newProjectId } = event.detail || {}
+      if (newSessionId) {
+        console.log('🔄 [CHAT] Updating session from event:', newSessionId)
+        setCurrentSessionId(newSessionId)
+        sessionIdRef.current = newSessionId
+        if (newProjectId) {
+          setCurrentProjectId(newProjectId)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('sessionUpdated', handleSessionUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('sessionUpdated', handleSessionUpdate as EventListener)
+    }
+  }, []) // Empty dependency array to run only on mount
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
   // const _send = useChatStore(s => s.send) // Unused for now
@@ -53,6 +122,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
 
   // Load existing messages when session changes
   useEffect(() => {
@@ -99,11 +169,11 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
 
       try {
         const { sessionApi } = await import('@/lib/api')
-        const messages = await sessionApi.getSessionMessages(_sessionId, 50, 0) as Array<{
-          role: string;
-          content: string;
-          created_at: string;
-        }>
+        const messagesResponse = await sessionApi.getSessionMessages(_sessionId, 50, 0)
+        console.log('📋 ChatPanel messages response:', messagesResponse)
+        
+        // Handle backend response structure: { success: true, messages: [...] }
+        const messages = (messagesResponse as any)?.messages || []
         
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map(msg => ({
@@ -116,26 +186,39 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       } catch (error) {
         console.error('Failed to load session messages:', error)
         
-        // If it's a 403 Forbidden error, the session belongs to a different user
-        // Clear the session from localStorage and state
+        // Use session sync manager to handle invalid sessions
         if (error && typeof error === 'object' && 'response' in error && 
-            error.response && typeof error.response === 'object' && 'status' in error.response &&
-            error.response.status === 403) {
-          console.log('🚨 Session access denied - clearing invalid session')
+            error.response && typeof error.response === 'object' && 'status' in error.response) {
           
-          // Clear session from localStorage
-          try {
-            localStorage.removeItem('stories_we_tell_session')
-          } catch (e) {
-            console.error('Failed to clear session from localStorage:', e)
+          const status = error.response.status
+          
+          if (status === 403 || status === 404) {
+            // Session is invalid, let the sync manager handle it
+            console.log(`🚨 Session validation failed (${status}) - triggering sync cleanup`)
+            console.log(`🚨 Invalid session ID: ${currentSessionId}`)
+            
+            // Clear the invalid session from localStorage immediately
+            try {
+              localStorage.removeItem('stories_we_tell_session')
+              console.log('🧹 Cleared invalid session from localStorage')
+            } catch (e) {
+              console.error('Failed to clear session from localStorage:', e)
+            }
+            
+            // Reset local state to reflect invalid session
+            setMessages([
+              {
+                role: 'assistant',
+                content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+              }
+            ])
+            setCurrentSessionId('')
+            setCurrentProjectId('')
+            sessionIdRef.current = ''
+            
+            // Trigger sync manager to clean up and find a valid session
+            sessionSyncManager.forceSync()
           }
-          
-          // Clear session state
-          setCurrentSessionId('')
-          sessionIdRef.current = ''
-          
-          // Clear messages
-          setMessages([])
         }
       }
     }
@@ -146,6 +229,7 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
   // Sync hook session values with local state
   useEffect(() => {
     if (hookSessionId && hookProjectId) {
+      console.log('🔄 [CHAT] Syncing hook session values:', hookSessionId, hookProjectId)
       setCurrentSessionId(hookSessionId)
       setCurrentProjectId(hookProjectId)
       sessionIdRef.current = hookSessionId
@@ -209,6 +293,11 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       return
     }
     
+    console.log('💬 [CHAT] handleSendMessage called with text:', text.substring(0, 50) + '...')
+    console.log('💬 [CHAT] isAuthenticated:', isAuthenticated, 'hookSessionId:', hookSessionId, 'hookProjectId:', hookProjectId)
+    console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
+    console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
+    
     setIsProcessingMessage(true)
 
     // Check if session is expired for anonymous users
@@ -248,6 +337,22 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
         sessionId = sessionInfo.sessionId
         projectId = sessionInfo.projectId
       }
+      
+      console.log('💬 [CHAT] Using sessionId:', sessionId, 'projectId:', projectId)
+      
+      // CRITICAL: Ensure we have a valid session before proceeding
+      if (!sessionId) {
+        console.error('💬 [CHAT] ERROR: No session ID available! This will create a new session.')
+        console.error('💬 [CHAT] Available session sources:', {
+          hookSessionId,
+          sessionIdRef: sessionIdRef.current,
+          currentSessionId,
+          localStorageSession: localStorage.getItem('anonymous_session_id')
+        })
+        // Don't proceed without a session - this prevents creating new sessions
+        throw new Error('No session ID available - cannot send message')
+      }
+      
       // Get headers for the request
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
@@ -332,14 +437,45 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                   setCurrentSessionId(data.metadata.session_id)
                   sessionIdRef.current = data.metadata.session_id
                   
-                  // Persist session to localStorage
+                  // Persist session to localStorage and ensure it completes before dispatching event
                   try {
-                    localStorage.setItem('stories_we_tell_session', JSON.stringify({
+                    const sessionData = {
                       sessionId: data.metadata.session_id,
                       projectId: data.metadata?.project_id,
                       isAuthenticated: isAuthenticated
-                    }))
+                    }
+                    
+                    localStorage.setItem('stories_we_tell_session', JSON.stringify(sessionData))
                     console.log('💾 Session persisted to localStorage:', data.metadata.session_id)
+                    
+                    // Verify the localStorage write was successful
+                    const stored = localStorage.getItem('stories_we_tell_session')
+                    if (stored) {
+                      const parsed = JSON.parse(stored)
+                      if (parsed.sessionId === data.metadata.session_id) {
+                        console.log('✅ localStorage verification successful')
+                        
+                        // Only dispatch event after localStorage is confirmed updated
+                        setTimeout(() => {
+                          window.dispatchEvent(new CustomEvent('sessionUpdated', { 
+                            detail: { 
+                              sessionId: data.metadata.session_id,
+                              projectId: data.metadata?.project_id 
+                            } 
+                          }))
+                          console.log('📡 Session update event dispatched:', data.metadata.session_id)
+                          
+                          // Also notify parent component if callback is provided
+                          if (onSessionUpdate) {
+                            onSessionUpdate(data.metadata.session_id, data.metadata?.project_id)
+                          }
+                        }, 50) // Small delay to ensure localStorage is fully written
+                      } else {
+                        console.error('❌ localStorage verification failed - session ID mismatch')
+                      }
+                    } else {
+                      console.error('❌ localStorage verification failed - no stored data')
+                    }
                   } catch (error) {
                     console.error('Failed to persist session:', error)
                   }
@@ -347,15 +483,6 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
                 if (data.metadata?.project_id) {
                   setCurrentProjectId(data.metadata.project_id)
                 }
-                
-                // Trigger a refresh of the sessions list to update message counts
-                // This will be handled by the parent component
-                window.dispatchEvent(new CustomEvent('sessionUpdated', { 
-                  detail: { 
-                    sessionId: data.metadata?.session_id,
-                    projectId: data.metadata?.project_id 
-                  } 
-                }))
               }
             } catch (e) {
               // Error parsing streaming data
@@ -379,9 +506,18 @@ export function ChatPanel({ _sessionId, _projectId }: ChatPanelProps) {
       // Ensure loading state is cleared
       setIsLoading(false)
     } catch (error) {
+      console.error('Error sending message:', error)
+      
+      // Show specific error message for session issues
+      let errorContent = "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."
+      
+      if (error instanceof Error && error.message.includes('No session ID available')) {
+        errorContent = 'Session error: Please refresh the page and try again. Your conversation will be preserved.'
+      }
+      
       const errorMessage: BubbleProps = {
         role: 'assistant',
-        content: "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."
+        content: errorContent
       }
       setMessages(prev => {
         const newMessages = [...prev]

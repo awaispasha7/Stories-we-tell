@@ -8,30 +8,23 @@ const getUserHeaders = () => {
     const user = localStorage.getItem('user')
     const session = localStorage.getItem('stories_we_tell_session')
     
-    console.log('🔍 getUserHeaders - user from localStorage:', user)
-    console.log('🔍 getUserHeaders - session from localStorage:', session)
-    
     const headers: Record<string, string> = {}
     
     if (user) {
       const userData = JSON.parse(user)
       headers['X-User-ID'] = userData.user_id
-      console.log('🔍 getUserHeaders - setting X-User-ID:', userData.user_id)
     }
     
     if (session) {
       const sessionData = JSON.parse(session)
       if (sessionData.sessionId) {
         headers['X-Session-ID'] = sessionData.sessionId
-        console.log('🔍 getUserHeaders - setting X-Session-ID:', sessionData.sessionId)
       }
       if (sessionData.projectId) {
         headers['X-Project-ID'] = sessionData.projectId
-        console.log('🔍 getUserHeaders - setting X-Project-ID:', sessionData.projectId)
       }
     }
     
-    console.log('🔍 getUserHeaders - final headers:', headers)
     return headers
   } catch (error) {
     console.error('❌ Error getting user headers:', error)
@@ -49,7 +42,6 @@ export const api = ky.create({
       (request) => {
         // Add user ID header to all requests
         const headers = getUserHeaders()
-        console.log('🔍 beforeRequest hook - setting headers:', headers)
         Object.entries(headers).forEach(([key, value]) => {
           request.headers.set(key, value)
         })
@@ -80,11 +72,9 @@ export const sessionApi = {
   // Get user sessions
   getSessions: async (limit = 10) => {
     try {
-      console.log('🔍 getSessions - calling API (headers will be set by beforeRequest hook)')
       const result = await api.get('api/v1/sessions', { 
         searchParams: { limit }
       }).json()
-      console.log('🔍 getSessions - result:', result)
       return result
         } catch (error: unknown) {
           console.error('❌ getSessions error:', error)
