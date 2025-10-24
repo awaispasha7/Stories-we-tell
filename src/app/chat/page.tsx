@@ -28,20 +28,21 @@ export default function ChatPage() {
   useEffect(() => {
     const initializeSession = async () => {
       try {
-        // Initialize the session sync manager
-        await sessionSyncManager.initialize()
-        
-        // Restore session from localStorage (after sync validation)
+        // First, restore session from localStorage synchronously
         const stored = localStorage.getItem('stories_we_tell_session')
         if (stored) {
           const parsed = JSON.parse(stored)
           if (parsed.sessionId) {
+            console.log('🔄 [PAGE] Restoring session from localStorage:', parsed.sessionId)
             setCurrentSessionId(parsed.sessionId)
             if (parsed.projectId) {
               setCurrentProjectId(parsed.projectId)
             }
           }
         }
+        
+        // Then initialize the session sync manager asynchronously
+        await sessionSyncManager.initialize()
       } catch (error) {
         console.error('Failed to initialize session:', error)
       }

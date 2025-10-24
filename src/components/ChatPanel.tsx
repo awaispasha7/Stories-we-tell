@@ -74,6 +74,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
             if (parsed.projectId) {
               setCurrentProjectId(parsed.projectId)
             }
+            
+            // Notify parent component about the restored session
+            if (onSessionUpdate) {
+              console.log('🔄 [CHAT] Notifying parent about restored session:', parsed.sessionId)
+              onSessionUpdate(parsed.sessionId, parsed.projectId)
+            }
           }
         }
       } catch (error) {
