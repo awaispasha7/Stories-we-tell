@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [convertSupabaseUser, migrationAttempted, userSynced])
+  }, [convertSupabaseUser, migrationAttempted])
 
   const login = useCallback(async (email: string, password: string) => {
     try {

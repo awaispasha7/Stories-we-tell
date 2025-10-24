@@ -277,12 +277,35 @@ export function useSession(sessionId?: string, projectId?: string) {
       return
     }
     
+    // Don't create session if we already have a session in state
+    if (sessionState.sessionId && sessionState.sessionId.trim()) {
+      console.log('🔄 [SESSION] useEffect check: Session already exists in state, skipping creation check')
+      return
+    }
+    
+    // Check if there's a valid session in localStorage before creating a new one
+    let hasValidLocalStorageSession = false
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(SESSION_STORAGE_KEY)
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.sessionId && parsed.sessionId.trim()) {
+            hasValidLocalStorageSession = true
+            console.log('🔄 [SESSION] useEffect check: Valid session found in localStorage, skipping creation')
+          }
+        }
+      } catch (error) {
+        console.error('Error checking localStorage session:', error)
+      }
+    }
+    
     const shouldCreateSession = (
       !authLoading && 
       !sessionState.isLoading && 
       !sessionCreationInProgress.current &&
       !globalSessionCreationInProgress &&
-      !sessionState.sessionId // Don't create if we already have a session
+      !hasValidLocalStorageSession // Don't create if there's a valid session in localStorage
     )
     
     console.log('🔄 [SESSION] useEffect check:', {
@@ -292,6 +315,7 @@ export function useSession(sessionId?: string, projectId?: string) {
       sessionCreationInProgress: sessionCreationInProgress.current,
       globalSessionCreationInProgress,
       sessionStateSessionId: sessionState.sessionId,
+      hasValidLocalStorageSession,
       shouldCreateSession
     })
     
