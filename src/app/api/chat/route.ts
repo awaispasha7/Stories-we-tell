@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, session_id, project_id } = await req.json()
+    const { text, session_id, project_id, attached_files } = await req.json()
     
     // Get headers from the request
     const xSessionId = req.headers.get('X-Session-ID')
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
           ...(xUserId && { 'X-User-ID': xUserId }),
           ...(xSessionId && { 'X-Session-ID': xSessionId }),
         },
-        body: JSON.stringify({ text, session_id, project_id }),
+        body: JSON.stringify({ text, session_id, project_id, attached_files }),
         signal: controller.signal,
       })
       

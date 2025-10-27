@@ -5,21 +5,35 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, Mic } from 'lucide-react'
 import { UploadDropzone } from './UploadDropzone'
 import { AudioRecorder } from './AudioRecorder'
+import { SimpleAttachmentPreview } from './SimpleAttachmentPreview'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { cn } from '@/lib/utils'
 
+interface AttachedFile {
+  name: string
+  size: number
+  url: string
+  type: string
+  asset_id: string
+}
+
 interface ComposerProps {
-  onSend: (message: string) => void
+  onSend: (message: string, attachedFiles?: AttachedFile[]) => void
   disabled?: boolean
   sessionId?: string
   projectId?: string
+  editContent?: string
+  isEditing?: boolean
+  onEditComplete?: () => void
+  editAttachedFiles?: AttachedFile[]
 }
 
-export function Composer({ onSend, disabled = false, sessionId, projectId }: ComposerProps) {
+export function Composer({ onSend, disabled = false, sessionId, projectId, editContent, isEditing, onEditComplete, editAttachedFiles }: ComposerProps) {
   const [text, setText] = useState('')
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const [isLargeScreen, setIsLargeScreen] = useState(false)
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
@@ -43,10 +57,40 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
     }
   }, [disabled])
 
+  // Handle edit content and attached files
+  useEffect(() => {
+    if (isEditing && editContent) {
+      setText(editContent)
+      // Set attached files if provided
+      if (editAttachedFiles && editAttachedFiles.length > 0) {
+        setAttachedFiles(editAttachedFiles)
+      }
+      // Focus the textarea after setting content
+      setTimeout(() => {
+        textareaRef.current?.focus()
+      }, 100)
+    }
+  }, [isEditing, editContent, editAttachedFiles])
+
+  // Auto-focus textarea when files are attached
+  useEffect(() => {
+    if (attachedFiles.length > 0 && textareaRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        textareaRef.current?.focus()
+      }, 100)
+    }
+  }, [attachedFiles.length])
+
   const handleSend = () => {
-    if (!text.trim() || disabled) return
-    onSend(text)
+    if ((!text.trim() && attachedFiles.length === 0) || disabled) return
+    onSend(text.trim(), attachedFiles.length > 0 ? attachedFiles : undefined)
     setText('')
+    setAttachedFiles([])
+    // Clear edit state when message is sent
+    if (isEditing && onEditComplete) {
+      onEditComplete()
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -71,6 +115,15 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
     }
   }
 
+  // Handle file attachments
+  const handleFileAttached = (file: AttachedFile) => {
+    setAttachedFiles(prev => [...prev, file])
+  }
+
+  const handleRemoveFile = (assetId: string) => {
+    setAttachedFiles(prev => prev.filter(file => file.asset_id !== assetId))
+  }
+
   // Auto-resize textarea - DISABLED to maintain fixed height
   // useEffect(() => {
   //   if (textareaRef.current) {
@@ -81,8 +134,15 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
 
   return (
     <div className="p-2 sm:p-3">
-        <div className={`flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
-          <UploadDropzone />
+      {/* Attachment Preview - Above the composer */}
+      {attachedFiles.length > 0 && (
+        <div className="mb-3">
+          <SimpleAttachmentPreview files={attachedFiles} onRemove={handleRemoveFile} />
+        </div>
+      )}
+      
+      <div className={`relative flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
+        <UploadDropzone sessionId={sessionId} projectId={projectId} onFileAttached={handleFileAttached} />
           <div className="relative">
             {!showAudioRecorder ? (
               // Initial state - just the mic button
@@ -147,6 +207,7 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
+            onClick={() => textareaRef.current?.focus()}
             placeholder={isSmallScreen ? "Take me to the mo…" : "Take me to the moment your story begins…"}
             className={cn(
               `composer-textarea flex-1 min-w-0 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-lg sm:rounded-xl transition-all duration-200 text-xs sm:text-sm md:text-base ${colors.text} px-2 sm:px-3 py-2 sm:py-3`,
@@ -172,13 +233,65 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
             }}
             disabled={disabled}
           />
+          
+          {/* Cancel button - only show when editing */}
+          {isEditing && (
+            <button
+              type="button"
+              onClick={onEditComplete}
+              className={cn(
+                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 mr-2",
+                "bg-gray-500 hover:bg-gray-600 hover:scale-110 active:scale-95 hover:shadow-2xl cursor-pointer shadow-gray-500/50"
+              )}
+              style={{ 
+                width: isLargeScreen ? '56px' : '40px',
+                height: isLargeScreen ? '56px' : '40px',
+                borderRadius: '30%',
+                boxShadow: '0 4px 14px 0 rgba(107, 114, 128, 0.3)',
+                border: 'none',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: 'white',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease-in-out',
+                cursor: 'pointer',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                WebkitTouchCallout: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                appearance: 'none',
+                background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                boxSizing: 'border-box',
+              }}
+              title="Cancel edit"
+            >
+              <svg 
+                className="h-4 w-4" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          
           <button
             type="button"
             onClick={handleSend}
-            disabled={!text.trim() || disabled}
+            disabled={(!text.trim() && attachedFiles.length === 0) || disabled}
               className={cn(
                 "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative",
-                !text.trim() || disabled
+                (!text.trim() && attachedFiles.length === 0) || disabled
                   ? resolvedTheme === 'light' 
                     ? "bg-white cursor-not-allowed shadow-sky-200/50"
                     : "bg-[rgb(83,93,108)] cursor-not-allowed shadow-slate-500/50"
@@ -202,9 +315,16 @@ export function Composer({ onSend, disabled = false, sessionId, projectId }: Com
           >
             {disabled ? (
               <Loader2 className={cn(
-                "h-4 w-4 sm:h-5 sm:w-5 animate-spin drop-shadow-xl",
+                "h-6 w-6 sm:h-7 sm:w-7 animate-spin drop-shadow-xl",
                 resolvedTheme === 'light' ? "text-sky-500" : "text-slate-400"
-              )} />
+              )} style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                margin: '0',
+                padding: '0'
+              }} />
             ) : !text.trim() ? (
               <Send className={cn(
                 "h-4 w-4 sm:h-5 sm:w-5 drop-shadow-xl",

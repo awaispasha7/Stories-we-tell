@@ -27,9 +27,10 @@ interface SessionsSidebarProps {
   onSessionSelect: (sessionId: string, projectId?: string) => void
   currentSessionId?: string
   onClose?: () => void
+  onNewStory?: () => void
 }
 
-export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: SessionsSidebarProps) {
+export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, onNewStory }: SessionsSidebarProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
   const { resolvedTheme } = useTheme()
@@ -362,6 +363,14 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
             Previous Chats
           </h2>
           <div className="flex items-center gap-2">
+            {/* New Story/Chat Button */}
+            <button
+              onClick={onNewStory}
+              className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
+              title={isAuthenticated ? "Create New Story" : "Create New Story (Sign up required)"}
+            >
+              <Plus className="h-4 w-4" />
+            </button>
             {/* Delete All Sessions Button */}
             {isAuthenticated && sessions.length > 0 && (
               <button
@@ -374,21 +383,6 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose }: 
               </button>
             )}
             
-            {/* Add New Chat Button */}
-            {isAuthenticated && (
-              <button
-              onClick={() => {
-                console.log('🆕 Create New Chat button clicked')
-                toast.info('Creating New Chat', 'Starting a new conversation...', 2000)
-                onSessionSelect('', '')
-              }}
-                className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
-                title="Start New Chat"
-                
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            )}
 
             
             {/* Back Button for mobile/tablet */}

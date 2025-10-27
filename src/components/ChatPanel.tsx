@@ -7,8 +7,17 @@ import { useDossierRefresh } from '@/lib/dossier-context'
 import { useAuth } from '@/lib/auth-context'
 import { useSession } from '@/hooks/useSession'
 import { sessionSyncManager } from '@/lib/session-sync'
+import { useRouter } from 'next/navigation'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
+
+interface AttachedFile {
+  name: string
+  size: number
+  url: string
+  type: string
+  asset_id: string
+}
 
 interface ChatPanelProps {
   _sessionId?: string
@@ -24,7 +33,72 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     isSessionExpired, 
     getSessionInfo 
   } = useSession(_sessionId, _projectId)
+  const router = useRouter()
   
+  // Action button handlers for interactive chat buttons
+  const handleSignup = () => {
+    router.push('/auth/signup')
+  }
+
+  const handleLogin = () => {
+    router.push('/auth/login')
+  }
+
+  const handleNewStory = () => {
+    // For authenticated users, create new story
+    if (isAuthenticated) {
+      setCurrentSessionId('')
+      setCurrentProjectId('')
+    } else {
+      // For anonymous users, this would trigger the modal
+      // The modal is handled at the page level
+    }
+  }
+
+  const handleEditMessage = async (messageId: string, newContent: string, attachedFiles?: AttachedFile[]) => {
+    // Extract message index from messageId (format: "message-{index}")
+    const messageIndex = parseInt(messageId.replace('message-', ''))
+    
+    if (isNaN(messageIndex) || messageIndex < 0 || messageIndex >= messages.length) {
+      console.error('Invalid message index:', messageIndex)
+      return
+    }
+    
+    // Store the edit point for later use - don't remove messages yet
+    setEditContent(newContent)
+    setIsEditing(true)
+    setEditMessageIndex(messageIndex)
+    setEditAttachedFiles(attachedFiles || [])
+    
+    console.log('Edit message at index:', messageIndex, 'Content:', newContent)
+    console.log('Edit attached files:', attachedFiles)
+    console.log('Composer will be populated with:', newContent)
+    console.log('Messages will be trimmed when user sends the edited message')
+  }
+
+  const handleEditComplete = () => {
+    setEditContent('')
+    setIsEditing(false)
+    setEditMessageIndex(null)
+    setEditAttachedFiles([])
+  }
+
+  // Function to determine if a message should show action buttons
+  // This is now simpler and focused on AI responses that mention signup
+  const shouldShowActionButtons = (content: string, role: string) => {
+    if (role !== 'assistant') return false
+    if (isAuthenticated) return false // Don't show for authenticated users
+    
+    // Check for AI responses that mention signup/login
+    const signupKeywords = [
+      'sign up', 'signup', 'create account', 'register', 'unlimited stories',
+      'multiple stories', 'save your story', 'access your stories',
+      'create unlimited stories', 'sign up to create', 'register to access'
+    ]
+    
+    const contentLower = content.toLowerCase()
+    return signupKeywords.some(keyword => contentLower.includes(keyword))
+  }
   
   const [messages, setMessages] = useState<BubbleProps[]>([
     {
@@ -36,6 +110,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const [typingMessage, setTypingMessage] = useState('')
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [isProcessingMessage, setIsProcessingMessage] = useState(false)
+  
+  // Edit functionality state
+  const [editContent, setEditContent] = useState<string>('')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editMessageIndex, setEditMessageIndex] = useState<number | null>(null)
+  const [editAttachedFiles, setEditAttachedFiles] = useState<AttachedFile[]>([])
   
   // Local state to track current session and project for this chat
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
@@ -192,11 +272,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map((msg: unknown) => {
-            const message = msg as { role?: string; content?: string; created_at?: string }
+            const message = msg as { role?: string; content?: string; created_at?: string; attached_files?: AttachedFile[] }
             return {
               role: message.role as 'user' | 'assistant',
               content: message.content || '',
-              timestamp: message.created_at
+              timestamp: message.created_at,
+              attachedFiles: message.attached_files || []
             }
           })
           setMessages(formattedMessages)
@@ -306,7 +387,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, attachedFiles?: AttachedFile[]) => {
     if (!text.trim() || isLoading) {
       return
     }
@@ -324,9 +405,21 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       return
     }
 
-    // Add user message
-    const userMessage: BubbleProps = { role: 'user', content: text }
-    setMessages(prev => [...prev, userMessage])
+    // Add user message with attached files
+    const userMessage: BubbleProps = { 
+      role: 'user', 
+      content: text,
+      attachedFiles: attachedFiles
+    }
+    
+    // If we're editing a message, replace it and remove subsequent messages
+    if (isEditing && editMessageIndex !== null) {
+      const editedMessages = messages.slice(0, editMessageIndex)
+      setMessages([...editedMessages, userMessage])
+      console.log('✏️ [EDIT] Replaced message at index', editMessageIndex, 'and removed', messages.length - editMessageIndex - 1, 'subsequent messages')
+    } else {
+      setMessages(prev => [...prev, userMessage])
+    }
     
     setIsLoading(true)
     
@@ -394,7 +487,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         body: JSON.stringify({ 
           text,
           session_id: sessionId,
-          project_id: projectId
+          project_id: projectId,
+          attached_files: attachedFiles || []
         }),
         signal: controller.signal,
       })
@@ -625,6 +719,13 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
               key={index}
               role={message.role}
               content={message.content}
+              showActionButtons={shouldShowActionButtons(message.content, message.role)}
+              onSignup={handleSignup}
+              onLogin={handleLogin}
+              onNewStory={handleNewStory}
+              attachedFiles={message.attachedFiles}
+              onEdit={handleEditMessage}
+              messageId={`message-${index}`}
             />
           ))}
 
@@ -657,7 +758,16 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
               {/* Enhanced Composer - Fixed at bottom */}
               <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
                 <div className="w-full overflow-hidden">
-                  <Composer onSend={handleSendMessage} disabled={isLoading || isProcessingMessage} sessionId={hookSessionId || undefined} projectId={hookProjectId || undefined} />
+                  <Composer 
+                    onSend={handleSendMessage} 
+                    disabled={isLoading || isProcessingMessage} 
+                    sessionId={hookSessionId || undefined} 
+                    projectId={hookProjectId || undefined}
+                    editContent={editContent}
+                    isEditing={isEditing}
+                    onEditComplete={handleEditComplete}
+                    editAttachedFiles={editAttachedFiles}
+                  />
                 </div>
               </div>
     </div>

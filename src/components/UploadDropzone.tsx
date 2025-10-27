@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { Paperclip, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 // import { Button } from '@/components/ui/button' // Removed - using custom styling
 import { useTheme } from '@/lib/theme-context'
@@ -15,12 +15,22 @@ interface UploadedFile {
   type: string
 }
 
+interface AttachedFile {
+  name: string
+  size: number
+  url: string
+  type: string
+  asset_id: string
+}
+
 interface UploadDropzoneProps {
   sessionId?: string
   projectId?: string
+  onFileAttached?: (file: AttachedFile) => void
 }
 
-export function UploadDropzone({ sessionId: propSessionId, projectId: propProjectId }: UploadDropzoneProps) {
+export function UploadDropzone({ sessionId: propSessionId, projectId: propProjectId, onFileAttached }: UploadDropzoneProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -78,7 +88,6 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
         formData.append('files', file)
       })
 
-
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -95,14 +104,31 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
       }
 
       const data = await response.json()
-      setUploadedFiles(prev => [...prev, ...data.files])
+      
+      // If onFileAttached callback is provided, call it for each uploaded file
+      if (onFileAttached) {
+        data.files.forEach((file: any) => {
+          const attachedFile = {
+            name: file.name,
+            size: file.size,
+            url: file.url,
+            type: file.type,
+            asset_id: file.asset_id
+          }
+          onFileAttached(attachedFile)
+        })
+      } else {
+        // Fallback to old behavior if no callback provided
+        setUploadedFiles(prev => [...prev, ...data.files])
+      }
     } catch (err) {
       console.error('❌ Upload error:', err)
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
     }
-  }, [sessionId, projectId, sessionLoading, user])
+  }, [sessionId, projectId, sessionLoading, user, onFileAttached])
+
 
   const onFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     handleFileUpload(event.target.files)
@@ -130,6 +156,7 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
   return (
   <div className="flex items-center gap-2">
     <input
+      ref={fileInputRef}
       type="file"
       multiple
       accept="image/*,.pdf,.doc,.docx,.txt,.mp4,.mov,.avi"
@@ -163,7 +190,13 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
           width: isLargeScreen ? '56px' : '40px',
           height: isLargeScreen ? '56px' : '40px',
         }}
-        onClick={() => !uploading && !sessionLoading && (user || (sessionId && projectId)) && document.getElementById('file-upload')?.click()}
+        onClick={() => {
+          if (!uploading && !sessionLoading && (user || (sessionId && projectId))) {
+            if (fileInputRef.current) {
+              fileInputRef.current.click()
+            }
+          }
+        }}
         disabled={!isClient || Boolean(uploading || sessionLoading || (!user && (!sessionId || !projectId)))}
       >
         {uploading ? (
