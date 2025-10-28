@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { X, FileImage, FileText, File } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { useTheme } from '@/lib/theme-context'
 
 interface AttachedFile {
   name: string

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Image from 'next/image'
 import { X, Eye, Download, FileImage, FileText, File } from 'lucide-react'
 import { cn } from '@/lib/utils'
