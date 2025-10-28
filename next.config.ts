@@ -23,14 +23,8 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'mooaeqqpfapakstjjxky.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
-      },
-    ],
+    // Disable optimization for Supabase images to avoid timeout issues
+    unoptimized: true,
   },
   
   // Compress output

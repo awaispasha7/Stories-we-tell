@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import Image from 'next/image'
+// Using regular img tags for Supabase images to avoid Next.js optimization timeout
 import { X, FileImage, FileText, File } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/lib/theme-context'
@@ -184,13 +184,12 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                 
                 {/* Image Content Area - Takes remaining space */}
                 <div className="flex-1 flex items-center justify-center p-4">
-                  <Image
+                  <img
                     src={previewFile.url}
                     alt={previewFile.name}
-                    width={800}
-                    height={600}
                     className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
                     style={{ maxWidth: '100%', maxHeight: '100%' }}
+                    loading="lazy"
                   />
                 </div>
               </div>
