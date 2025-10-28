@@ -62,13 +62,11 @@ class SessionSyncManager {
         return
       }
 
-      // For anonymous users, always clear stored sessions for fresh experience
-      const currentUser = this.getCurrentUser()
-      if (!currentUser) {
-        console.log('🔄 [DEMO] Anonymous user detected - clearing stored session for fresh experience')
-        this.clearStoredSession()
-        return
-      }
+          // For anonymous users, check for existing session
+          const currentUser = this.getCurrentUser()
+          if (!currentUser) {
+            console.log('🔄 [DEMO] Anonymous user - checking for existing session')
+          }
 
       console.log('🔍 Validating stored session:', storedSession.sessionId)
       

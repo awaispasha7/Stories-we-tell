@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useSession } from '@/hooks/useSession'
 import { sessionSyncManager } from '@/lib/session-sync'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/Toast'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -34,6 +35,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     getSessionInfo 
   } = useSession(_sessionId, _projectId)
   const router = useRouter()
+  const toast = useToast()
   
   // Action button handlers for interactive chat buttons
   const handleSignup = () => {
@@ -50,8 +52,29 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       setCurrentSessionId('')
       setCurrentProjectId('')
     } else {
-      // For anonymous users, this would trigger the modal
-      // The modal is handled at the page level
+      // For anonymous users, show warning toast with options
+      toast.newChatWarning(
+        'Create New Chat?',
+        'If you create a new chat, your current chat data will be lost forever! To save and load chats, login/signup.',
+        () => {
+          // User confirmed - clear current session
+          setCurrentSessionId('')
+          setCurrentProjectId('')
+          sessionIdRef.current = ''
+          localStorage.removeItem('stories_we_tell_session')
+          setMessages([
+            {
+              role: 'assistant',
+              content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+            }
+          ])
+        },
+        undefined, // No cancel action needed
+        handleLogin, // Login button
+        handleSignup, // Signup button
+        'Continue',
+        'Cancel'
+      )
     }
   }
 
@@ -150,11 +173,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           if (parsed.sessionId) {
             console.log('🔄 [CHAT] Found session in localStorage:', parsed.sessionId)
             
-            // For anonymous users, don't restore sessions - always start fresh
+            // For anonymous users, allow session restoration
             if (!isAuthenticated) {
-              console.log('🔄 [DEMO] Anonymous user - clearing localStorage session for fresh experience')
-              localStorage.removeItem('stories_we_tell_session')
-              return
+              console.log('🔄 [DEMO] Anonymous user - allowing session restoration')
             }
             
             // Only use localStorage session if no specific session was provided via props
@@ -187,10 +208,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     // Listen for localStorage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'stories_we_tell_session') {
-        // For anonymous users, ignore localStorage changes
+        // For anonymous users, allow localStorage changes
         if (!isAuthenticated) {
-          console.log('🔄 [DEMO] Anonymous user - ignoring localStorage changes')
-          return
+          console.log('🔄 [DEMO] Anonymous user - allowing localStorage changes')
         }
         
         // Only respond to storage changes if no specific session is provided via props
@@ -454,13 +474,30 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       if (isAuthenticated) {
         // For authenticated users, prioritize currentSessionId (from selected chat) over hook values
         // This ensures that when a user clicks on a previous chat, messages are sent to that chat
-        sessionId = currentSessionId || hookSessionId || sessionIdRef.current || localStorage.getItem('anonymous_session_id')
-        projectId = currentProjectId || hookProjectId || localStorage.getItem('anonymous_project_id')
+        sessionId = currentSessionId || hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
+        projectId = currentProjectId || hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
       } else {
-        // For anonymous users, use session info from useSession hook
-        const sessionInfo = getSessionInfo()
-        sessionId = sessionInfo.sessionId
-        projectId = sessionInfo.projectId
+        // For anonymous users, try multiple sources to find session data
+        // This ensures consistency with upload component
+        sessionId = hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
+        projectId = hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
+        
+        // If still no session, try to get from localStorage (for demo users)
+        if (!sessionId) {
+          try {
+            const stored = typeof window !== 'undefined' ? localStorage.getItem('stories_we_tell_session') : null
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              if (parsed.sessionId) {
+                sessionId = parsed.sessionId
+                projectId = parsed.projectId
+                console.log('💬 [CHAT] Restored session from localStorage for anonymous user:', sessionId)
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing localStorage session:', error)
+          }
+        }
       }
       
       console.log('💬 [CHAT] Using sessionId:', sessionId, 'projectId:', projectId)
@@ -472,7 +509,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           hookSessionId,
           sessionIdRef: sessionIdRef.current,
           currentSessionId,
-          localStorageSession: localStorage.getItem('anonymous_session_id')
+          localStorageSession: typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null
         })
         // Don't proceed without a session - this prevents creating new sessions
         throw new Error('No session ID available - cannot send message')
@@ -774,8 +811,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                   <Composer 
                     onSend={handleSendMessage} 
                     disabled={isLoading || isProcessingMessage} 
-                    sessionId={hookSessionId || undefined} 
-                    projectId={hookProjectId || undefined}
+                    sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
+                    projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
                     editContent={editContent}
                     isEditing={isEditing}
                     onEditComplete={handleEditComplete}

@@ -27,6 +27,8 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
   const [previewFile, setPreviewFile] = useState<AttachedFile | null>(null)
   const [textPreviewContent, setTextPreviewContent] = useState<string | null>(null)
   const [isLoadingTextContent, setIsLoadingTextContent] = useState(false)
+  const [isLoadingImage, setIsLoadingImage] = useState(false)
+  const [imageLoadError, setImageLoadError] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { resolvedTheme } = useTheme()
 
@@ -69,6 +71,18 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
   const handleFileClick = (file: AttachedFile) => {
     setPreviewFile(file)
     setTextPreviewContent(null) // Reset text content
+    
+    // Set loading state for images
+    if (file.type.includes('image')) {
+      setIsLoadingImage(true)
+      setImageLoadError(false)
+      
+      // Add timeout to prevent infinite loading
+      setTimeout(() => {
+        setIsLoadingImage(false)
+        setImageLoadError(true)
+      }, 10000) // 10 second timeout
+    }
     
     // If it's a text file, fetch the content
     if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
@@ -150,7 +164,12 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
             bottom: 0,
             zIndex: 999999
           }}
-          onClick={() => setPreviewFile(null)}
+          onClick={() => {
+            setPreviewFile(null)
+            setIsLoadingImage(false)
+            setIsLoadingTextContent(false)
+            setImageLoadError(false)
+          }}
         >
           <div 
             className="min-w-[600px] min-h-[400px] max-w-[95vw] max-h-[95vh] bg-white dark:bg-slate-800 rounded-lg shadow-2xl overflow-hidden"
@@ -174,7 +193,12 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                     </div>
                   </div>
                   <button
-                    onClick={() => setPreviewFile(null)}
+                    onClick={() => {
+                      setPreviewFile(null)
+                      setIsLoadingImage(false)
+                      setIsLoadingTextContent(false)
+                      setImageLoadError(false)
+                    }}
                     className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                     title="Close preview"
                   >
@@ -184,13 +208,34 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                 
                 {/* Image Content Area - Takes remaining space */}
                 <div className="flex-1 flex items-center justify-center p-4">
-                  <img
-                    src={previewFile.url}
-                    alt={previewFile.name}
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                    style={{ maxWidth: '100%', maxHeight: '100%' }}
-                    loading="lazy"
-                  />
+                  {isLoadingImage ? (
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Loading image...</p>
+                    </div>
+                  ) : imageLoadError ? (
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="text-red-500 text-4xl">⚠️</div>
+                      <p className="text-red-500 dark:text-red-400 text-sm">Failed to load image</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">The image may be corrupted or the URL is invalid</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={previewFile.url}
+                      alt={previewFile.name}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                      style={{ maxWidth: '100%', maxHeight: '100%' }}
+                      loading="lazy"
+                      onLoad={() => {
+                        setIsLoadingImage(false)
+                        setImageLoadError(false)
+                      }}
+                      onError={() => {
+                        setIsLoadingImage(false)
+                        setImageLoadError(true)
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             ) : (
@@ -210,7 +255,12 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                     </div>
                   </div>
                   <button
-                    onClick={() => setPreviewFile(null)}
+                    onClick={() => {
+                      setPreviewFile(null)
+                      setIsLoadingImage(false)
+                      setIsLoadingTextContent(false)
+                      setImageLoadError(false)
+                    }}
                     className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     <X className="h-5 w-5" />

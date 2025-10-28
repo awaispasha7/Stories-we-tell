@@ -12,6 +12,7 @@ interface ResizableSidebarProps {
   className?: string
   isCollapsed?: boolean
   onCollapseChange?: (collapsed: boolean) => void
+  showNotification?: boolean
 }
 
 export function ResizableSidebar({ 
@@ -21,7 +22,8 @@ export function ResizableSidebar({
   defaultWidth = 300,
   className = '',
   isCollapsed: externalCollapsed,
-  onCollapseChange
+  onCollapseChange,
+  showNotification = false
 }: ResizableSidebarProps) {
   const [width, setWidth] = useState(defaultWidth)
   const [isResizing, setIsResizing] = useState(false)
@@ -186,14 +188,22 @@ export function ResizableSidebar({
       {isMobile && (
         <button
           onClick={toggleCollapse}
-          className={`fixed top-1/2 z-50 p-4 bg-white/95 dark:bg-gray-800/95 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 sm:hidden ${
-            isCollapsed ? 'left-4 transform -translate-y-1/2' : 'right-4 transform -translate-y-1/2'
-          }`}
+          className={`fixed top-1/2 z-50 p-8 bg-linear-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-full shadow-2xl border-2 border-white dark:border-gray-800 hover:from-blue-600 hover:to-purple-700 dark:hover:from-blue-700 dark:hover:to-purple-800 transition-all duration-300 hover:scale-110 active:scale-95 sm:hidden animate-pulse transform -translate-y-1/2 ${
+            isCollapsed ? 'left-0' : 'right-0'
+          }`} style={{ padding: '1.5rem 0.5rem', borderRadius: '0 30% 30% 0' }}
+          title={isCollapsed ? "Open sidebar - View dossier & previous chats" : "Close sidebar"}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-8 w-8 text-gray-700 dark:text-gray-200" />
+            <ChevronRight className="h-6 w-6 text-white drop-shadow-lg" />
           ) : (
-            <ChevronLeft className="h-8 w-8 text-gray-700 dark:text-gray-200" />
+            <ChevronLeft className="h-6 w-6 text-white drop-shadow-lg" />
+          )}
+          
+          {/* Notification badge */}
+          {showNotification && isCollapsed && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-ping">
+              <div className="w-full h-full bg-red-500 rounded-full"></div>
+            </div>
           )}
         </button>
       )}

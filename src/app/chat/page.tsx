@@ -24,6 +24,7 @@ export default function ChatPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [loginModalTrigger, setLoginModalTrigger] = useState<'new-story' | 'session-start' | 'story-complete'>('session-start')
+  const [showSidebarHint, setShowSidebarHint] = useState(false)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { user, isAuthenticated } = useAuth()
@@ -50,6 +51,21 @@ export default function ChatPage() {
       }
     }
   }, [isAuthenticated, user])
+
+  // Show sidebar hint for new users on mobile
+  useEffect(() => {
+    const hasSeenSidebarHint = localStorage.getItem('stories_we_tell_seen_sidebar_hint')
+    const isMobile = window.innerWidth < 640
+    
+    if (!hasSeenSidebarHint && isMobile && isSidebarCollapsed) {
+      // Show hint after a delay to let the page load
+      const timer = setTimeout(() => {
+        setShowSidebarHint(true)
+      }, 3000) // 3 second delay
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isSidebarCollapsed])
 
   // Initialize session sync and restore session
   useEffect(() => {
@@ -243,6 +259,59 @@ export default function ChatPage() {
         onLogin={handleLogin}
         trigger={loginModalTrigger}
       />
+
+      {/* Sidebar Hint for Mobile Users */}
+      {showSidebarHint && (
+        <div className="fixed inset-0 z-60 pointer-events-none">
+          {/* Background overlay */}
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+          
+          {/* Hint bubble pointing to sidebar toggle */}
+          <div className="absolute left-16 top-1/2 transform -translate-y-1/2 pointer-events-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 max-w-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                    Discover More!
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                    Tap the colorful button to access your story dossier and previous chats.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setShowSidebarHint(false)
+                        localStorage.setItem('stories_we_tell_seen_sidebar_hint', 'true')
+                      }}
+                      className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Got it!
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowSidebarHint(false)
+                        setIsSidebarCollapsed(false)
+                        localStorage.setItem('stories_we_tell_seen_sidebar_hint', 'true')
+                      }}
+                      className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Show me
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Arrow pointing to sidebar toggle */}
+            <div className="absolute -left-2 top-1/2 transform -translate-y-1/2">
+              <div className="w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-white dark:border-r-gray-800"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </DossierProvider>
   )
 }
