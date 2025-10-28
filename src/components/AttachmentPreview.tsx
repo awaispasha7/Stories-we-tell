@@ -1,6 +1,4 @@
-'use client'
-
-import { useState } from 'react'
+import Image from 'next/image'
 import { X, Eye, Download, FileImage, FileText, File } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -182,9 +180,11 @@ export function AttachmentPreview({ files, onRemove }: AttachmentPreviewProps) {
               </button>
             </div>
             <div className="p-4">
-              <img
+              <Image
                 src={previewFile.url}
                 alt={previewFile.name}
+                width={800}
+                height={600}
                 className="max-w-full max-h-[70vh] object-contain rounded-lg"
               />
             </div>

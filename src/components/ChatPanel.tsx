@@ -208,7 +208,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('sessionUpdated', handleSessionUpdate as EventListener)
     }
-  }, []) // Empty dependency array to run only on mount
+  }, [_sessionId, onSessionUpdate]) // Include missing dependencies
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, LogIn, Sparkles, X } from 'lucide-react'
+import { UserPlus, LogIn, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface InteractiveButtonProps {

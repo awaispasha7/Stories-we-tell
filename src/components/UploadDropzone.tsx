@@ -13,6 +13,7 @@ interface UploadedFile {
   size: number
   url: string
   type: string
+  asset_id: string
 }
 
 interface AttachedFile {
@@ -107,7 +108,7 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
       
       // If onFileAttached callback is provided, call it for each uploaded file
       if (onFileAttached) {
-        data.files.forEach((file: any) => {
+        data.files.forEach((file: UploadedFile) => {
           const attachedFile = {
             name: file.name,
             size: file.size,

@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
 import { X, UserPlus, LogIn, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface LoginPromptModalProps {
   isOpen: boolean
