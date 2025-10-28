@@ -153,7 +153,7 @@ export function Composer({ onSend, disabled = false, sessionId, projectId, editC
                 }}
                 disabled={disabled}
                 className={cn(
-                  "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm flex-shrink-0",
+                  "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm shrink-0",
                   resolvedTheme === 'light' 
                     ? "border-gray-400 bg-white hover:border-blue-500 hover:bg-gray-50" 
                     : "border-slate-500 bg-slate-800 hover:border-sky-400 hover:bg-slate-700",
@@ -240,7 +240,7 @@ export function Composer({ onSend, disabled = false, sessionId, projectId, editC
               type="button"
               onClick={onEditComplete}
               className={cn(
-                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 mr-2",
+                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center shrink-0 mr-2",
                 "bg-gray-500 hover:bg-gray-600 hover:scale-110 active:scale-95 hover:shadow-2xl cursor-pointer shadow-gray-500/50"
               )}
               style={{ 
@@ -290,7 +290,7 @@ export function Composer({ onSend, disabled = false, sessionId, projectId, editC
             onClick={handleSend}
             disabled={(!text.trim() && attachedFiles.length === 0) || disabled}
               className={cn(
-                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center flex-shrink-0 relative",
+                "rounded-full transition-all duration-300 shadow-xl flex items-center justify-center shrink-0 relative",
                 (!text.trim() && attachedFiles.length === 0) || disabled
                   ? resolvedTheme === 'light' 
                     ? "bg-white cursor-not-allowed shadow-sky-200/50"
