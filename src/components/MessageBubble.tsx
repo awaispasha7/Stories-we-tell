@@ -58,8 +58,8 @@ export function MessageBubble({
       marginBottom: '16px'
     }}>
       {!isUser && (
-        <div className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-green-200 rounded-full flex items-center justify-center" style={{ marginLeft: '16px', marginTop: '16px' }}>
-          <div className="bg-gradient-to-br from-green-200 to-green-300 text-green-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
+        <div className="h-9 w-9 mt-1 shrink-0 ring-2 ring-green-200 rounded-full flex items-center justify-center" style={{ marginLeft: '16px', marginTop: '16px' }}>
+          <div className="bg-linear-to-br from-green-200 to-green-300 text-green-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
             <Image 
               src="/swt-logo.svg" 
               alt="SWT Assistant" 
@@ -73,10 +73,10 @@ export function MessageBubble({
       <div className={cn(
         'max-w-[70%] rounded-xl px-8 py-6 text-sm leading-relaxed transform transition-all duration-200 hover:scale-[1.02] relative group',
         isUser
-          ? 'bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-br-lg shadow-2xl shadow-blue-500/40 border-2 border-blue-400/40'
+          ? 'bg-linear-to-br from-blue-500 via-blue-600 to-blue-700 text-white rounded-br-lg shadow-2xl shadow-blue-500/40 border-2 border-blue-400/40'
           : resolvedTheme === 'light'
-            ? 'bg-gradient-to-br from-gray-100 via-gray-50 to-white text-gray-900 backdrop-blur-sm border-2 border-gray-200 rounded-bl-lg shadow-2xl shadow-gray-300/30'
-            : 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 text-slate-100 backdrop-blur-sm border-2 border-slate-500/70 rounded-bl-lg shadow-2xl shadow-slate-400/30'
+            ? 'bg-linear-to-br from-gray-100 via-gray-50 to-white text-gray-900 backdrop-blur-sm border-2 border-gray-200 rounded-bl-lg shadow-2xl shadow-gray-300/30'
+            : 'bg-linear-to-br from-slate-800 via-slate-700 to-slate-600 text-slate-100 backdrop-blur-sm border-2 border-slate-500/70 rounded-bl-lg shadow-2xl shadow-slate-400/30'
       )}>
         {/* Attached Files Display - Above message content */}
         {attachedFiles && attachedFiles.length > 0 && (
@@ -91,7 +91,7 @@ export function MessageBubble({
           </div>
         )}
         
-        <div className="whitespace-pre-wrap leading-relaxed break-words" style={{ 
+        <div className="whitespace-pre-wrap leading-relaxed wrap-break-words" style={{ 
           marginLeft: '10px',
           marginRight: isUser ? '10px' : '10px'
         }}>
@@ -151,8 +151,8 @@ export function MessageBubble({
         )}
       </div>
       {isUser && (
-        <div className="h-9 w-9 mt-1 flex-shrink-0 ring-2 ring-blue-200 rounded-full flex items-center justify-center" style={{ marginRight: '16px' }}>
-          <div className="bg-gradient-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
+        <div className="h-9 w-9 mt-1 shrink-0 ring-2 ring-blue-200 rounded-full flex items-center justify-center" style={{ marginRight: '16px' }}>
+          <div className="bg-linear-to-br from-blue-200 to-blue-300 text-blue-800 text-xs font-bold shadow-sm rounded-full w-full h-full flex items-center justify-center">
             {isHydrated && profile.userImage ? (
               <Image 
                 src={profile.userImage} 

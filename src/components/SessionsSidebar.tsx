@@ -366,7 +366,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, on
             {/* New Story/Chat Button */}
             <button
               onClick={onNewStory}
-              className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
+              className="p-2 rounded-lg bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer"
               title={isAuthenticated ? "Create New Story" : "Create New Story (Sign up required)"}
             >
               <Plus className="h-4 w-4" />
@@ -376,7 +376,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, on
               <button
                 onClick={handleDeleteAllSessions}
                 disabled={deleteAllSessionsMutation.isPending}
-                className="p-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="p-2 rounded-lg bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 title="Delete All Chats"
               >
                 <Trash2 className="h-4 w-4" />
@@ -456,7 +456,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, on
                   
                   {/* Beautiful Divider */}
                   <div className="flex items-center justify-center px-1">
-                    <div className="w-0.5 h-10 bg-gradient-to-b from-transparent via-white/50 to-transparent rounded-full"></div>
+                    <div className="w-0.5 h-10 bg-linear-to-b from-transparent via-white/50 to-transparent rounded-full"></div>
                   </div>
                   
                   <button
@@ -541,7 +541,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, on
                   className={`
                     relative overflow-hidden
                     ${colors.textMuted} 
-                    text-black hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600
+                    text-black hover:bg-linear-to-r hover:from-red-500 hover:to-red-600
                     dark:hover:from-red-600 dark:hover:to-red-700
                     p-2 rounded-lg 
                     opacity-0 group-hover:opacity-100 
@@ -563,7 +563,7 @@ export function SessionsSidebar({ onSessionSelect, currentSessionId, onClose, on
                     <Trash2 className="h-3 w-3" />
                   </div>
                   {/* Animated background effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-600 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                  <div className="absolute inset-0 bg-linear-to-r from-red-400 to-red-600 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                   {/* Danger sparkle effect */}
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full opacity-0 hover:opacity-100 animate-ping"></div>
                   <div className="absolute -bottom-1 -left-1 w-1 h-1 bg-red-400 rounded-full opacity-0 hover:opacity-100 animate-ping" style={{ animationDelay: '0.5s' }}></div>

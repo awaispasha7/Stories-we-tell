@@ -159,7 +159,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
           <div className="flex gap-3 mt-4">
             <button
               onClick={handleConfirm}
-              className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-red-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-red-500/20"
+              className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-red-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-red-500/20"
               style={{ 
                 color: 'white', 
                 padding: '0.5rem 1rem', 
@@ -172,7 +172,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
             </button>
             <button
               onClick={handleCancel}
-              className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 border border-gray-300/50 dark:border-gray-600/50"
+              className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 border border-gray-300/50 dark:border-gray-600/50"
               style={{ 
                 color: 'black', 
                 padding: '0.5rem 1rem', 
@@ -189,7 +189,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
       {toast.type !== 'confirm' && (
         <button
           onClick={handleRemove}
-          className="flex-shrink-0 p-1 rounded-md hover:bg-black/10 transition-colors"
+          className="shrink-0 p-1 rounded-md hover:bg-black/10 transition-colors"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" />
@@ -214,11 +214,11 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
     <>
       {/* Background blur overlay for confirmation toasts */}
       {hasConfirmToast && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-all duration-300" />
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-60 transition-all duration-300" />
       )}
       
       {/* Toast container */}
-      <div className="fixed top-4 right-4 z-[70] space-y-2 pointer-events-none">
+      <div className="fixed top-4 right-4 z-70 space-y-2 pointer-events-none">
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
             <ToastComponent toast={toast} onRemove={onRemove} />

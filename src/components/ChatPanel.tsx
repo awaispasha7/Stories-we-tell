@@ -652,12 +652,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
 
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white via-green-50/60 to-blue-50/40 relative overflow-hidden">
+    <div className="flex flex-col h-full bg-linear-to-b from-white via-green-50/60 to-blue-50/40 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 opacity-70 pointer-events-none">
-        <div className="absolute -top-10 -left-10 w-56 h-56 bg-gradient-to-br from-green-400/80 to-green-500/60 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 -right-10 w-48 h-48 bg-gradient-to-br from-blue-400/70 to-blue-500/60 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/3 left-1/3 w-24 h-24 bg-gradient-to-br from-red-400/70 to-red-500/60 rounded-full blur-2xl animate-pulse delay-500"></div>
+        <div className="absolute -top-10 -left-10 w-56 h-56 bg-linear-to-br from-green-400/80 to-green-500/60 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 -right-10 w-48 h-48 bg-linear-to-br from-blue-400/70 to-blue-500/60 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/3 left-1/3 w-24 h-24 bg-linear-to-br from-red-400/70 to-red-500/60 rounded-full blur-2xl animate-pulse delay-500"></div>
       </div>
 
       {/* Messages Area */}
@@ -665,7 +665,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         <div className="w-full px-6 py-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
+              <div className="w-16 h-16 bg-linear-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
                 <span className="text-2xl">🎬</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">Welcome to Stories We Tell</h2>
@@ -681,12 +681,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           {/* Sign-in Prompt for Anonymous Users */}
           {showSignInPrompt && (
             <div className="flex items-start gap-3 mb-6 animate-in slide-in-from-bottom-2 duration-300">
-              <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 mt-1 ml-4">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center">
+              <div className="h-9 w-9 flex items-center justify-center shrink-0 mt-1 ml-4">
+                <div className="h-8 w-8 rounded-full bg-linear-to-br from-amber-200 to-orange-300 flex items-center justify-center">
                   <span className="text-xs font-bold text-amber-800">⏰</span>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4 max-w-2xl">
+              <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4 max-w-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   <span className="text-sm font-semibold text-amber-700">Session Expired</span>
@@ -732,7 +732,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           {/* Dynamic Typing Indicator */}
           {isLoading && (
             <div className="flex items-start gap-3 mb-6 animate-in slide-in-from-bottom-2 duration-300 ml-8" style={{ marginTop: '2px', marginLeft: '16px' }}>
-              <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 mt-1 ml-4">
+              <div className="h-9 w-9 flex items-center justify-center shrink-0 mt-1 ml-4">
                 {/* <span className="text-xs font-bold text-green-800">SW</span> */}
               </div>
               <div className="flex items-center pt-2">

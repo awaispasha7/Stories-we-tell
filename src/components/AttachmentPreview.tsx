@@ -100,7 +100,7 @@ export function AttachmentPreview({ files, onRemove }: AttachmentPreviewProps) {
                 )}
               >
                 {/* File Icon */}
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {getFileIcon(file.type)}
                 </div>
                 
@@ -163,7 +163,7 @@ export function AttachmentPreview({ files, onRemove }: AttachmentPreviewProps) {
 
       {/* Image Preview Modal */}
       {previewFile && previewFile.type === 'image' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="relative max-w-4xl max-h-[90vh] bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-600">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">

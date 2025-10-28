@@ -203,7 +203,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       )}
       {/* Header */}
       <div className={`text-center pb-4 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
-        <h2 className="text-xl font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
+        <h2 className="text-xl font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
           Story Dossier
         </h2>
         <p className={`text-sm ${colors.textSecondary} mt-1`}>Your story development hub</p>
@@ -221,7 +221,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide`}>Title</div>
-              <div className="font-bold bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm">
+              <div className="font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm">
                 {d.title || 'Untitled Story'}
               </div>
             </div>
@@ -233,7 +233,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
             </div>
             <div className="flex gap-2 flex-wrap">
               {d.genre && (
-                <span className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-sm px-2 py-1 rounded-full text-xs">
+                <span className="bg-linear-to-r from-red-500 to-red-600 text-white border-0 shadow-sm px-2 py-1 rounded-full text-xs">
                   {d.genre}
                 </span>
               )}
@@ -260,7 +260,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
             {(d.scenes ?? []).slice(0, 4).map((s: SceneData, index: number) => (
               <div key={s.scene_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     {index + 1}
                   </div>
                   <div className="flex-1">

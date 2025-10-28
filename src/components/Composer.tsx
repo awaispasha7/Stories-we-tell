@@ -295,7 +295,7 @@ export function Composer({ onSend, disabled = false, sessionId, projectId, editC
                   ? resolvedTheme === 'light' 
                     ? "bg-white cursor-not-allowed shadow-sky-200/50"
                     : "bg-[rgb(83,93,108)] cursor-not-allowed shadow-slate-500/50"
-                  : "bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:to-blue-800 hover:scale-110 active:scale-95 hover:shadow-2xl cursor-pointer shadow-blue-500/50"
+                  : "bg-linear-to-br from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:to-blue-800 hover:scale-110 active:scale-95 hover:shadow-2xl cursor-pointer shadow-blue-500/50"
               )}
               style={{ 
                 width: isLargeScreen ? '56px' : '40px',

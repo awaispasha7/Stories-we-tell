@@ -226,7 +226,7 @@ export function AudioRecorder({ onAudioData, onClose, sessionId, projectId }: Au
       }}
     >
       {/* Timer and State */}
-      <div className="flex flex-col items-center min-w-[4rem]">
+      <div className="flex flex-col items-center min-w-16">
         <div className={`text-xs font-mono ${resolvedTheme === 'light' ? 'text-gray-800' : 'text-gray-100'}`}>
           {fmt(time)}
         </div>

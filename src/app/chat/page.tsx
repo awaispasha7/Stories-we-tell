@@ -158,7 +158,7 @@ export default function ChatPage() {
     <DossierProvider>
       <div className={`h-screen w-screen overflow-hidden ${colors.background} flex flex-col`}>
         {/* Topbar - Full width across entire screen */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <Topbar />
         </div>
         

@@ -117,7 +117,7 @@ export function LoginPromptModal({
           }}
         >
           <div 
-            className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4"
+            className="w-16 h-16 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4"
             style={{
               width: '4rem',
               height: '4rem',
@@ -285,7 +285,7 @@ export function LoginPromptModal({
         >
           <button
             onClick={onSignup}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+            className="w-full bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
             style={{
               width: '100%',
               background: 'linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%)',

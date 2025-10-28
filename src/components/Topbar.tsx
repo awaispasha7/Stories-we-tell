@@ -55,10 +55,10 @@ export function Topbar() {
 
   return (
     <>
-        <header className={`flex items-center justify-evenly sm:px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm flex-shrink-0 relative z-50`}>
+        <header className={`flex items-center justify-evenly sm:px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm shrink-0 relative z-50`}>
           {/* Left side - Logo and Text */}
           <div className={`flex items-center gap-2 sm:gap-3 ${colors.textSecondary}`}>
-            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-sky-500 to-emerald-500 rounded-lg sm:rounded-xl shadow-lg shadow-sky-500/30">
+            <div className="p-1.5 sm:p-2 bg-linear-to-br from-sky-500 to-emerald-500 rounded-lg sm:rounded-xl shadow-lg shadow-sky-500/30">
               <Film className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
@@ -94,7 +94,7 @@ export function Topbar() {
                         className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-white/20 group-hover:ring-white/40 transition-all"
                       />
                     ) : (
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                         <User className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                       </div>
                     )}

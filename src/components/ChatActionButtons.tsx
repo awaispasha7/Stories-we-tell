@@ -52,7 +52,7 @@ export function InteractiveButton({ type, onClick, className }: InteractiveButto
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
         "inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-white",
-        `bg-gradient-to-r ${config.gradient} hover:bg-gradient-to-r ${config.hoverGradient}`,
+        `bg-linear-to-r ${config.gradient} hover:bg-linear-to-r ${config.hoverGradient}`,
         className
       )}
     >

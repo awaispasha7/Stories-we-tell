@@ -107,7 +107,7 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                   style={{ padding: '1rem 2rem' }}
                 onClick={() => handleFileClick(file)}
               >
-                <div className="flex-shrink-0 text-gray-500 dark:text-gray-300">
+                <div className="shrink-0 text-gray-500 dark:text-gray-300">
                   {getFileIcon(file.type)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -159,7 +159,7 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
             {previewFile.type.includes('image') ? (
               <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-slate-700">
                 {/* Image Header with File Info */}
-                <div className="flex-shrink-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-600">
+                <div className="shrink-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-4 flex items-center justify-between border-b border-gray-200 dark:border-slate-600">
                   <div className="flex items-center space-x-3">
                     <div className="text-gray-500 dark:text-gray-400">
                       {getFileIcon(previewFile.type)}

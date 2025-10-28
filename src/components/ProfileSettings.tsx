@@ -48,7 +48,7 @@ export function ProfileSettings({ isOpen, onClose, initialTab = 'chat' }: Profil
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="w-full max-w-2xl bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 space-y-4">
+        <div className="relative bg-linear-to-r from-indigo-600 to-purple-600 px-6 py-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">

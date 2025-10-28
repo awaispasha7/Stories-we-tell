@@ -201,7 +201,7 @@ export function ResizableSidebar({
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`${className} flex-shrink-0 relative transition-all duration-300 ${
+        className={`${className} shrink-0 relative transition-all duration-300 ${
           isMobile && isCollapsed ? 'w-0 overflow-hidden' : ''
         } ${isMobile && !isCollapsed ? 'fixed inset-0 z-50 w-full h-full' : ''}`}
         style={{ 

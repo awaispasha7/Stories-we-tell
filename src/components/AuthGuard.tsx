@@ -21,9 +21,9 @@ export function AuthGuard({ children, redirectTo = '/auth/login' }: AuthGuardPro
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-green-50">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <div className="w-16 h-16 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <span className="text-2xl text-white font-bold">SW</span>
           </div>
           <p className="text-gray-600">Loading...</p>
