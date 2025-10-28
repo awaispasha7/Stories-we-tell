@@ -32,7 +32,22 @@ export function useSession(sessionId?: string, projectId?: string) {
       }
     }
     
-    // Try to restore from localStorage
+    // For anonymous users, always start fresh (don't restore from localStorage)
+    if (!isAuthenticated) {
+      console.log('🔄 [DEMO] Anonymous user detected - clearing any existing session for fresh experience')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(SESSION_STORAGE_KEY)
+      }
+      return {
+        sessionId: null,
+        projectId: null,
+        isAuthenticated: false,
+        expiresAt: null,
+        isLoading: true
+      }
+    }
+    
+    // For authenticated users, try to restore from localStorage
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(SESSION_STORAGE_KEY)

@@ -150,6 +150,13 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           if (parsed.sessionId) {
             console.log('🔄 [CHAT] Found session in localStorage:', parsed.sessionId)
             
+            // For anonymous users, don't restore sessions - always start fresh
+            if (!isAuthenticated) {
+              console.log('🔄 [DEMO] Anonymous user - clearing localStorage session for fresh experience')
+              localStorage.removeItem('stories_we_tell_session')
+              return
+            }
+            
             // Only use localStorage session if no specific session was provided via props
             // This prevents overriding when user clicks on a previous chat
             if (!_sessionId || _sessionId.trim() === '') {
@@ -180,6 +187,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     // Listen for localStorage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'stories_we_tell_session') {
+        // For anonymous users, ignore localStorage changes
+        if (!isAuthenticated) {
+          console.log('🔄 [DEMO] Anonymous user - ignoring localStorage changes')
+          return
+        }
+        
         // Only respond to storage changes if no specific session is provided via props
         if (!_sessionId || _sessionId.trim() === '') {
           checkLocalStorageSession()
@@ -208,7 +221,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('sessionUpdated', handleSessionUpdate as EventListener)
     }
-  }, [_sessionId, onSessionUpdate]) // Include missing dependencies
+  }, [_sessionId, onSessionUpdate, isAuthenticated]) // Include missing dependencies
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
