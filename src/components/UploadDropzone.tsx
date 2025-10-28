@@ -62,17 +62,30 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
+    console.log('📤 [UPLOAD] Starting upload with:', {
+      sessionId,
+      projectId,
+      sessionLoading,
+      user: user?.user_id,
+      propSessionId,
+      propProjectId
+    })
+
     // Wait for session to be ready, but allow uploads if we have a user (authenticated)
     if (sessionLoading) {
+      console.log('📤 [UPLOAD] Session still loading, blocking upload')
       setError('Please wait for session to be ready before uploading files.')
       return
     }
 
     // For authenticated users, we can upload even without a session (it will be created)
     if (!user && (!sessionId || !projectId)) {
+      console.log('📤 [UPLOAD] No user and no session/project, blocking upload')
       setError('Please wait for session to be ready before uploading files.')
       return
     }
+
+    console.log('📤 [UPLOAD] Upload allowed, proceeding...')
 
     setUploading(true)
     setError(null)
