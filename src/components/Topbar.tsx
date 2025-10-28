@@ -2,21 +2,23 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Film, Settings, User, LogOut, ChevronDown } from 'lucide-react'
+import { Film, Settings, User, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { ProfileSettings } from './ProfileSettings'
 import { ThemeSelector } from './ThemeSelector'
 import { useAuth } from '@/lib/auth-context'
 import { useProfile } from '@/lib/profile-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { useToastContext } from '@/components/ToastProvider'
 
 export function Topbar() {
   const [showProfileSettings, setShowProfileSettings] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
   const { profile } = useProfile()
   const { resolvedTheme } = useTheme()
   const router = useRouter()
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const toast = useToastContext()
   
   const colors = getThemeColors(resolvedTheme)
 
@@ -53,6 +55,35 @@ export function Topbar() {
     setShowProfileDropdown(false)
   }
 
+  // New Chat functionality for anonymous users
+  const handleSignup = () => {
+    router.push('/auth/signup')
+  }
+
+  const handleLogin = () => {
+    router.push('/auth/login')
+  }
+
+  const handleNewChat = () => {
+    console.log('🆕 [TOPBAR] New Chat button clicked')
+    // For anonymous users, show warning toast with options
+    toast.newChatWarning(
+      'Create New Chat?',
+      'If you create a new chat, your current chat data will be lost forever! To save and load chats, login/signup.',
+      () => {
+        console.log('🆕 [TOPBAR] User confirmed new chat - clearing session')
+        // User confirmed - clear current session and reload page
+        localStorage.removeItem('stories_we_tell_session')
+        window.location.reload()
+      },
+      undefined, // No cancel action needed
+      handleLogin, // Login button
+      handleSignup, // Signup button
+      'Continue',
+      'Cancel'
+    )
+  }
+
   return (
     <>
         <header className={`flex items-center justify-evenly sm:px-6 h-16 border-b ${colors.border} ${colors.backgroundSecondary} backdrop-blur-lg shadow-sm shrink-0 relative z-50`}>
@@ -76,6 +107,21 @@ export function Topbar() {
           <div className="flex items-center gap-3">
             {/* Theme Selector */}
             <ThemeSelector />
+            
+            {/* New Chat Button - Only for anonymous users */}
+            {!isAuthenticated && (
+              <button
+                onClick={handleNewChat}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-all duration-200 group border border-blue-200 dark:border-blue-700 hover:scale-105 hover:shadow-md cursor-pointer`}
+                title="Start a new chat"
+                style={{ padding: '0.2rem', borderRadius: '0.5rem'}}
+              >
+                <Plus className="h-4 w-4 text-blue-500 group-hover:text-blue-600 transition-colors" />
+                <span className={`text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 group-hover:opacity-80`}>
+                  New Chat
+                </span>
+              </button>
+            )}
             
             {user ? (
               /* Authenticated User - Merged Profile & Settings */
