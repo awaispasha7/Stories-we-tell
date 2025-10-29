@@ -279,17 +279,44 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
-      // Only process if _sessionId prop has actually changed
-      const currentPropSessionId = _sessionId || undefined
-      if (currentPropSessionId === prevSessionIdRef.current) {
+      // Determine which session ID to use: prop > hook > current state > localStorage
+      const sessionIdToUse = _sessionId || hookSessionId || currentSessionId || (typeof window !== 'undefined' ? (() => {
+        try {
+          const stored = localStorage.getItem('stories_we_tell_session')
+          if (stored) {
+            const parsed = JSON.parse(stored)
+            return parsed.sessionId || undefined
+          }
+        } catch (e) {
+          console.error('Error reading localStorage:', e)
+        }
+        return undefined
+      })() : undefined)
+      
+      const projectIdToUse = _projectId || hookProjectId || currentProjectId || (typeof window !== 'undefined' ? (() => {
+        try {
+          const stored = localStorage.getItem('stories_we_tell_session')
+          if (stored) {
+            const parsed = JSON.parse(stored)
+            return parsed.projectId || undefined
+          }
+        } catch (e) {
+          console.error('Error reading localStorage:', e)
+        }
+        return undefined
+      })() : undefined)
+      
+      // Check if session ID has actually changed
+      const currentSessionIdValue = sessionIdToUse || undefined
+      if (currentSessionIdValue === prevSessionIdRef.current) {
         // Session ID hasn't changed, don't reset anything
         return
       }
       
       // Session ID has changed, update the ref
-      prevSessionIdRef.current = currentPropSessionId
+      prevSessionIdRef.current = currentSessionIdValue
       
-      // If _sessionId is empty string, reset to initial state (new chat)
+      // If session ID is explicitly empty string (from props), reset to initial state (new chat)
       if (_sessionId === '') {
         setMessages([
           {
@@ -300,74 +327,99 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         // Reset local session tracking for new chat  
         setCurrentSessionId(undefined)
         setCurrentProjectId(undefined)
+        prevSessionIdRef.current = undefined
         return
       }
       
-      // Update local state when props change (e.g., switching to existing chat)
-      setCurrentSessionId(_sessionId || undefined)
-      setCurrentProjectId(_projectId || undefined)
+      // Update local state with the session we're using
+      setCurrentSessionId(sessionIdToUse || undefined)
+      setCurrentProjectId(projectIdToUse || undefined)
       
       // For authenticated users with no session ID, create one immediately
-      if (isAuthenticated && user && !_sessionId) {
+      if (isAuthenticated && user && !sessionIdToUse) {
         const newSessionId = crypto.randomUUID()
         setCurrentSessionId(newSessionId)
         sessionIdRef.current = newSessionId
+        prevSessionIdRef.current = newSessionId
       }
 
       // If no session ID, don't load messages
-      if (!_sessionId) {
+      if (!sessionIdToUse) {
+        console.log('🔄 [CHAT] No session ID available, skipping message load')
         return
       }
 
+      console.log('🔄 [CHAT] Loading messages for session:', sessionIdToUse)
+
       try {
         const { sessionApi } = await import('@/lib/api')
-        const messagesResponse = await sessionApi.getSessionMessages(_sessionId, 50, 0)
+        const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 50, 0)
         console.log('📋 ChatPanel messages response:', messagesResponse)
         
         // Handle backend response structure: { success: true, messages: [...] }
         const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
         
-        if (messages && Array.isArray(messages) && messages.length > 0) {
-          const formattedMessages = messages.map((msg: unknown) => {
-            const message = msg as { 
-              role?: string; 
-              content?: string; 
-              created_at?: string; 
-              message_id?: string;
-              metadata?: { attached_files?: AttachedFile[] };
-              attached_files?: AttachedFile[] // Fallback for direct attachment (shouldn't happen but just in case)
-            }
-            
-            // Extract attached files from metadata (where they're stored in the database)
-            const attachedFiles = message.metadata?.attached_files || message.attached_files || []
-            
-            console.log('📎 [CHAT] Loading message:', {
-              message_id: message.message_id,
-              role: message.role,
-              content: message.content?.substring(0, 50),
-              hasAttachedFiles: attachedFiles.length > 0,
-              attachedFilesCount: attachedFiles.length,
-              attachedFiles: attachedFiles.map(f => ({ name: f.name, type: f.type })),
-              timestamp: message.created_at
+        if (messages && Array.isArray(messages)) {
+          if (messages.length > 0) {
+            const formattedMessages = messages.map((msg: unknown) => {
+              const message = msg as { 
+                role?: string; 
+                content?: string; 
+                created_at?: string; 
+                message_id?: string;
+                metadata?: { attached_files?: AttachedFile[] };
+                attached_files?: AttachedFile[] // Fallback for direct attachment (shouldn't happen but just in case)
+              }
+              
+              // Extract attached files from metadata (where they're stored in the database)
+              const attachedFiles = message.metadata?.attached_files || message.attached_files || []
+              
+              console.log('📎 [CHAT] Loading message:', {
+                message_id: message.message_id,
+                role: message.role,
+                content: message.content?.substring(0, 50),
+                hasAttachedFiles: attachedFiles.length > 0,
+                attachedFilesCount: attachedFiles.length,
+                attachedFiles: attachedFiles.map(f => ({ name: f.name, type: f.type })),
+                timestamp: message.created_at
+              })
+              
+              return {
+                role: message.role as 'user' | 'assistant',
+                content: message.content || '',
+                timestamp: message.created_at,
+                attachedFiles: attachedFiles,
+                messageId: message.message_id // Store message_id for editing functionality
+              }
             })
             
-            return {
-              role: message.role as 'user' | 'assistant',
-              content: message.content || '',
-              timestamp: message.created_at,
-              attachedFiles: attachedFiles,
-              messageId: message.message_id // Store message_id for editing functionality
+            console.log('📋 [CHAT] Formatted messages summary:', formattedMessages.map(m => ({
+              role: m.role,
+              hasFiles: m.attachedFiles?.length > 0,
+              fileCount: m.attachedFiles?.length || 0,
+              fileNames: m.attachedFiles?.map(f => f.name) || []
+            })))
+            
+            setMessages(formattedMessages)
+          } else {
+            // Session exists but has no messages - show initial welcome message
+            console.log('📋 [CHAT] Session exists but has no messages - showing welcome message')
+            setMessages([
+              {
+                role: 'assistant',
+                content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+              }
+            ])
+          }
+        } else {
+          // Invalid response format - show welcome message
+          console.log('📋 [CHAT] Invalid response format - showing welcome message')
+          setMessages([
+            {
+              role: 'assistant',
+              content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
             }
-          })
-          
-          console.log('📋 [CHAT] Formatted messages summary:', formattedMessages.map(m => ({
-            role: m.role,
-            hasFiles: m.attachedFiles?.length > 0,
-            fileCount: m.attachedFiles?.length || 0,
-            fileNames: m.attachedFiles?.map(f => f.name) || []
-          })))
-          
-          setMessages(formattedMessages)
+          ])
         }
       } catch (error) {
         console.error('Failed to load session messages:', error)
@@ -410,7 +462,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     }
 
     loadSessionMessages()
-  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, user])
+  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, hookSessionId, hookProjectId, currentProjectId, user])
 
   // Sync hook session values with local state
   useEffect(() => {

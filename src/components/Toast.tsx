@@ -78,6 +78,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   }
 
   const getTypeStyles = () => {
+    // Base styles - we'll override with inline styles for dark mode
     switch (toast.type) {
       case 'success':
         return resolvedTheme === 'light'
@@ -99,6 +100,10 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
         return resolvedTheme === 'light'
           ? 'bg-orange-50/80 text-orange-800'
           : 'bg-orange-900/30 text-orange-300'
+      case 'new-chat-warning':
+        return resolvedTheme === 'light'
+          ? 'bg-orange-50/90 text-orange-900'
+          : 'bg-gray-800/95 text-gray-100'
       default:
         return resolvedTheme === 'light'
           ? 'bg-gray-50 border-gray-200 text-gray-800'
@@ -106,22 +111,52 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
     }
   }
 
-  const getIcon = () => {
-    const iconClass = "w-5 h-5 flex-shrink-0 mt-0.5"
+  const getDarkModeStyles = () => {
+    if (resolvedTheme !== 'dark') return {}
     
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className={`${iconClass} text-green-600`} />
+        return {
+          backgroundColor: 'rgba(20, 83, 45, 0.95)', // dark green with high opacity
+          color: '#86efac', // bright green-300
+          borderColor: '#16a34a', // green-600
+        }
       case 'error':
-        return <AlertCircle className={`${iconClass} text-red-600`} />
+        return {
+          backgroundColor: 'rgba(127, 29, 29, 0.95)', // dark red with high opacity
+          color: '#fca5a5', // bright red-300
+          borderColor: '#dc2626', // red-600
+        }
       case 'warning':
-        return <AlertTriangle className={`${iconClass} text-yellow-600`} />
+        return {
+          backgroundColor: 'rgba(113, 63, 18, 0.95)', // dark yellow/amber with high opacity
+          color: '#fde047', // bright yellow-300
+          borderColor: '#d97706', // amber-600
+        }
       case 'info':
-        return <Info className={`${iconClass} text-blue-600`} />
+        return {
+          backgroundColor: 'rgba(30, 58, 138, 0.95)', // dark blue with high opacity
+          color: '#93c5fd', // bright blue-300
+          borderColor: '#2563eb', // blue-600
+        }
       case 'confirm':
-        return <HelpCircle className={`${iconClass} text-orange-600`} />
+        return {
+          backgroundColor: 'rgba(124, 45, 18, 0.95)', // dark orange with high opacity
+          color: '#fdba74', // bright orange-300
+          borderColor: '#ea580c', // orange-600
+        }
+      case 'new-chat-warning':
+        return {
+          backgroundColor: 'rgba(31, 41, 55, 0.98)', // dark gray-800 with very high opacity
+          color: '#f3f4f6', // gray-100 - very bright text
+          borderColor: '#f97316', // orange-500 - prominent border
+        }
       default:
-        return <Info className={`${iconClass} text-gray-600`} />
+        return {
+          backgroundColor: 'rgba(17, 24, 39, 0.95)', // dark gray-900 with high opacity
+          color: '#e5e7eb', // gray-200 - bright text
+          borderColor: '#374151', // gray-700
+        }
     }
   }
 
@@ -139,21 +174,67 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
     handleRemove()
   }
 
+  const darkModeStyles = getDarkModeStyles()
+  const isDarkMode = resolvedTheme === 'dark'
+  
+  const getIcon = () => {
+    const iconClass = "w-5 h-5 flex-shrink-0 mt-0.5"
+    const iconColor = isDarkMode && darkModeStyles.color 
+      ? darkModeStyles.color 
+      : undefined
+    
+    const iconStyle = iconColor ? { color: iconColor } : {}
+    
+    switch (toast.type) {
+      case 'success':
+        return <CheckCircle className={`${iconClass} text-green-600`} style={iconStyle} />
+      case 'error':
+        return <AlertCircle className={`${iconClass} text-red-600`} style={iconStyle} />
+      case 'warning':
+        return <AlertTriangle className={`${iconClass} text-yellow-600`} style={iconStyle} />
+      case 'info':
+        return <Info className={`${iconClass} text-blue-600`} style={iconStyle} />
+      case 'confirm':
+        return <HelpCircle className={`${iconClass} text-orange-600`} style={iconStyle} />
+      case 'new-chat-warning':
+        return <Info className={`${iconClass} text-orange-600`} style={iconStyle} />
+      default:
+        return <Info className={`${iconClass} text-gray-600`} style={iconStyle} />
+    }
+  }
+  
   return (
-    <div className={`${getToastStyles()} ${getTypeStyles()} min-w-80 max-w-md`} 
-    style={{
-      border: '2px solid #f97316',
-      borderRadius: '12px',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-      padding: '1rem 2rem',
-    }}>
+    <div 
+      className={`${getToastStyles()} ${getTypeStyles()} min-w-80 max-w-md flex justify-between`} 
+      style={{
+        border: isDarkMode && darkModeStyles.borderColor 
+          ? `2px solid ${darkModeStyles.borderColor}` 
+          : toast.type === 'confirm' || toast.type === 'new-chat-warning'
+          ? '2px solid #f97316'
+          : undefined,
+        borderRadius: '12px',
+        boxShadow: isDarkMode 
+          ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
+          : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        padding: '1rem 2rem',
+        ...darkModeStyles, // Apply dark mode styles (will override className colors)
+      }}>
       {getIcon()}
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-sm leading-tight">
+        <h4 
+          className="font-semibold text-sm leading-tight"
+          style={isDarkMode ? { color: darkModeStyles.color } : {}}
+        >
           {toast.title}
         </h4>
         {toast.message && (
-          <p className="text-sm mt-1 leading-relaxed opacity-90">
+          <p 
+            className="text-sm mt-1 leading-relaxed"
+            style={isDarkMode ? { 
+              color: darkModeStyles.color,
+              opacity: 0.95 // Slightly less opaque than title for hierarchy
+            } : { opacity: 0.9 }}
+          >
             {toast.message}
           </p>
         )}
@@ -189,35 +270,77 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
         )}
         
         {toast.type === 'new-chat-warning' && (
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="flex gap-2">
-              <button
-                onClick={toast.onLogin}
-                className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-blue-500/20"
-              >
-                Login
-              </button>
-              <button
-                onClick={toast.onSignup}
-                className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-green-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-green-500/20"
-              >
-                Sign Up
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleConfirm}
-                className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-red-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-red-500/20"
-              >
-                {toast.confirmText || 'Continue'}
-              </button>
+          <div className="flex flex-row gap-2 mt-6" style={{ marginTop: '1.5rem' }}>
+            <button
+              onClick={toast.onLogin}
+              className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-blue-500/20"
+              style={{
+                backgroundColor: isDarkMode ? '#2563eb' : undefined, // blue-600
+                color: '#ffffff',
+                borderColor: isDarkMode ? '#3b82f6' : undefined, // blue-500
+                boxShadow: isDarkMode 
+                  ? '0 10px 15px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -2px rgba(37, 99, 235, 0.2)' 
+                  : undefined,
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+              }}
+            >
+              Login
+            </button>
+            <button
+              onClick={toast.onSignup}
+              className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-green-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-green-500/20"
+              style={{
+                backgroundColor: isDarkMode ? '#16a34a' : undefined, // green-600
+                color: '#ffffff',
+                borderColor: isDarkMode ? '#22c55e' : undefined, // green-500
+                boxShadow: isDarkMode 
+                  ? '0 10px 15px -3px rgba(22, 163, 74, 0.4), 0 4px 6px -2px rgba(22, 163, 74, 0.2)' 
+                  : undefined,
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+              }}
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-red-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-red-500/20"
+              style={{
+                backgroundColor: isDarkMode ? '#dc2626' : undefined, // red-600
+                color: '#ffffff',
+                borderColor: isDarkMode ? '#ef4444' : undefined, // red-500
+                boxShadow: isDarkMode 
+                  ? '0 10px 15px -3px rgba(220, 38, 38, 0.4), 0 4px 6px -2px rgba(220, 38, 38, 0.2)' 
+                  : undefined,
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+              }}
+            >
+              {toast.confirmText || 'Continue'}
+            </button>
+            {toast.onCancel && (
               <button
                 onClick={handleCancel}
                 className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 border border-gray-300/50 dark:border-gray-600/50"
+                style={{
+                  backgroundColor: isDarkMode ? '#374151' : undefined, // gray-700
+                  color: isDarkMode ? '#f3f4f6' : undefined, // gray-100
+                  borderColor: isDarkMode ? '#4b5563' : undefined, // gray-600
+                  boxShadow: isDarkMode 
+                    ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)' 
+                    : undefined,
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                }}
               >
                 {toast.cancelText || 'Cancel'}
               </button>
-            </div>
+            )}
           </div>
         )}
       </div>
@@ -226,6 +349,25 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
           onClick={handleRemove}
           className="shrink-0 p-1 rounded-md hover:bg-black/10 transition-colors"
           aria-label="Close notification"
+          style={isDarkMode ? {
+            color: darkModeStyles.color,
+            opacity: 0.8,
+          } : {}}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+      {toast.type === 'new-chat-warning' && (
+        <button
+          onClick={handleRemove}
+          className="shrink-0 p-1 rounded-full bg-black/20 hover:bg-black/30 transition-colors"
+          aria-label="Close notification"
+          style={isDarkMode ? {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#f3f4f6',
+          } : {
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          }}
         >
           <X className="w-4 h-4" />
         </button>
@@ -249,7 +391,12 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
     <>
       {/* Background blur overlay for confirmation toasts */}
       {hasConfirmToast && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-60 transition-all duration-300" />
+        <div 
+          className="fixed inset-0 backdrop-blur-sm z-60 transition-all duration-300" 
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Darker overlay for better contrast
+          }}
+        />
       )}
       
       {/* Toast container */}
