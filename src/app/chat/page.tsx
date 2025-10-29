@@ -161,6 +161,14 @@ export default function ChatPage() {
       setShowLoginModal(true)
     } else {
       // For authenticated users, create new story
+      // Clear localStorage to prevent restoring old session
+      try {
+        localStorage.removeItem('stories_we_tell_session')
+        console.log('🆕 [PAGE] Cleared localStorage for new story')
+      } catch (error) {
+        console.error('Failed to clear localStorage:', error)
+      }
+      
       setCurrentSessionId('')
       setCurrentProjectId('')
       

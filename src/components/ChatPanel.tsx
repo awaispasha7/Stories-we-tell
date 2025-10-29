@@ -49,8 +49,25 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const handleNewStory = () => {
     // For authenticated users, create new story
     if (isAuthenticated) {
+      // Clear localStorage to prevent restoring old session
+      try {
+        localStorage.removeItem('stories_we_tell_session')
+        console.log('🆕 [CHAT] Cleared localStorage for authenticated user new story')
+      } catch (error) {
+        console.error('Failed to clear localStorage:', error)
+      }
+      
       setCurrentSessionId('')
       setCurrentProjectId('')
+      sessionIdRef.current = ''
+      
+      // Reset messages to initial state
+      setMessages([
+        {
+          role: 'assistant',
+          content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+        }
+      ])
     } else {
       // For anonymous users, show warning toast with options
       toast.newChatWarning(
