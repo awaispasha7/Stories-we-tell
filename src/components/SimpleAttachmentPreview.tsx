@@ -76,12 +76,10 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
     if (file.type.includes('image')) {
       setIsLoadingImage(true)
       setImageLoadError(false)
+      console.log('🖼️ Loading image:', file.url)
       
-      // Add timeout to prevent infinite loading
-      setTimeout(() => {
-        setIsLoadingImage(false)
-        setImageLoadError(true)
-      }, 10000) // 10 second timeout
+      // Remove aggressive timeout - let browser handle loading naturally
+      // Signed URLs might take a moment to load, especially on first access
     }
     
     // If it's a text file, fetch the content
@@ -207,34 +205,43 @@ export function SimpleAttachmentPreview({ files, onRemove, variant = 'composer',
                 </div>
                 
                 {/* Image Content Area - Takes remaining space */}
-                <div className="flex-1 flex items-center justify-center p-4">
-                  {isLoadingImage ? (
-                    <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="flex-1 flex items-center justify-center p-4 relative">
+                  {/* Always render the image so it can load */}
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className={`max-w-full max-h-full object-contain rounded-lg shadow-lg transition-opacity duration-300 ${
+                      isLoadingImage ? 'opacity-0' : 'opacity-100'
+                    }`}
+                    style={{ maxWidth: '100%', maxHeight: '100%' }}
+                    onLoad={() => {
+                      console.log('✅ Image loaded successfully:', previewFile.url)
+                      setIsLoadingImage(false)
+                      setImageLoadError(false)
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Image load error:', e)
+                      console.error('❌ Image URL:', previewFile.url)
+                      setIsLoadingImage(false)
+                      setImageLoadError(true)
+                    }}
+                  />
+                  
+                  {/* Loading overlay */}
+                  {isLoadingImage && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-gray-50/90 dark:bg-slate-700/90">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                       <p className="text-gray-500 dark:text-gray-400 text-sm">Loading image...</p>
                     </div>
-                  ) : imageLoadError ? (
-                    <div className="flex flex-col items-center justify-center space-y-4">
+                  )}
+                  
+                  {/* Error overlay */}
+                  {imageLoadError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-gray-50/90 dark:bg-slate-700/90">
                       <div className="text-red-500 text-4xl">⚠️</div>
                       <p className="text-red-500 dark:text-red-400 text-sm">Failed to load image</p>
                       <p className="text-gray-500 dark:text-gray-400 text-xs">The image may be corrupted or the URL is invalid</p>
                     </div>
-                  ) : (
-                    <img
-                      src={previewFile.url}
-                      alt={previewFile.name}
-                      className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                      style={{ maxWidth: '100%', maxHeight: '100%' }}
-                      loading="lazy"
-                      onLoad={() => {
-                        setIsLoadingImage(false)
-                        setImageLoadError(false)
-                      }}
-                      onError={() => {
-                        setIsLoadingImage(false)
-                        setImageLoadError(true)
-                      }}
-                    />
                   )}
                 </div>
               </div>

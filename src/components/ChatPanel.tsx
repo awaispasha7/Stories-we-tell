@@ -87,16 +87,21 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       return
     }
     
+    // Get the actual database message_id from the message
+    const messageToEdit = messages[messageIndex]
+    const dbMessageId = messageToEdit.messageId || null
+    
     // Store the edit point for later use - don't remove messages yet
     setEditContent(newContent)
     setIsEditing(true)
     setEditMessageIndex(messageIndex)
     setEditAttachedFiles(attachedFiles || [])
+    setEditMessageId(dbMessageId)
     
-    console.log('Edit message at index:', messageIndex, 'Content:', newContent)
-    console.log('Edit attached files:', attachedFiles)
-    console.log('Composer will be populated with:', newContent)
-    console.log('Messages will be trimmed when user sends the edited message')
+    console.log('✏️ [EDIT] Edit message at index:', messageIndex, 'Content:', newContent)
+    console.log('✏️ [EDIT] Database message_id:', dbMessageId)
+    console.log('✏️ [EDIT] Edit attached files:', attachedFiles)
+    console.log('✏️ [EDIT] Messages will be trimmed when user sends the edited message')
   }
 
   const handleEditComplete = () => {
@@ -104,6 +109,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     setIsEditing(false)
     setEditMessageIndex(null)
     setEditAttachedFiles([])
+    setEditMessageId(null)
   }
 
   // Function to determine if a message should show action buttons
@@ -139,6 +145,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const [isEditing, setIsEditing] = useState(false)
   const [editMessageIndex, setEditMessageIndex] = useState<number | null>(null)
   const [editAttachedFiles, setEditAttachedFiles] = useState<AttachedFile[]>([])
+  const [editMessageId, setEditMessageId] = useState<string | null>(null) // Store database message_id for editing
   
   // Local state to track current session and project for this chat
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
@@ -305,14 +312,44 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
         
         if (messages && Array.isArray(messages) && messages.length > 0) {
           const formattedMessages = messages.map((msg: unknown) => {
-            const message = msg as { role?: string; content?: string; created_at?: string; attached_files?: AttachedFile[] }
+            const message = msg as { 
+              role?: string; 
+              content?: string; 
+              created_at?: string; 
+              message_id?: string;
+              metadata?: { attached_files?: AttachedFile[] };
+              attached_files?: AttachedFile[] // Fallback for direct attachment (shouldn't happen but just in case)
+            }
+            
+            // Extract attached files from metadata (where they're stored in the database)
+            const attachedFiles = message.metadata?.attached_files || message.attached_files || []
+            
+            console.log('📎 [CHAT] Loading message:', {
+              message_id: message.message_id,
+              role: message.role,
+              content: message.content?.substring(0, 50),
+              hasAttachedFiles: attachedFiles.length > 0,
+              attachedFilesCount: attachedFiles.length,
+              attachedFiles: attachedFiles.map(f => ({ name: f.name, type: f.type })),
+              timestamp: message.created_at
+            })
+            
             return {
               role: message.role as 'user' | 'assistant',
               content: message.content || '',
               timestamp: message.created_at,
-              attachedFiles: message.attached_files || []
+              attachedFiles: attachedFiles,
+              messageId: message.message_id // Store message_id for editing functionality
             }
           })
+          
+          console.log('📋 [CHAT] Formatted messages summary:', formattedMessages.map(m => ({
+            role: m.role,
+            hasFiles: m.attachedFiles?.length > 0,
+            fileCount: m.attachedFiles?.length || 0,
+            fileNames: m.attachedFiles?.map(f => f.name) || []
+          })))
+          
           setMessages(formattedMessages)
         }
       } catch (error) {
@@ -538,7 +575,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
           text,
           session_id: sessionId,
           project_id: projectId,
-          attached_files: attachedFiles || []
+          attached_files: attachedFiles || [],
+          edit_from_message_id: (isEditing && editMessageId) ? editMessageId : undefined
         }),
         signal: controller.signal,
       })
@@ -691,6 +729,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       setIsLoading(false)
       setIsProcessingMessage(false)
       setTypingMessage('')
+      
+      // Clear edit state after sending message
+      if (isEditing) {
+        handleEditComplete()
+      }
       
       // Trigger dossier refresh after AI response completes
       // Add a small delay to ensure backend dossier update is finished

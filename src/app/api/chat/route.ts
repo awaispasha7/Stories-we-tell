@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, session_id, project_id, attached_files } = await req.json()
+    const { text, session_id, project_id, attached_files, edit_from_message_id } = await req.json()
     
     // Get headers from the request
     const xSessionId = req.headers.get('X-Session-ID')
@@ -13,6 +13,9 @@ export async function POST(req: NextRequest) {
     
     console.log(`Frontend: Attempting to call backend at ${backendUrl}/api/v1/chat`)
     console.log(`Frontend: Headers - X-Session-ID: ${xSessionId}, X-User-ID: ${xUserId}`)
+    if (edit_from_message_id) {
+      console.log(`Frontend: Edit mode - deleting from message_id: ${edit_from_message_id}`)
+    }
     
     // Try to call the backend with a timeout
     const controller = new AbortController()
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
           ...(xUserId && { 'X-User-ID': xUserId }),
           ...(xSessionId && { 'X-Session-ID': xSessionId }),
         },
-        body: JSON.stringify({ text, session_id, project_id, attached_files }),
+        body: JSON.stringify({ text, session_id, project_id, attached_files, edit_from_message_id }),
         signal: controller.signal,
       })
       
