@@ -1,6 +1,6 @@
 import './globals.css'
 import './auth/auth-styles.css'
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { Inter } from 'next/font/google'
 import { QueryProvider } from '@/components/QueryProvider'
 import { AuthProvider } from '@/lib/auth-context'
@@ -28,7 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AuthProvider>
               <ProfileProvider>
                 <ToastProvider>
-                  <GlobalLoader />
+                  <Suspense fallback={null}>
+                    <GlobalLoader />
+                  </Suspense>
                   {children}
                 </ToastProvider>
               </ProfileProvider>
