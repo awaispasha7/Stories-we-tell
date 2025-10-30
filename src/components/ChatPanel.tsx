@@ -273,6 +273,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { triggerRefresh } = useDossierRefresh()
+  const dossierDispatchTimerRef = useRef<number | null>(null)
   // const _send = useChatStore(s => s.send) // Unused for now
 
   const scrollToBottom = () => {
@@ -870,16 +871,18 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       }
       
       // Trigger dossier refresh after AI response completes
-      // Add a small delay to ensure backend dossier update is finished
-      setTimeout(() => {
+      // Debounce the dossierUpdated dispatch so it only fires once per message
+      if (dossierDispatchTimerRef.current) {
+        window.clearTimeout(dossierDispatchTimerRef.current)
+      }
+      dossierDispatchTimerRef.current = window.setTimeout(() => {
         triggerRefresh()
-          try {
-            // Notify sidebar to refresh projects when dossier changes
-            const stored = localStorage.getItem('stories_we_tell_session')
-            const proj = (stored ? JSON.parse(stored)?.projectId : currentProjectId || hookProjectId || _projectId) || undefined
-            window.dispatchEvent(new CustomEvent('dossierUpdated', { detail: { projectId: proj } }))
-          } catch {}
-      }, 2000) // 2 second delay to ensure backend processing is complete
+        try {
+          const stored = localStorage.getItem('stories_we_tell_session')
+          const proj = (stored ? JSON.parse(stored)?.projectId : currentProjectId || hookProjectId || _projectId) || undefined
+          window.dispatchEvent(new CustomEvent('dossierUpdated', { detail: { projectId: proj } }))
+        } catch {}
+      }, 1600) // keep tight but avoid double-dispatches
     }
   }
 

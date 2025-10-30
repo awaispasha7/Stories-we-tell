@@ -49,6 +49,11 @@ interface DossierData {
   story_timeframe?: string
   story_world_type?: string
   problem_statement?: string
+  subject_full_name?: string
+  subject_brief_description?: string
+  subject_exists_real_world?: boolean
+  writer_connection_place_time?: string
+  subject_relationship_to_writer?: string
   [key: string]: any
 }
 
@@ -100,6 +105,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         // The API returns a row with snapshot_json; unwrap it into the shape the UI expects
         const snapshot = raw?.snapshot_json || raw || {}
         const mapped: DossierData = {
+          ...snapshot, // Spread all snapshot fields first
           title: snapshot.title || '',
           logline: snapshot.logline || '',
           genre: snapshot.genre || '',
@@ -107,8 +113,25 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           scenes: snapshot.scenes || [],
           characters: snapshot.characters || [],
           locations: snapshot.locations || [],
-          project_id: projectId
+          project_id: projectId,
+          // Extended fields from snapshot_json
+          problem_statement: snapshot.problem_statement,
+          outcome: snapshot.outcome,
+          runtime: snapshot.runtime,
+          actions_taken: snapshot.actions_taken,
+          likes_in_story: snapshot.likes_in_story,
+          story_location: snapshot.story_location,
+          story_timeframe: snapshot.story_timeframe,
+          story_world_type: snapshot.story_world_type,
+          subject_full_name: snapshot.subject_full_name,
+          subject_brief_description: snapshot.subject_brief_description,
+          subject_exists_real_world: snapshot.subject_exists_real_world,
+          writer_connection_place_time: snapshot.writer_connection_place_time,
+          subject_relationship_to_writer: snapshot.subject_relationship_to_writer
         }
+        console.log('📋 Mapped dossier data:', mapped)
+        console.log('📋 Characters count:', mapped.characters?.length || 0)
+        console.log('📋 Scenes count:', mapped.scenes?.length || 0)
         // Cache a copy for other consumers
         try { localStorage.setItem('dossier_snapshot', JSON.stringify(mapped)) } catch {}
         return mapped
@@ -301,6 +324,30 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         </div>
         <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
           <div className="grid grid-cols-1 gap-3">
+            {d.subject_full_name && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Subject Name</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_full_name}</div>
+              </div>
+            )}
+            {d.subject_brief_description && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Subject Description</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_brief_description}</div>
+              </div>
+            )}
+            {d.subject_relationship_to_writer && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Relationship to Writer</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_relationship_to_writer}</div>
+              </div>
+            )}
+            {d.writer_connection_place_time && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Writer Connection</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.writer_connection_place_time}</div>
+              </div>
+            )}
             {d.problem_statement && (
               <div className="flex items-start justify-between gap-3">
                 <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Problem</div>
@@ -313,10 +360,12 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                 <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.outcome}</div>
               </div>
             )}
-            <div className="flex items-center justify-between gap-3">
-              <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Runtime</div>
-              <div className={`text-sm ${colors.textSecondary}`}>{d.runtime || '—'}</div>
-            </div>
+            {d.runtime && (
+              <div className="flex items-center justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Runtime</div>
+                <div className={`text-sm ${colors.textSecondary}`}>{d.runtime}</div>
+              </div>
+            )}
             {(d.story_location || d.story_timeframe || d.story_world_type) && (
               <div className={`text-xs ${colors.textSecondary} grid grid-cols-1 gap-1`}>
                 {d.story_location && <div><span className={`font-semibold ${colors.text}`}>Location:</span> {d.story_location}</div>}

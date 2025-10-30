@@ -81,32 +81,26 @@ export function SessionsSidebar({
   useEffect(() => {
     const handleSessionUpdate = () => {
       console.log('🔄 Session updated, refreshing projects list')
-      // Invalidate both sidebar and page-level caches
+      // Single, lightweight invalidation; React Query will refetch once
       queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-      queryClient.invalidateQueries({ queryKey: ['projects'] })
-      // Proactively refetch sidebar for instant UI update
-      queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
     }
-    const handleDossierUpdated = (e?: Event) => {
-      console.log('🔄 Dossier updated, refreshing projects list', e)
+    let lastDossierEventAt = 0
+    const handleDossierUpdated = () => {
+      const now = Date.now()
+      if (now - lastDossierEventAt < 1200) {
+        return
+      }
+      lastDossierEventAt = now
+      console.log('🔄 Dossier updated, refreshing projects list')
       queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-      queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
     }
 
     window.addEventListener('sessionUpdated', handleSessionUpdate)
     window.addEventListener('dossierUpdated', handleDossierUpdated)
-    return () => window.removeEventListener('sessionUpdated', handleSessionUpdate)
-  }, [queryClient])
-
-  // Separate cleanup for dossierUpdated listener
-  useEffect(() => {
-    const handler = (e: Event) => {
-      console.log('🔄 Dossier updated (listener 2), refreshing sidebar')
-      queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-      queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+    return () => {
+      window.removeEventListener('sessionUpdated', handleSessionUpdate)
+      window.removeEventListener('dossierUpdated', handleDossierUpdated)
     }
-    window.addEventListener('dossierUpdated', handler)
-    return () => window.removeEventListener('dossierUpdated', handler)
   }, [queryClient])
 
   // Toggle project expansion

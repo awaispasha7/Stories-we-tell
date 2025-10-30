@@ -156,13 +156,16 @@ export const sessionApi = {
   },
   
   // Simplified session management
-  getOrCreateSession: (sessionId?: string, projectId?: string) => 
-    api.post('api/v1/session', {
-      json: { 
-        session_id: sessionId,
-        project_id: projectId 
-      }
-    }).json(),
+  // Note: Chat endpoint is authoritative for creating sessions. Avoid hitting a non-existent /session route.
+  // Return a resolved value to keep callers happy without a network roundtrip.
+  getOrCreateSession: async (sessionId?: string, projectId?: string) => {
+    return Promise.resolve({
+      success: true,
+      session_id: sessionId || null,
+      project_id: projectId || null,
+      created: false
+    })
+  },
   
   // Migrate anonymous session to authenticated user
   migrateSession: (anonymousUserId: string, authenticatedUserId: string) =>
