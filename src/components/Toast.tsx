@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle, HelpCircle } from 'lucide-react'
 import { useTheme } from '@/lib/theme-context'
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'confirm' | 'new-chat-warning'
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'confirm' | 'new-chat-warning' | 'input'
 
 export interface Toast {
   id: string
@@ -18,6 +18,10 @@ export interface Toast {
   cancelText?: string
   onLogin?: () => void
   onSignup?: () => void
+  // For input toasts
+  inputDefault?: string
+  inputPlaceholder?: string
+  inputOnConfirm?: (value: string) => void
 }
 
 interface ToastProps {
@@ -29,6 +33,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const { resolvedTheme } = useTheme()
+  const [inputValue, setInputValue] = useState<string>(toast.inputDefault || '')
 
   useEffect(() => {
     // Animate in
@@ -104,6 +109,10 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
         return resolvedTheme === 'light'
           ? 'bg-orange-50/90 text-orange-900'
           : 'bg-gray-800/95 text-gray-100'
+      case 'input':
+        return resolvedTheme === 'light'
+          ? 'bg-gray-50 border-gray-200 text-gray-800'
+          : 'bg-gray-900/30 border-gray-800 text-gray-200'
       default:
         return resolvedTheme === 'light'
           ? 'bg-gray-50 border-gray-200 text-gray-800'
@@ -151,6 +160,12 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
           color: '#f3f4f6', // gray-100 - very bright text
           borderColor: '#f97316', // orange-500 - prominent border
         }
+      case 'input':
+        return {
+          backgroundColor: 'rgba(17, 24, 39, 0.9)',
+          color: '#e5e7eb',
+          borderColor: '#374151',
+        }
       default:
         return {
           backgroundColor: 'rgba(17, 24, 39, 0.95)', // dark gray-900 with high opacity
@@ -161,6 +176,11 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   }
 
   const handleConfirm = () => {
+    if (toast.type === 'input' && toast.inputOnConfirm) {
+      toast.inputOnConfirm(inputValue)
+      handleRemove()
+      return
+    }
     if (toast.onConfirm) {
       toast.onConfirm()
     }
@@ -198,6 +218,8 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
         return <HelpCircle className={`${iconClass} text-orange-600`} style={iconStyle} />
       case 'new-chat-warning':
         return <Info className={`${iconClass} text-orange-600`} style={iconStyle} />
+      case 'input':
+        return <Info className={`${iconClass} text-blue-600`} style={iconStyle} />
       default:
         return <Info className={`${iconClass} text-gray-600`} style={iconStyle} />
     }
@@ -268,11 +290,39 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
             </button>
           </div>
         )}
+
+        {toast.type === 'input' && (
+          <div className="mt-3! space-y-3!">
+            <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={toast.inputPlaceholder || ''}
+              className="w-full px-3! py-2! rounded-md! bg-white! dark:bg-gray-800! border! border-gray-300! dark:border-gray-600! text-sm! text-gray-900! dark:text-gray-100! outline-none! focus:ring-2! focus:ring-blue-500! shadow-inner!"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleConfirm}
+                className="px-4! py-2! text-sm! font-semibold! rounded-md! text-white! bg-emerald-600! hover:bg-emerald-700! active:bg-emerald-800! shadow-md! hover:shadow-lg! transition-all! duration-200!"
+              >
+                {toast.confirmText || 'Save'}
+              </button>
+              <button
+                onClick={handleCancel}
+                className="px-4! py-2! text-sm! font-semibold! rounded-md! text-gray-800! dark:text-gray-200! bg-gray-100! hover:bg-gray-200! dark:bg-gray-700! dark:hover:bg-gray-600! border! border-gray-300/60! dark:border-gray-600/60! shadow-sm! hover:shadow-md! transition-all! duration-200!"
+              >
+                {toast.cancelText || 'Cancel'}
+              </button>
+            </div>
+          </div>
+        )}
         
         {toast.type === 'new-chat-warning' && (
           <div className="flex flex-row gap-2 mt-6" style={{ marginTop: '1.5rem' }}>
             <button
-              onClick={toast.onLogin}
+              onClick={() => {
+                if (toast.onLogin) toast.onLogin()
+                handleRemove()
+              }}
               className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-blue-500/20"
               style={{
                 backgroundColor: isDarkMode ? '#2563eb' : undefined, // blue-600
@@ -289,7 +339,10 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
               Login
             </button>
             <button
-              onClick={toast.onSignup}
+              onClick={() => {
+                if (toast.onSignup) toast.onSignup()
+                handleRemove()
+              }}
               className="px-4 py-2 text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:shadow-green-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-green-500/20"
               style={{
                 backgroundColor: isDarkMode ? '#16a34a' : undefined, // green-600
@@ -471,6 +524,20 @@ export function useToast() {
       duration: 0 // No auto-dismiss for warning dialogs
     })
 
+  const input = (title: string, message: string, defaultValue: string, onConfirm: (value: string) => void, onCancel?: () => void, confirmText?: string, cancelText?: string, placeholder?: string) =>
+    addToast({
+      type: 'input',
+      title,
+      message,
+      inputDefault: defaultValue,
+      inputPlaceholder: placeholder,
+      inputOnConfirm: onConfirm,
+      onCancel,
+      confirmText,
+      cancelText,
+      duration: 0
+    })
+
   return {
     toasts,
     addToast,
@@ -480,6 +547,7 @@ export function useToast() {
     warning,
     info,
     confirm,
-    newChatWarning
+    newChatWarning,
+    input
   }
 }

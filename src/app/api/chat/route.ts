@@ -7,12 +7,13 @@ export async function POST(req: NextRequest) {
     // Get headers from the request
     const xSessionId = req.headers.get('X-Session-ID')
     const xUserId = req.headers.get('X-User-ID')
+    const xProjectId = req.headers.get('X-Project-ID') || project_id // Fallback to body if header not present
     
     // Get the backend URL from environment variables
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     
     console.log(`Frontend: Attempting to call backend at ${backendUrl}/api/v1/chat`)
-    console.log(`Frontend: Headers - X-Session-ID: ${xSessionId}, X-User-ID: ${xUserId}`)
+    console.log(`Frontend: Headers - X-Session-ID: ${xSessionId}, X-User-ID: ${xUserId}, X-Project-ID: ${xProjectId}`)
     if (edit_from_message_id) {
       console.log(`Frontend: Edit mode - deleting from message_id: ${edit_from_message_id}`)
     }
@@ -28,8 +29,9 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           ...(xUserId && { 'X-User-ID': xUserId }),
           ...(xSessionId && { 'X-Session-ID': xSessionId }),
+          ...(xProjectId && { 'X-Project-ID': xProjectId }),
         },
-        body: JSON.stringify({ text, session_id, project_id, attached_files, edit_from_message_id }),
+        body: JSON.stringify({ text, session_id, project_id: xProjectId || project_id, attached_files, edit_from_message_id }),
         signal: controller.signal,
       })
       

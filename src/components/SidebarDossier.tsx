@@ -39,6 +39,17 @@ interface DossierData {
   scenes: SceneData[]
   characters: CharacterData[]
   locations: string[]
+  project_id?: string  // Include project_id for visibility
+  // Extended optional fields mirrored from snapshot_json
+  outcome?: string
+  runtime?: string
+  actions_taken?: string
+  likes_in_story?: string
+  story_location?: string
+  story_timeframe?: string
+  story_world_type?: string
+  problem_statement?: string
+  [key: string]: any
 }
 
 interface SceneData {
@@ -53,9 +64,11 @@ interface SceneData {
 }
 
 interface CharacterData {
-  character_id: string
-  name: string
-  description: string
+  character_id?: string
+  name?: string
+  description?: string
+  role?: string
+  [key: string]: any
 }
 
 interface SidebarDossierProps {
@@ -82,9 +95,23 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       console.log('🔍 API URL will be:', `api/v1/dossiers/${projectId}`)
       console.log('🔍 Headers being sent:', getUserHeaders())
       try {
-        const result = await api.get(`api/v1/dossiers/${projectId}`).json<DossierData>()
-        console.log('✅ Dossier fetched successfully:', result)
-        return result
+        const raw = await api.get(`api/v1/dossiers/${projectId}`).json<any>()
+        console.log('✅ Dossier fetched successfully:', raw)
+        // The API returns a row with snapshot_json; unwrap it into the shape the UI expects
+        const snapshot = raw?.snapshot_json || raw || {}
+        const mapped: DossierData = {
+          title: snapshot.title || '',
+          logline: snapshot.logline || '',
+          genre: snapshot.genre || '',
+          tone: snapshot.tone || '',
+          scenes: snapshot.scenes || [],
+          characters: snapshot.characters || [],
+          locations: snapshot.locations || [],
+          project_id: projectId
+        }
+        // Cache a copy for other consumers
+        try { localStorage.setItem('dossier_snapshot', JSON.stringify(mapped)) } catch {}
+        return mapped
       } catch (err) {
         console.error('❌ Error fetching dossier:', err)
         console.error('❌ Full error details:', {
@@ -96,10 +123,10 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         return null
       }
     },
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    refetchOnMount: true, // Allow initial fetch on mount
-    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
+    refetchInterval: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 0,
     enabled: !!(sessionId && projectId), // Only fetch if we have both IDs
     retry: 1, // Only retry once on failure
     retryDelay: 2000 // Wait 2 seconds before retry
@@ -209,6 +236,23 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         <p className={`text-sm ${colors.textSecondary} mt-1`}>Your story development hub</p>
       </div>
 
+      {/* Project Information */}
+      {projectId && (
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} rounded-lg p-4 mb-4 shadow-sm`}>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-linear-to-br from-blue-500 to-purple-500 rounded-full"></div>
+            <div className="flex-1">
+              <div className={`text-xs font-semibold ${colors.textSecondary} uppercase tracking-wide mb-1`}>Project</div>
+              <div className={`text-sm font-mono ${colors.text} break-all`} style={{ 
+                fontFamily: 'monospace'
+              }}>
+                {projectId}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Story Overview Card */}
       <div>
         <div className="pb-3">
@@ -247,52 +291,101 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         </div>
       </div>
 
-      {/* Scenes Card */}
+      {/* Key Details Card */}
       <div>
         <div className="pb-3">
             <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              Scene Structure
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              Key Details
             </h3>
-          </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
-          <div className="space-y-4 p-4">
-            {(d.scenes ?? []).slice(0, 4).map((s: SceneData, index: number) => (
-              <div key={s.scene_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className={`font-semibold ${colors.text} text-sm mb-1`}>
-                      {s.one_liner || s.description || 'Scene ' + (index + 1)}
-                    </div>
-                    <div className={`text-xs ${colors.textSecondary} space-y-1`}>
-                      <div className="flex gap-2">
-                        <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-300'} px-2 py-0.5 rounded-full text-xs`}>
-                          {s.time_of_day || 'Day'}
-                        </span>
-                        <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/30 text-blue-300'} px-2 py-0.5 rounded-full text-xs`}>
-                          {s.interior_exterior || 'INT'}
-                        </span>
-                      </div>
-                      {s.tone && (
-                        <div className={`${colors.textTertiary} italic`}>Tone: {s.tone}</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+        </div>
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
+          <div className="grid grid-cols-1 gap-3">
+            {d.problem_statement && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Problem</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.problem_statement}</div>
               </div>
-            ))}
-            {(d.scenes ?? []).length === 0 && (
-              <div className={`text-center py-6 ${colors.textTertiary}`}>
-                <div className="text-2xl mb-2">🎬</div>
-                <div className="text-sm">Start chatting to build your scenes</div>
+            )}
+            {d.outcome && (
+              <div className="flex items-start justify-between gap-3">
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Outcome</div>
+                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.outcome}</div>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Runtime</div>
+              <div className={`text-sm ${colors.textSecondary}`}>{d.runtime || '—'}</div>
+            </div>
+            {(d.story_location || d.story_timeframe || d.story_world_type) && (
+              <div className={`text-xs ${colors.textSecondary} grid grid-cols-1 gap-1`}>
+                {d.story_location && <div><span className={`font-semibold ${colors.text}`}>Location:</span> {d.story_location}</div>}
+                {d.story_timeframe && <div><span className={`font-semibold ${colors.text}`}>Timeframe:</span> {d.story_timeframe}</div>}
+                {d.story_world_type && <div><span className={`font-semibold ${colors.text}`}>World:</span> {d.story_world_type}</div>}
+              </div>
+            )}
+            {d.actions_taken && (
+              <div className={`text-xs ${colors.textSecondary}`}>
+                <div className={`font-semibold ${colors.text} mb-1`}>Actions Taken</div>
+                <div className="text-sm whitespace-pre-wrap">{d.actions_taken}</div>
+              </div>
+            )}
+            {d.likes_in_story && (
+              <div className={`text-xs ${colors.textSecondary}`}>
+                <div className={`font-semibold ${colors.text} mb-1`}>What We Love</div>
+                <div className="text-sm whitespace-pre-wrap">{d.likes_in_story}</div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Scenes Card - show only if scenes are present */}
+      {(d.scenes ?? []).length > 0 && (
+        <div>
+          <div className="pb-3">
+              <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                Scene Structure
+              </h3>
+            </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
+            <div className="space-y-4 p-4">
+              {(d.scenes ?? []).slice(0, 8).map((s: SceneData, index: number) => (
+                <div key={s.scene_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className={`font-semibold ${colors.text} text-sm mb-1`}>
+                        {s.one_liner || s.description || 'Scene ' + (index + 1)}
+                      </div>
+                      <div className={`text-xs ${colors.textSecondary} space-y-1`}>
+                        <div className="flex gap-2">
+                          {s.time_of_day && (
+                            <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-300'} px-2 py-0.5 rounded-full text-xs`}>
+                              {s.time_of_day}
+                            </span>
+                          )}
+                          {s.interior_exterior && (
+                            <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/30 text-blue-300'} px-2 py-0.5 rounded-full text-xs`}>
+                              {s.interior_exterior}
+                            </span>
+                          )}
+                        </div>
+                        {s.tone && (
+                          <div className={`${colors.textTertiary} italic`}>Tone: {s.tone}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Characters Card */}
       <div>
@@ -306,17 +399,22 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           <div>
             {(d.characters ?? []).length > 0 ? (
               <div className="space-y-3">
-                {d.characters.slice(0, 3).map((char: CharacterData) => (
-                  <div key={char.character_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                    <div className={`font-semibold ${colors.text}`}>{char.name}</div>
-                    <div className={`text-xs ${colors.textSecondary} mt-1`}>{char.description}</div>
+                {d.characters.map((char: CharacterData, idx: number) => (
+                  <div key={char.character_id || `${idx}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                    <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                    {char.role && (
+                      <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                    )}
+                    {char.description && (
+                      <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                <div className={`font-semibold ${colors.text}`}>Protagonist</div>
-                <div className={`text-xs ${colors.textSecondary} mt-1`}>Main character with a clear goal</div>
+                <div className={`font-semibold ${colors.text}`}>No characters yet</div>
+                <div className={`text-xs ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
               </div>
             )}
           </div>

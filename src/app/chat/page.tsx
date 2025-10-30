@@ -7,6 +7,7 @@ import { SidebarDossier } from '@/components/SidebarDossier'
 import { SessionsSidebar } from '@/components/SessionsSidebar'
 import { ResizableSidebar } from '@/components/ResizableSidebar'
 import { LoginPromptModal } from '@/components/LoginPromptModal'
+import { ProjectCreationModal } from '@/components/ProjectCreationModal'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -15,6 +16,8 @@ import { MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
+import { projectApi } from '@/lib/api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
@@ -25,12 +28,86 @@ export default function ChatPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [loginModalTrigger, setLoginModalTrigger] = useState<'new-story' | 'session-start' | 'story-complete'>('session-start')
   const [showSidebarHint, setShowSidebarHint] = useState(false)
+  const [showProjectModal, setShowProjectModal] = useState(false)
+  const [projectModalRequired, setProjectModalRequired] = useState(false)
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  // Fetch user projects to check availability
+  const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      if (!isAuthenticated || !user?.user_id) return { projects: [], count: 0 }
+      try {
+        return await projectApi.getProjects()
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+        return { projects: [], count: 0 }
+      }
+    },
+    enabled: isAuthenticated && !!user?.user_id,
+    staleTime: 30000, // Cache for 30 seconds
+  })
+
+  const projects = projectsData?.projects || []
 
   useEffect(() => { init() }, [init])
+
+  // Check if current project still exists (was deleted)
+  useEffect(() => {
+    if (isAuthenticated && user && currentProjectId && projects.length > 0) {
+      const projectExists = projects.some(p => p.project_id === currentProjectId)
+      if (!projectExists) {
+        // Current project was deleted - clear everything
+        console.log('🗑️ [PAGE] Current project was deleted, clearing selection')
+        setCurrentProjectId('')
+        setCurrentSessionId('')
+        try {
+          localStorage.removeItem('stories_we_tell_session')
+        } catch (error) {
+          console.error('Failed to clear localStorage:', error)
+        }
+      }
+    }
+  }, [isAuthenticated, user, currentProjectId, projects])
+
+  // Auto-select most recent project for authenticated users if none selected
+  useEffect(() => {
+    if (isAuthenticated && user && projects.length > 0 && !currentProjectId && !currentSessionId) {
+      // User has projects but no project/session selected - auto-select most recent
+      const mostRecentProject = projects[0] // Already ordered by updated_at DESC
+      console.log('🔄 [PAGE] Auto-selecting most recent project:', mostRecentProject.name, mostRecentProject.project_id)
+      setCurrentProjectId(mostRecentProject.project_id)
+      
+      // Update localStorage to persist the selection
+      try {
+        const stored = localStorage.getItem('stories_we_tell_session')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          parsed.projectId = mostRecentProject.project_id
+          localStorage.setItem('stories_we_tell_session', JSON.stringify(parsed))
+        } else {
+          localStorage.setItem('stories_we_tell_session', JSON.stringify({
+            projectId: mostRecentProject.project_id
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to update localStorage with project:', error)
+      }
+    }
+    
+    // For authenticated users with no projects, show project creation modal
+    // Only show if projects have finished loading (not still loading)
+    if (isAuthenticated && user && !isProjectsLoading && projects.length === 0 && !showProjectModal && !currentProjectId) {
+      // Show modal immediately (no delay needed when project was deleted)
+      console.log('🆕 [PAGE] No projects available - showing project creation modal')
+      setProjectModalRequired(true)
+      setShowProjectModal(true)
+    }
+  }, [isAuthenticated, user, projects, currentProjectId, currentSessionId, showProjectModal, isProjectsLoading])
 
   // Show login modal for anonymous users at session start
   useEffect(() => {
@@ -155,13 +232,24 @@ export default function ChatPage() {
     router.push('/auth/login')
   }
 
-  const handleNewStoryClick = () => {
+  const handleNewStoryClick = async () => {
     if (!isAuthenticated) {
       setLoginModalTrigger('new-story')
       setShowLoginModal(true)
     } else {
-      // For authenticated users, create new story
-      // Clear localStorage to prevent restoring old session
+      // For authenticated users, check if they have projects
+      if (projects.length === 0) {
+        // No projects - require creating one
+        console.log('🆕 [PAGE] No projects found, requiring project creation')
+        setProjectModalRequired(true)
+        setShowProjectModal(true)
+        return
+      }
+
+      // User has projects - clear session but keep most recent project selected
+      // Auto-select the most recent project for convenience
+      const mostRecentProject = projects[0] // Projects are ordered by updated_at DESC
+      
       try {
         localStorage.removeItem('stories_we_tell_session')
         console.log('🆕 [PAGE] Cleared localStorage for new story')
@@ -170,16 +258,53 @@ export default function ChatPage() {
       }
       
       setCurrentSessionId('')
-      setCurrentProjectId('')
+      setCurrentProjectId(mostRecentProject.project_id) // Auto-select most recent project
+      
+      console.log('🆕 [PAGE] Auto-selected project:', mostRecentProject.name, mostRecentProject.project_id)
       
       // Close sidebar on mobile after creating new story
-      // This provides immediate feedback that the action worked
       setIsSidebarCollapsed(true)
     }
   }
 
+  // Handle project creation success
+  const handleProjectCreated = (projectId: string, projectName: string) => {
+    console.log('✅ [PAGE] Project created:', projectName, projectId)
+    setShowProjectModal(false)
+    setProjectModalRequired(false)
+    
+    // Invalidate and refetch projects query to refresh the sidebar
+    queryClient.invalidateQueries({ queryKey: ['projects'] })
+    queryClient.refetchQueries({ queryKey: ['projects'] })
+    // Also refresh the sidebar-specific cache
+    queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+    queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+    
+    // Set the new project as current and clear session for fresh start
+    setCurrentProjectId(projectId)
+    setCurrentSessionId('')
+    
+    try {
+      localStorage.removeItem('stories_we_tell_session')
+    } catch (error) {
+      console.error('Failed to clear localStorage:', error)
+    }
+    
+    // Close sidebar on mobile
+    setIsSidebarCollapsed(true)
+  }
+
   return (
     <DossierProvider>
+      {/* Global loader overlay */}
+      {(authLoading || (isAuthenticated && isProjectsLoading)) && (
+        <div className="fixed inset-0 z-1000 flex items-center justify-center bg-white/70 dark:bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Loading...</span>
+          </div>
+        </div>
+      )}
       <div className={`h-screen w-screen overflow-hidden ${colors.background} flex flex-col`}>
         {/* Topbar - Full width across entire screen */}
         <div className="shrink-0">
@@ -227,8 +352,13 @@ export default function ChatPage() {
                 <SessionsSidebar 
                   onSessionSelect={handleSessionSelect}
                   currentSessionId={currentSessionId}
+                  currentProjectId={currentProjectId}
                   onClose={handleSidebarClose}
                   onNewStory={handleNewStoryClick}
+                  onNewProject={() => {
+                    // Project created callback - can trigger new chat in the new project
+                    console.log('✅ New project created, ready for new chat')
+                  }}
                 />
               ) : (
                 <SidebarDossier 
@@ -240,22 +370,30 @@ export default function ChatPage() {
             </div>
           </ResizableSidebar>
 
-          {/* Chat Area */}
-          <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
-            <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-              <ChatPanel 
-                _sessionId={currentSessionId} 
-                _projectId={currentProjectId} 
-                onSessionUpdate={(sessionId, projectId) => {
-                  console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
-                  setCurrentSessionId(sessionId)
-                  if (projectId) {
-                    setCurrentProjectId(projectId)
-                  }
-                }}
-              />
+          {/* Chat Area - Only show for anonymous users or authenticated users with a project */}
+          {!isAuthenticated || (isAuthenticated && (currentProjectId || isProjectsLoading)) ? (
+            <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
+              <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
+                <ChatPanel 
+                  _sessionId={currentSessionId} 
+                  _projectId={currentProjectId} 
+                  onSessionUpdate={(sessionId, projectId) => {
+                    console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
+                    setCurrentSessionId(sessionId)
+                    if (projectId) {
+                      setCurrentProjectId(projectId)
+                    }
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
+              <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
+                {/* Intentionally empty: global loader handles this state */}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -267,6 +405,32 @@ export default function ChatPage() {
         onLogin={handleLogin}
         trigger={loginModalTrigger}
       />
+
+      {/* Project Creation Modal - Required for authenticated users with no projects */}
+      {isAuthenticated && !isProjectsLoading && projects.length === 0 ? (
+        <ProjectCreationModal
+          isOpen={true}
+          onClose={() => {
+            // Cannot close if required (no projects exist)
+            if (!projectModalRequired) {
+              setShowProjectModal(false)
+            }
+          }}
+          onProjectCreated={handleProjectCreated}
+          isRequired={true}
+        />
+      ) : (
+        <ProjectCreationModal
+          isOpen={showProjectModal}
+          onClose={() => {
+            if (!projectModalRequired) {
+              setShowProjectModal(false)
+            }
+          }}
+          onProjectCreated={handleProjectCreated}
+          isRequired={projectModalRequired}
+        />
+      )}
 
       {/* Sidebar Hint for Mobile Users */}
       {showSidebarHint && (

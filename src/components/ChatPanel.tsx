@@ -9,6 +9,7 @@ import { useSession } from '@/hooks/useSession'
 import { sessionSyncManager } from '@/lib/session-sync'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
+import { CompletionModal } from '@/components/CompletionModal'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -156,6 +157,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const [typingMessage, setTypingMessage] = useState('')
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [isProcessingMessage, setIsProcessingMessage] = useState(false)
+  const [showCompletion, setShowCompletion] = useState(false)
+  const [composerLocked, setComposerLocked] = useState(false)
+  const [completedTitle, setCompletedTitle] = useState<string | undefined>(undefined)
   
   // Edit functionality state
   const [editContent, setEditContent] = useState<string>('')
@@ -608,6 +612,41 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       
       console.log('💬 [CHAT] Using sessionId:', sessionId, 'projectId:', projectId)
       
+      // CRITICAL: For authenticated users, ensure we have a project_id before proceeding
+      if (isAuthenticated) {
+        if (!projectId) {
+          console.error('💬 [CHAT] ERROR: Authenticated user needs a project_id!')
+          console.error('💬 [CHAT] Available project sources:', {
+            hookProjectId,
+            currentProjectId,
+            propProjectId: _projectId,
+            localStorageProjectId: typeof window !== 'undefined' ? (() => {
+              try {
+                const stored = localStorage.getItem('stories_we_tell_session')
+                if (stored) {
+                  const parsed = JSON.parse(stored)
+                  return parsed.projectId || null
+                }
+              } catch (e) {
+                return null
+              }
+              return null
+            })() : null
+          })
+          
+          // Show error toast - user needs to select/create a project
+          toast.error(
+            'Project Required',
+            'Please create or select a project before sending messages. Use the "New Project" button in the sidebar.',
+            5000
+          )
+          setIsLoading(false)
+          setIsProcessingMessage(false)
+          setMessages(prev => prev.slice(0, -1)) // Remove the assistant message we just added
+          return
+        }
+      }
+      
       // CRITICAL: Ensure we have a valid session before proceeding
       if (!sessionId) {
         console.error('💬 [CHAT] ERROR: No session ID available! This will create a new session.')
@@ -762,6 +801,32 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       }
       
       // Check if we received any content - if not, show error message
+      // Detect completion heuristics (match backend markers)
+      const lower = assistantContent.toLowerCase()
+      const completed = [
+        'the story is complete',
+        'your story is complete',
+        'story is complete',
+        "we've reached the end",
+        'the end of the story',
+        'conclusion of the story',
+        'would you like to create another story',
+        'would you like to start another story'
+      ].some(k => lower.includes(k))
+
+      if (completed) {
+        setShowCompletion(true)
+        setComposerLocked(true)
+        // try to read current dossier title from localStorage cache if present
+        try {
+          const stored = localStorage.getItem('dossier_snapshot')
+          if (stored) {
+            const snap = JSON.parse(stored)
+            if (snap && snap.title) setCompletedTitle(snap.title as string)
+          }
+        } catch {}
+      }
+
       if (assistantContent.trim() === '') {
         setMessages(prev => {
           const newMessages = [...prev]
@@ -808,6 +873,12 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       // Add a small delay to ensure backend dossier update is finished
       setTimeout(() => {
         triggerRefresh()
+          try {
+            // Notify sidebar to refresh projects when dossier changes
+            const stored = localStorage.getItem('stories_we_tell_session')
+            const proj = (stored ? JSON.parse(stored)?.projectId : currentProjectId || hookProjectId || _projectId) || undefined
+            window.dispatchEvent(new CustomEvent('dossierUpdated', { detail: { projectId: proj } }))
+          } catch {}
       }, 2000) // 2 second delay to ensure backend processing is complete
     }
   }
@@ -824,7 +895,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 custom-scrollbar">
-        <div className="w-full px-6 py-4">
+        <div className="w-full px-6 py-4" key={currentSessionId || hookSessionId || _sessionId || 'no-session'}>
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <div className="w-16 h-16 bg-linear-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
@@ -922,7 +993,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                 <div className="w-full overflow-hidden">
                   <Composer 
                     onSend={handleSendMessage} 
-                    disabled={isLoading || isProcessingMessage} 
+                  disabled={isLoading || isProcessingMessage || composerLocked} 
                     sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
                     projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
                     editContent={editContent}
@@ -932,6 +1003,18 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                   />
                 </div>
               </div>
+
+            {/* Completion Modal */}
+            <CompletionModal
+              open={showCompletion}
+              title={completedTitle}
+              onClose={() => setShowCompletion(false)}
+              onNewStory={handleNewStory}
+              onViewDossier={() => {
+                // Simple hint; actual dossier panel is already visible in UI
+                setShowCompletion(false)
+              }}
+            />
     </div>
   )
 }

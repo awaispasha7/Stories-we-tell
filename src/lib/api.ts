@@ -178,6 +178,85 @@ export const sessionApi = {
     api.post('api/v1/cleanup-expired').json()
 }
 
+// Projects API - for managing user projects (stories)
+export const projectApi = {
+  // Create a new project
+  createProject: async (name: string, description?: string) => {
+    const headers = getUserHeaders()
+    return await api.post('api/v1/projects', {
+      json: { name, description },
+      headers
+    }).json<{
+      project_id: string
+      name: string
+      description?: string
+      user_id: string
+      created_at: string
+      updated_at: string
+      session_count: number
+    }>()
+  },
+  
+  // Get all projects for user
+  getProjects: async () => {
+    const headers = getUserHeaders()
+    return await api.get('api/v1/projects', {
+      headers
+    }).json<{
+      projects: Array<{
+        project_id: string
+        name: string
+        description?: string
+        user_id: string
+        created_at: string
+        updated_at: string
+        session_count: number
+      }>
+      count: number
+    }>()
+  },
+  
+  // Get specific project with sessions
+  getProject: async (projectId: string) => {
+    const headers = getUserHeaders()
+    return await api.get(`api/v1/projects/${projectId}`, {
+      headers
+    }).json<{
+      project_id: string
+      name: string
+      description?: string
+      user_id: string
+      created_at: string
+      updated_at: string
+      session_count: number
+      sessions: Array<{
+        session_id: string
+        title: string
+        created_at: string
+        last_message_at: string
+        is_active: boolean
+      }>
+    }>()
+  },
+  
+  // Delete a project
+  deleteProject: async (projectId: string) => {
+    const headers = getUserHeaders()
+    return await api.delete(`api/v1/projects/${projectId}`, {
+      headers
+    }).json()
+  },
+
+  // Rename a project (updates dossier title)
+  renameProject: async (projectId: string, name: string) => {
+    const headers = getUserHeaders()
+    return await api.put(`api/v1/projects/${projectId}/name`, {
+      json: { name },
+      headers
+    }).json<{ success: boolean; project_id: string; name: string }>()
+  },
+}
+
 // Authentication API
 export const authApi = {
   // Login with email and password

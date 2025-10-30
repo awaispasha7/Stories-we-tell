@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/auth-context'
 import { ProfileProvider } from '@/lib/profile-context'
 import { ThemeProvider } from '@/lib/theme-context'
 import { ToastProvider } from '@/components/ToastProvider'
+import { GlobalLoader } from '@/components/GlobalLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AuthProvider>
               <ProfileProvider>
                 <ToastProvider>
+                  <GlobalLoader />
                   {children}
                 </ToastProvider>
               </ProfileProvider>

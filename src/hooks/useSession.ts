@@ -134,13 +134,37 @@ export function useSession(sessionId?: string, projectId?: string) {
     setSessionState(prev => ({ ...prev, isLoading: true }))
 
     try {
-      console.log('🔄 [SESSION] Calling sessionApi.getOrCreateSession()')
-      const response = await sessionApi.getOrCreateSession() as { 
+      // For authenticated users, ensure we have project_id before calling API
+      if (isAuthenticated && !projectId) {
+        console.log('🔄 [SESSION] Authenticated user needs project_id, skipping session creation')
+        setSessionState(prev => ({ ...prev, isLoading: false }))
+        // Mark as blocked to prevent retries
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('stories_we_tell_session_creation_blocked', 'true')
+          } catch (e) {
+            // Ignore localStorage errors
+          }
+        }
+        return
+      }
+      
+      console.log('🔄 [SESSION] Calling sessionApi.getOrCreateSession()', { sessionId, projectId })
+      const response = await sessionApi.getOrCreateSession(sessionId, projectId) as { 
         success?: boolean; 
         session_id?: string; 
         project_id?: string;
         is_authenticated?: boolean;
         user_id?: string;
+      }
+      
+      // Clear any previous block on success
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('stories_we_tell_session_creation_blocked')
+        } catch (e) {
+          // Ignore localStorage errors
+        }
       }
       
       // The backend returns the session data in a success wrapper
@@ -171,14 +195,62 @@ export function useSession(sessionId?: string, projectId?: string) {
         console.error('Invalid response from session creation:', response)
         setSessionState(prev => ({ ...prev, isLoading: false }))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create session:', error)
+      
+      // Log full error details for debugging
+      try {
+        const errorDetail = await error?.response?.json?.() || error?.response?.data || {}
+        console.error('📋 [SESSION] Full error response:', {
+          statusCode: error?.response?.status || error?.status || 0,
+          message: error?.message || '',
+          detail: errorDetail?.detail || errorDetail?.message || 'Unknown error'
+        })
+      } catch (e) {
+        // Error response might not be JSON, that's okay
+      }
+      
+      // Get error details
+      const errorMessage = error?.message || ''
+      const statusCode = error?.response?.status || error?.status || 0
+      
+      // For 500 errors (server errors), don't retry immediately - mark as blocked temporarily
+      // For 400/404 errors (client errors like missing project), don't retry at all
+      if (statusCode === 500 || statusCode === 503) {
+        console.error('🔄 [SESSION] Server error (500/503) - will not retry automatically')
+        setSessionState(prev => ({ ...prev, isLoading: false }))
+        // Mark as blocked temporarily (will clear after page reload or manual retry)
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('stories_we_tell_session_creation_blocked', 'true')
+            localStorage.setItem('stories_we_tell_session_error', JSON.stringify({
+              message: errorMessage,
+              statusCode,
+              timestamp: Date.now()
+            }))
+          } catch (e) {
+            // Ignore localStorage errors
+          }
+        }
+      } else if (errorMessage.includes('project') || errorMessage.includes('Project') || 
+          statusCode === 400 || statusCode === 404) {
+        console.log('🔄 [SESSION] Session creation failed due to missing project. Will not retry.')
+        // Mark that we've tried and failed - don't retry for this error
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('stories_we_tell_session_creation_blocked', 'true')
+          } catch (e) {
+            // Ignore localStorage errors
+          }
+        }
+      }
+      
       setSessionState(prev => ({ ...prev, isLoading: false }))
     } finally {
       sessionCreationInProgress.current = false
       globalSessionCreationInProgress = false
     }
-  }, [sessionId, sessionState.sessionId])
+  }, [sessionId, projectId, sessionState.sessionId, isAuthenticated])
 
   // Listen for session updates from other components
   useEffect(() => {
@@ -288,6 +360,48 @@ export function useSession(sessionId?: string, projectId?: string) {
       return
     }
     
+    // CRITICAL: For authenticated users, don't create session without project_id
+    // Session creation requires a project_id for authenticated users
+    if (isAuthenticated && !projectId) {
+      console.log('🔄 [SESSION] useEffect check: Authenticated user needs project_id, skipping session creation')
+      return
+    }
+    
+    // Check if session creation was blocked (due to missing project or server error)
+    let isSessionCreationBlocked = false
+    if (typeof window !== 'undefined') {
+      try {
+        const blocked = localStorage.getItem('stories_we_tell_session_creation_blocked')
+        const errorInfo = localStorage.getItem('stories_we_tell_session_error')
+        if (blocked === 'true') {
+          isSessionCreationBlocked = true
+          // Check if it was a server error (500/503) or a client error
+          if (errorInfo) {
+            try {
+              const error = JSON.parse(errorInfo)
+              // For server errors, keep blocking until manual retry or page reload
+              if (error.statusCode === 500 || error.statusCode === 503) {
+                console.log('🔄 [SESSION] Session creation blocked due to server error (500/503)')
+                return // Don't try to create session if we had a server error
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+          // Only keep it blocked if still missing project_id (for 400/404 errors)
+          if (!projectId) {
+            console.log('🔄 [SESSION] Session creation previously blocked, still missing project_id')
+          } else {
+            // Clear the block if we now have project_id (might have been a transient error)
+            localStorage.removeItem('stories_we_tell_session_creation_blocked')
+            localStorage.removeItem('stories_we_tell_session_error')
+          }
+        }
+      } catch (error) {
+        // Ignore localStorage errors
+      }
+    }
+    
     // Check if there's a valid session in localStorage before creating a new one
     let hasValidLocalStorageSession = false
     if (typeof window !== 'undefined') {
@@ -310,25 +424,41 @@ export function useSession(sessionId?: string, projectId?: string) {
       !sessionState.isLoading && 
       !sessionCreationInProgress.current &&
       !globalSessionCreationInProgress &&
-      !hasValidLocalStorageSession // Don't create if there's a valid session in localStorage
+      !hasValidLocalStorageSession && // Don't create if there's a valid session in localStorage
+      (!isAuthenticated || projectId) && // Authenticated users need project_id
+      !isSessionCreationBlocked // Don't retry if previous attempt was blocked
     )
     
     console.log('🔄 [SESSION] useEffect check:', {
       sessionId,
+      projectId,
       authLoading,
       sessionStateIsLoading: sessionState.isLoading,
       sessionCreationInProgress: sessionCreationInProgress.current,
       globalSessionCreationInProgress,
       sessionStateSessionId: sessionState.sessionId,
       hasValidLocalStorageSession,
+      isAuthenticated,
       shouldCreateSession
     })
     
     if (shouldCreateSession) {
       console.log('🔄 [SESSION] Triggering session creation from useEffect')
-      createSession()
+      // Add delay for authenticated users to allow database transaction to commit
+      // Longer delay needed for project creation → session creation flow
+      if (isAuthenticated) {
+        // Use a longer delay to ensure database transaction is committed
+        const timeoutId = setTimeout(() => {
+          createSession()
+        }, 1500) // 1.5 seconds for project creation flow
+        
+        // Cleanup timeout on unmount
+        return () => clearTimeout(timeoutId)
+      } else {
+        createSession()
+      }
     }
-  }, [sessionId, authLoading, sessionState.isLoading, sessionState.sessionId, createSession, isAuthenticated])
+  }, [sessionId, projectId, authLoading, sessionState.isLoading, sessionState.sessionId, createSession, isAuthenticated])
 
   // Check if session is expired
   const isSessionExpired = useCallback(() => {

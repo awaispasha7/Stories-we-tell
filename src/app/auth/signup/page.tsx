@@ -381,6 +381,18 @@ export default function SignupPage() {
                 </button>
               </div>
 
+              {/* Continue without Signup */}
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/chat')}
+                  className=" text-cyan-500! text-sm! hover:text-white! transition-all! focus:outline-none"
+                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                >
+                  Continue to Chat without Signup
+                </button>
+              </div>
+
               {/* Login Link */}
               <div className="auth-signup-link">
                 <p>

@@ -12,6 +12,7 @@ interface ToastContextType {
   newChatWarning: (title: string, message: string, onConfirm: () => void, onCancel?: () => void, onLogin?: () => void, onSignup?: () => void, confirmText?: string, cancelText?: string) => string
   addToast: (toast: Omit<Toast, 'id'>) => string
   removeToast: (id: string) => void
+  input: (title: string, message: string, defaultValue: string, onConfirm: (value: string) => void, onCancel?: () => void, confirmText?: string, cancelText?: string, placeholder?: string) => string
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
