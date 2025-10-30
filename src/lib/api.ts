@@ -155,16 +155,29 @@ export const sessionApi = {
     return api.get('api/v1/users/me', { headers }).json()
   },
   
-  // Simplified session management
-  // Note: Chat endpoint is authoritative for creating sessions. Avoid hitting a non-existent /session route.
-  // Return a resolved value to keep callers happy without a network roundtrip.
+  // Create or get session
   getOrCreateSession: async (sessionId?: string, projectId?: string) => {
-    return Promise.resolve({
-      success: true,
-      session_id: sessionId || null,
-      project_id: projectId || null,
-      created: false
-    })
+    const headers = getUserHeaders()
+    try {
+      return await api.post('api/v1/session', {
+        json: { session_id: sessionId, project_id: projectId },
+        headers
+      }).json()
+    } catch (error: unknown) {
+      console.error('❌ getOrCreateSession error:', error)
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'status' in error.response &&
+          error.response.status === 404) {
+        // Session endpoint not available, return mock response
+        return {
+          success: false,
+          session_id: sessionId || null,
+          project_id: projectId || null,
+          created: false
+        }
+      }
+      throw error
+    }
   },
   
   // Migrate anonymous session to authenticated user
