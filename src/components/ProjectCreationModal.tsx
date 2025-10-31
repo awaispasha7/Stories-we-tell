@@ -8,7 +8,7 @@ import { useTheme, getThemeColors } from '@/lib/theme-context'
 interface ProjectCreationModalProps {
   isOpen: boolean
   onClose: () => void
-  onProjectCreated: (projectId: string, projectName: string) => void
+  onProjectCreated: (projectId: string, projectName: string) => void | Promise<void>
   isRequired?: boolean // If true, user cannot close without creating a project
 }
 
@@ -52,8 +52,15 @@ export function ProjectCreationModal({
       
       console.log('✅ Project created:', result)
       
-      // Call callback with project info
-      onProjectCreated(result.project_id, result.name)
+      // Call callback with project info - await it since it's async
+      try {
+        console.log('📞 [MODAL] Calling onProjectCreated callback...')
+        await onProjectCreated(result.project_id, result.name)
+        console.log('✅ [MODAL] onProjectCreated callback completed')
+      } catch (error) {
+        console.error('❌ [MODAL] Error in onProjectCreated callback:', error)
+        // Still reset form even if callback fails
+      }
       
       // Reset form
       setProjectName('')

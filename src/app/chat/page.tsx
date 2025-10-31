@@ -146,20 +146,26 @@ export default function ChatPage() {
   }, [isSidebarCollapsed])
 
   // Initialize session sync and restore session
+  // Only run once on mount - don't restore if we already have values
   useEffect(() => {
     const initializeSession = async () => {
       try {
-        // First, restore session from localStorage synchronously
-        const stored = localStorage.getItem('stories_we_tell_session')
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (parsed.sessionId) {
-            console.log('🔄 [PAGE] Restoring session from localStorage:', parsed.sessionId)
-            setCurrentSessionId(parsed.sessionId)
-            if (parsed.projectId) {
-              setCurrentProjectId(parsed.projectId)
+        // Only restore from localStorage if we don't already have session/project set
+        // This prevents overriding newly created projects
+        if (!currentSessionId && !currentProjectId) {
+          const stored = localStorage.getItem('stories_we_tell_session')
+          if (stored) {
+            const parsed = JSON.parse(stored)
+            if (parsed.sessionId) {
+              console.log('🔄 [PAGE] Restoring session from localStorage:', parsed.sessionId)
+              setCurrentSessionId(parsed.sessionId)
+              if (parsed.projectId) {
+                setCurrentProjectId(parsed.projectId)
+              }
             }
           }
+        } else {
+          console.log('🔄 [PAGE] Skipping localStorage restore - already have session/project:', { currentSessionId, currentProjectId })
         }
         
         // Then initialize the session sync manager asynchronously
@@ -170,7 +176,7 @@ export default function ChatPage() {
     }
 
     initializeSession()
-  }, [])
+  }, []) // Only run once on mount
 
   // Listen for session cleared and updated events
   useEffect(() => {
