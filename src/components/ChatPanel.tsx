@@ -184,17 +184,36 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   
   // Sync local state with props when they change
+  // CRITICAL: Sync props to local state immediately when props change
+  // This ensures we use the correct project/session even if localStorage has stale data
   useEffect(() => {
-    if (_sessionId !== currentSessionId) {
+    if (_sessionId && _sessionId !== currentSessionId) {
       console.log('🔄 [CHAT] Syncing sessionId from props:', _sessionId)
       setCurrentSessionId(_sessionId)
       sessionIdRef.current = _sessionId
     }
-    if (_projectId !== currentProjectId) {
+    if (_projectId && _projectId !== currentProjectId) {
       console.log('🔄 [CHAT] Syncing projectId from props:', _projectId)
       setCurrentProjectId(_projectId)
+      // Also update localStorage to match props (ensures consistency)
+      try {
+        const stored = localStorage.getItem('stories_we_tell_session')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed.projectId !== _projectId) {
+            parsed.projectId = _projectId
+            if (_sessionId) {
+              parsed.sessionId = _sessionId
+            }
+            localStorage.setItem('stories_we_tell_session', JSON.stringify(parsed))
+            console.log('💾 [CHAT] Updated localStorage to match props')
+          }
+        }
+      } catch (e) {
+        console.error('Failed to sync localStorage with props:', e)
+      }
     }
-  }, [_sessionId, _projectId, currentSessionId, currentProjectId])
+  }, [_sessionId, _projectId])
 
   // Sync local state with localStorage session changes
   useEffect(() => {
@@ -211,9 +230,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
               console.log('🔄 [DEMO] Anonymous user - allowing session restoration')
             }
             
-            // Only use localStorage session if no specific session was provided via props
-            // This prevents overriding when user clicks on a previous chat
-            if (!_sessionId || _sessionId.trim() === '') {
+            // Only use localStorage session if no specific session/project was provided via props
+            // This prevents overriding when user clicks on a previous chat or creates a new project
+            if ((!_sessionId || _sessionId.trim() === '') && (!_projectId || _projectId.trim() === '')) {
               setCurrentSessionId(parsed.sessionId)
               sessionIdRef.current = parsed.sessionId
               if (parsed.projectId) {
@@ -226,7 +245,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                 onSessionUpdate(parsed.sessionId, parsed.projectId)
               }
             } else {
-              console.log('🔄 [CHAT] Skipping localStorage session because specific session provided via props:', _sessionId)
+              console.log('🔄 [CHAT] Skipping localStorage session because specific session/project provided via props:', { sessionId: _sessionId, projectId: _projectId })
             }
           }
         }
@@ -615,10 +634,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
       // Use session info from useSession hook for both authenticated and anonymous users
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, prioritize currentSessionId (from selected chat) over hook values
-        // This ensures that when a user clicks on a previous chat, messages are sent to that chat
-        sessionId = currentSessionId || hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
-        projectId = currentProjectId || hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
+        // For authenticated users, prioritize props > local state > hook values
+        // This ensures that when a new project is created, messages go to the correct project
+        sessionId = _sessionId || currentSessionId || hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
+        projectId = _projectId || currentProjectId || hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
       } else {
         // For anonymous users, try multiple sources to find session data
         // This ensures consistency with upload component
