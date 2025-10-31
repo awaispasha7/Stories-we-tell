@@ -57,8 +57,9 @@ export default function ChatPage() {
   useEffect(() => { init() }, [init])
 
   // Check if current project still exists (was deleted)
+  // Only run when projects have finished loading to avoid race conditions with new projects
   useEffect(() => {
-    if (isAuthenticated && user && currentProjectId && projects.length > 0) {
+    if (isAuthenticated && user && currentProjectId && projects.length > 0 && !isProjectsLoading) {
       const projectExists = projects.some(p => p.project_id === currentProjectId)
       if (!projectExists) {
         // Current project was deleted - clear everything
@@ -72,7 +73,7 @@ export default function ChatPage() {
         }
       }
     }
-  }, [isAuthenticated, user, currentProjectId, projects])
+  }, [isAuthenticated, user, currentProjectId, projects, isProjectsLoading])
 
   // Auto-select most recent project for authenticated users if none selected
   useEffect(() => {
@@ -273,6 +274,14 @@ export default function ChatPage() {
     setShowProjectModal(false)
     setProjectModalRequired(false)
     
+    // CRITICAL: Refetch projects FIRST to ensure the new project is in the list
+    // This prevents race conditions where deletion check runs before project appears
+    await queryClient.invalidateQueries({ queryKey: ['projects'] })
+    await queryClient.refetchQueries({ queryKey: ['projects'] })
+    await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+    await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+    console.log('🔄 [PAGE] Projects refreshed before setting state')
+    
     try {
       // Clear old session data first
       localStorage.removeItem('stories_we_tell_session')
@@ -301,7 +310,7 @@ export default function ChatPage() {
           console.error('Failed to store session in localStorage:', e)
         }
         
-        // Now set state - this will trigger ChatPanel to use the new project/session
+        // Now set state AFTER projects are refetched - ensures deletion check won't trigger
         setCurrentProjectId(projectId)
         setCurrentSessionId(sessionResponse.session_id)
         console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
@@ -318,15 +327,6 @@ export default function ChatPage() {
       setCurrentProjectId(projectId)
       setCurrentSessionId('')
     }
-    
-    // Invalidate and refetch projects query to refresh the sidebar
-    // Do this after setting state so sidebar reflects the new project
-    await queryClient.invalidateQueries({ queryKey: ['projects'] })
-    await queryClient.refetchQueries({ queryKey: ['projects'] })
-    await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-    await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
-    
-    console.log('🔄 [PAGE] Sidebar queries refreshed')
     
     // Close sidebar on mobile
     setIsSidebarCollapsed(true)
