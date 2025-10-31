@@ -270,21 +270,24 @@ export default function ChatPage() {
 
   // Handle project creation success
   const handleProjectCreated = async (projectId: string, projectName: string) => {
-    console.log('✅ [PAGE] Project created:', projectName, projectId)
-    setShowProjectModal(false)
-    setProjectModalRequired(false)
-    
-    // CRITICAL: Refetch projects FIRST to ensure the new project is in the list
-    // This prevents race conditions where deletion check runs before project appears
-    await queryClient.invalidateQueries({ queryKey: ['projects'] })
-    await queryClient.refetchQueries({ queryKey: ['projects'] })
-    await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-    await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
-    console.log('🔄 [PAGE] Projects refreshed before setting state')
-    
     try {
+      console.log('🚀 [PAGE] handleProjectCreated CALLED with:', { projectId, projectName })
+      console.log('✅ [PAGE] Project created:', projectName, projectId)
+      setShowProjectModal(false)
+      setProjectModalRequired(false)
+      
+      // CRITICAL: Refetch projects FIRST to ensure the new project is in the list
+      // This prevents race conditions where deletion check runs before project appears
+      console.log('🔄 [PAGE] Starting projects refetch...')
+      await queryClient.invalidateQueries({ queryKey: ['projects'] })
+      await queryClient.refetchQueries({ queryKey: ['projects'] })
+      await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+      await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+      console.log('🔄 [PAGE] Projects refreshed before setting state')
+      
       // Clear old session data first
       localStorage.removeItem('stories_we_tell_session')
+      console.log('🧹 [PAGE] Cleared old localStorage session')
       
       // Create a session for this new project automatically
       console.log('🆕 [PAGE] Auto-creating session for new project:', projectId)
@@ -294,6 +297,8 @@ export default function ChatPage() {
         project_id?: string
         is_authenticated?: boolean
       }
+      
+      console.log('📦 [PAGE] Session response:', sessionResponse)
       
       if (sessionResponse && sessionResponse.session_id) {
         console.log('✅ [PAGE] Auto-created session:', sessionResponse.session_id)
@@ -316,20 +321,22 @@ export default function ChatPage() {
         console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
         console.log('🆕 [PAGE] With session:', sessionResponse.session_id)
       } else {
-        console.warn('⚠️ [PAGE] Failed to auto-create session')
+        console.warn('⚠️ [PAGE] Failed to auto-create session - response:', sessionResponse)
         // Still set the project even if session creation failed
         setCurrentProjectId(projectId)
         setCurrentSessionId('')
       }
+      
+      // Close sidebar on mobile
+      setIsSidebarCollapsed(true)
+      console.log('✅ [PAGE] handleProjectCreated COMPLETED successfully')
     } catch (error) {
-      console.error('❌ [PAGE] Failed to auto-create session:', error)
+      console.error('❌ [PAGE] handleProjectCreated ERROR:', error)
       // Still set the project even if there was an error
       setCurrentProjectId(projectId)
       setCurrentSessionId('')
+      throw error // Re-throw so caller knows it failed
     }
-    
-    // Close sidebar on mobile
-    setIsSidebarCollapsed(true)
   }
 
   return (
