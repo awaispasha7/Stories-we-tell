@@ -147,17 +147,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       }
     },
     refetchInterval: false,
-    refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
+    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid flash
+    refetchOnMount: false, // Only refetch when query key changes (refreshTrigger)
     staleTime: 0,
+    placeholderData: (previousData) => previousData, // Keep previous data during refetch to prevent flash
     enabled: !!(sessionId && projectId), // Only fetch if we have both IDs
     retry: 1, // Only retry once on failure
     retryDelay: 2000 // Wait 2 seconds before retry
   })
   const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state ONLY on initial load (when there's no data yet)
+  // This prevents flash during background refetches
+  if (isLoading && !data) {
     return (
       <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
         {onClose && (
@@ -401,7 +403,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
             <div className="space-y-4 p-4">
               {(d.scenes ?? []).slice(0, 8).map((s: SceneData, index: number) => (
-                <div key={s.scene_id} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
+                <div key={s.scene_id || `scene-${index}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {index + 1}
