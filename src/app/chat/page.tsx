@@ -16,7 +16,7 @@ import { MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
-import { projectApi } from '@/lib/api'
+import { projectApi, sessionApi } from '@/lib/api'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export default function ChatPage() {
@@ -268,7 +268,7 @@ export default function ChatPage() {
   }
 
   // Handle project creation success
-  const handleProjectCreated = (projectId: string, projectName: string) => {
+  const handleProjectCreated = async (projectId: string, projectName: string) => {
     console.log('✅ [PAGE] Project created:', projectName, projectId)
     setShowProjectModal(false)
     setProjectModalRequired(false)
@@ -280,14 +280,42 @@ export default function ChatPage() {
     queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
     queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
     
-    // Set the new project as current and clear session for fresh start
+    // Set the new project as current
     setCurrentProjectId(projectId)
-    setCurrentSessionId('')
     
     try {
       localStorage.removeItem('stories_we_tell_session')
+      
+      // Create a session for this new project automatically
+      console.log('🆕 [PAGE] Auto-creating session for new project:', projectId)
+      const sessionResponse = await sessionApi.getOrCreateSession(undefined, projectId) as { 
+        success?: boolean
+        session_id?: string
+        project_id?: string
+        is_authenticated?: boolean
+      }
+      
+      if (sessionResponse && sessionResponse.session_id) {
+        console.log('✅ [PAGE] Auto-created session:', sessionResponse.session_id)
+        setCurrentSessionId(sessionResponse.session_id)
+        
+        // Store in localStorage
+        try {
+          localStorage.setItem('stories_we_tell_session', JSON.stringify({
+            sessionId: sessionResponse.session_id,
+            projectId: projectId,
+            isAuthenticated: true
+          }))
+        } catch (e) {
+          console.error('Failed to store session in localStorage:', e)
+        }
+      } else {
+        console.warn('⚠️ [PAGE] Failed to auto-create session, clearing session ID')
+        setCurrentSessionId('')
+      }
     } catch (error) {
-      console.error('Failed to clear localStorage:', error)
+      console.error('❌ [PAGE] Failed to auto-create session:', error)
+      setCurrentSessionId('')
     }
     
     // Close sidebar on mobile
