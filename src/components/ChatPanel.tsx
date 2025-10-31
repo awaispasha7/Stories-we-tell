@@ -48,6 +48,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   }
 
   const handleNewStory = () => {
+    // Reset completion states
+    setStoryCompleted(false)
+    setShowCompletion(false)
+    setCompletedTitle(undefined)
+    
     // For authenticated users, create new story
     if (isAuthenticated) {
       // Clear localStorage to prevent restoring old session
@@ -158,7 +163,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [isProcessingMessage, setIsProcessingMessage] = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)
-  const [composerLocked, setComposerLocked] = useState(false)
+  const [storyCompleted, setStoryCompleted] = useState(false)
   const [completedTitle, setCompletedTitle] = useState<string | undefined>(undefined)
   
   // Edit functionality state
@@ -541,6 +546,33 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
     console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
     console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
     
+    // Check if story is completed - show helpful prompt instead of sending message
+    if (storyCompleted) {
+      console.log('📖 [CHAT] Story completed - showing prompt instead of sending message')
+      
+      // Add user message to UI
+      const userMessage: BubbleProps = { 
+        role: 'user', 
+        content: text,
+        attachedFiles: attachedFiles
+      }
+      setMessages(prev => [...prev, userMessage])
+      
+      // Add helpful assistant response based on auth status
+      const promptMessage: BubbleProps = {
+        role: 'assistant',
+        content: isAuthenticated 
+          ? "Your story is complete! 🎉 To start a new story, please click the \"New Project\" button in the sidebar."
+          : "Your story is complete! 🎉 To create more stories and save your progress, please sign up or log in. It's free and takes just a moment!"
+      }
+      
+      setTimeout(() => {
+        setMessages(prev => [...prev, promptMessage])
+      }, 500)
+      
+      return
+    }
+    
     setIsProcessingMessage(true)
 
     // Check if session is expired for anonymous users
@@ -817,7 +849,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
 
       if (completed) {
         setShowCompletion(true)
-        setComposerLocked(true)
+        setStoryCompleted(true)
         // try to read current dossier title from localStorage cache if present
         try {
           const stored = localStorage.getItem('dossier_snapshot')
@@ -996,7 +1028,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
                 <div className="w-full overflow-hidden">
                   <Composer 
                     onSend={handleSendMessage} 
-                  disabled={isLoading || isProcessingMessage || composerLocked} 
+                    disabled={isLoading || isProcessingMessage} 
                     sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
                     projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
                     editContent={editContent}
