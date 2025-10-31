@@ -7,7 +7,11 @@
 @import "tailwindcss/utilities";
 
 
-:root { color-scheme: light dark; }
+:root { 
+  color-scheme: light dark;
+  /* Dynamic viewport height for mobile - updated by JavaScript */
+  --vh: 1vh;
+}
 body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 
 @theme inline {
@@ -438,19 +442,19 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   z-index: 2;
   cursor: pointer;
   border: none;
-  background: transparent;
+  background: transparent !important;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.sidebar-switch-button:hover {
+.sidebar-switch-button:hover:not(.active) {
   color: rgba(255, 255, 255, 0.9);
   transform: scale(1.02);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .sidebar-switch-button.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
-  color: white;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8)) !important;
+  color: white !important;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   transform: scale(1.05);
 }
@@ -458,6 +462,25 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 .sidebar-switch-button.active:hover {
   transform: scale(1.08);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(147, 51, 234, 0.9)) !important;
+}
+
+/* Mobile touch styles - prevent hover state from sticking */
+@media (hover: none) and (pointer: coarse) {
+  .sidebar-switch-button:hover:not(.active) {
+    background: transparent !important;
+    color: inherit;
+  }
+  
+  .sidebar-switch-button:active:not(.active) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(0.98);
+  }
+  
+  .sidebar-switch-button.active:active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8)) !important;
+    transform: scale(1.02);
+  }
 }
 
 .sidebar-switch-icon {
@@ -480,13 +503,13 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.dark .sidebar-switch-button {
+.dark .sidebar-switch-button:not(.active) {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.dark .sidebar-switch-button:hover {
+.dark .sidebar-switch-button:hover:not(.active) {
   color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Light theme adjustments */
@@ -495,13 +518,13 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.light .sidebar-switch-button {
+.light .sidebar-switch-button:not(.active) {
   color: rgba(0, 0, 0, 0.6);
 }
 
-.light .sidebar-switch-button:hover {
+.light .sidebar-switch-button:hover:not(.active) {
   color: rgba(0, 0, 0, 0.9);
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Theme-specific styles moved to component classes to avoid global interference */

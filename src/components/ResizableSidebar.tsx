@@ -211,12 +211,13 @@ export function ResizableSidebar({
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`${className} shrink-0 relative transition-all duration-300 ${
+        className={`${className} shrink-0 relative transition-all duration-300 h-full ${
           isMobile && isCollapsed ? 'w-0 overflow-hidden' : ''
-        } ${isMobile && !isCollapsed ? 'fixed inset-0 z-50 w-full h-full' : ''}`}
+        } ${isMobile && !isCollapsed ? 'fixed inset-0 z-50 w-full' : ''}`}
         style={{ 
           width: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${width}px`,
-          minWidth: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${minWidth}px`
+          minWidth: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${minWidth}px`,
+          height: isMobile && !isCollapsed ? 'calc(var(--vh, 1vh) * 100)' : '100%'
         }}
       >
         {children}

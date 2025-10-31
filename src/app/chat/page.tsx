@@ -56,6 +56,54 @@ export default function ChatPage() {
 
   useEffect(() => { init() }, [init])
 
+  // Dynamic viewport height for mobile (handles iOS Safari address bar)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null
+    
+    const setViewportHeight = () => {
+      // Clear any pending updates
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      
+      // Debounce to avoid too many updates
+      timeoutId = setTimeout(() => {
+        // Use the actual viewport height
+        const vh = window.innerHeight
+        document.documentElement.style.setProperty('--vh', `${vh * 0.01}px`)
+      }, 100)
+    }
+
+    // Set initial value immediately
+    const vh = window.innerHeight
+    document.documentElement.style.setProperty('--vh', `${vh * 0.01}px`)
+
+    // Update on resize and orientation change
+    window.addEventListener('resize', setViewportHeight)
+    window.addEventListener('orientationchange', () => {
+      // Wait a bit longer for orientation change to complete
+      setTimeout(setViewportHeight, 300)
+    })
+
+    // Also update when visual viewport changes (iOS Safari)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setViewportHeight)
+      window.visualViewport.addEventListener('scroll', setViewportHeight)
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      window.removeEventListener('resize', setViewportHeight)
+      window.removeEventListener('orientationchange', setViewportHeight)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', setViewportHeight)
+        window.visualViewport.removeEventListener('scroll', setViewportHeight)
+      }
+    }
+  }, [])
+
   // Check if current project still exists (was deleted)
   // Only run when projects have finished loading to avoid race conditions with new projects
   useEffect(() => {
@@ -356,7 +404,7 @@ export default function ChatPage() {
           </div>
         </div>
       )}
-      <div className={`h-screen w-screen overflow-hidden ${colors.background} flex flex-col`}>
+      <div className={`w-screen overflow-hidden ${colors.background} flex flex-col`} style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
         {/* Topbar - Full width across entire screen */}
         <div className="shrink-0">
           <Topbar />
@@ -369,36 +417,37 @@ export default function ChatPage() {
             minWidth={250} 
             maxWidth={400} 
             defaultWidth={300}
-            className={`${colors.sidebarBackground} border-r ${colors.border}`}
+            className={`${colors.sidebarBackground} border-r ${colors.border} flex flex-col`}
             isCollapsed={isSidebarCollapsed}
             onCollapseChange={setIsSidebarCollapsed}
           >
-            {/* Enhanced Sidebar Switch */}
-            <div className="sidebar-switch-container">
-              <button
-                onClick={() => setActiveTab('sessions')}
-                className={cn(
-                  "sidebar-switch-button",
-                  activeTab === 'sessions' && "active"
-                )}
-              >
-                <MessageSquare className="sidebar-switch-icon" />
-                Chats
-              </button>
-              <button
-                onClick={() => setActiveTab('dossier')}
-                className={cn(
-                  "sidebar-switch-button",
-                  activeTab === 'dossier' && "active"
-                )}
-              >
-                <FileText className="sidebar-switch-icon" />
-                Dossier
-              </button>
-            </div>
-            
-            {/* Sidebar Content */}
-            <div className="h-[calc(100%-60px)]">
+            <div className="flex flex-col h-full">
+              {/* Enhanced Sidebar Switch */}
+              <div className="sidebar-switch-container shrink-0">
+                <button
+                  onClick={() => setActiveTab('sessions')}
+                  className={cn(
+                    "sidebar-switch-button",
+                    activeTab === 'sessions' && "active"
+                  )}
+                >
+                  <MessageSquare className="sidebar-switch-icon" />
+                  Chats
+                </button>
+                <button
+                  onClick={() => setActiveTab('dossier')}
+                  className={cn(
+                    "sidebar-switch-button",
+                    activeTab === 'dossier' && "active"
+                  )}
+                >
+                  <FileText className="sidebar-switch-icon" />
+                  Dossier
+                </button>
+              </div>
+              
+              {/* Sidebar Content */}
+              <div className="flex-1 min-h-0 overflow-hidden">
               {activeTab === 'sessions' ? (
                 <SessionsSidebar 
                   onSessionSelect={handleSessionSelect}
@@ -419,6 +468,7 @@ export default function ChatPage() {
                   onClose={handleSidebarClose}
                 />
               )}
+              </div>
             </div>
           </ResizableSidebar>
 
