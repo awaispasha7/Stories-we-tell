@@ -410,6 +410,7 @@ export default function ChatPage() {
                     // Project created callback - can trigger new chat in the new project
                     console.log('✅ New project created, ready for new chat')
                   }}
+                  onProjectCreated={handleProjectCreated}
                 />
               ) : (
                 <SidebarDossier 

@@ -32,6 +32,7 @@ interface SessionsSidebarProps {
   onClose?: () => void
   onNewStory?: (projectId?: string) => void
   onNewProject?: () => void
+  onProjectCreated?: (projectId: string, projectName: string) => void | Promise<void>
 }
 
 interface ProjectWithSessions {
@@ -59,7 +60,8 @@ export function SessionsSidebar({
   currentProjectId,
   onClose, 
   onNewStory,
-  onNewProject 
+  onNewProject,
+  onProjectCreated
 }: SessionsSidebarProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -218,23 +220,33 @@ export function SessionsSidebar({
       : []
 
   // Handle project creation
-  const handleProjectCreated = (projectId: string, projectName: string) => {
-    console.log('✅ Project created:', projectId, projectName)
-    // Invalidate both caches so the sidebar reflects immediately
-    queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
-    // Proactively refetch sidebar to avoid waiting for focus/refetch timers
-    queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
-    setShowProjectModal(false)
-    toast.success(
-      'Project Created',
-      `"${projectName}" has been created successfully!`,
-      3000
-    )
-    // Optionally select the first session if any
-    if (onNewProject) {
-      onNewProject()
+  const handleProjectCreated = async (projectId: string, projectName: string) => {
+    console.log('✅ [SIDEBAR] Project created:', projectId, projectName)
+    
+    // If parent provides handler, use it (it handles session creation and state)
+    if (onProjectCreated) {
+      console.log('📞 [SIDEBAR] Delegating to parent onProjectCreated handler')
+      try {
+        await onProjectCreated(projectId, projectName)
+      } catch (error) {
+        console.error('❌ [SIDEBAR] Error in parent onProjectCreated:', error)
+      }
+    } else {
+      // Fallback: just invalidate queries and show toast
+      queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+      toast.success(
+        'Project Created',
+        `"${projectName}" has been created successfully!`,
+        3000
+      )
+      if (onNewProject) {
+        onNewProject()
+      }
     }
+    
+    setShowProjectModal(false)
   }
 
   // Delete session mutation
