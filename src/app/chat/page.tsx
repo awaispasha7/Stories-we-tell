@@ -273,17 +273,8 @@ export default function ChatPage() {
     setShowProjectModal(false)
     setProjectModalRequired(false)
     
-    // Invalidate and refetch projects query to refresh the sidebar
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
-    queryClient.refetchQueries({ queryKey: ['projects'] })
-    // Also refresh the sidebar-specific cache
-    queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
-    queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
-    
-    // Set the new project as current
-    setCurrentProjectId(projectId)
-    
     try {
+      // Clear old session data first
       localStorage.removeItem('stories_we_tell_session')
       
       // Create a session for this new project automatically
@@ -297,26 +288,45 @@ export default function ChatPage() {
       
       if (sessionResponse && sessionResponse.session_id) {
         console.log('✅ [PAGE] Auto-created session:', sessionResponse.session_id)
-        setCurrentSessionId(sessionResponse.session_id)
         
-        // Store in localStorage
+        // Store in localStorage FIRST before setting state
         try {
           localStorage.setItem('stories_we_tell_session', JSON.stringify({
             sessionId: sessionResponse.session_id,
             projectId: projectId,
             isAuthenticated: true
           }))
+          console.log('💾 [PAGE] Stored new session in localStorage')
         } catch (e) {
           console.error('Failed to store session in localStorage:', e)
         }
+        
+        // Now set state - this will trigger ChatPanel to use the new project/session
+        setCurrentProjectId(projectId)
+        setCurrentSessionId(sessionResponse.session_id)
+        console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
+        console.log('🆕 [PAGE] With session:', sessionResponse.session_id)
       } else {
-        console.warn('⚠️ [PAGE] Failed to auto-create session, clearing session ID')
+        console.warn('⚠️ [PAGE] Failed to auto-create session')
+        // Still set the project even if session creation failed
+        setCurrentProjectId(projectId)
         setCurrentSessionId('')
       }
     } catch (error) {
       console.error('❌ [PAGE] Failed to auto-create session:', error)
+      // Still set the project even if there was an error
+      setCurrentProjectId(projectId)
       setCurrentSessionId('')
     }
+    
+    // Invalidate and refetch projects query to refresh the sidebar
+    // Do this after setting state so sidebar reflects the new project
+    await queryClient.invalidateQueries({ queryKey: ['projects'] })
+    await queryClient.refetchQueries({ queryKey: ['projects'] })
+    await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+    await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+    
+    console.log('🔄 [PAGE] Sidebar queries refreshed')
     
     // Close sidebar on mobile
     setIsSidebarCollapsed(true)
