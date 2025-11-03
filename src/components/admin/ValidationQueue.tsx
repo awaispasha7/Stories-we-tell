@@ -81,22 +81,22 @@ export default function ValidationQueue() {
 
   if (error) {
     return (
-      <div className={`p-4 rounded-lg border border-red-300 bg-red-50 ${colors.text}`}>
-        <p>Error loading validation requests: {error.message}</p>
+      <div className={`p-4! rounded-lg! border! border-red-300! dark:border-red-700! bg-red-50! dark:bg-red-900/20! ${colors.text} shadow-lg!`}>
+        <p className="font-semibold!">Error loading validation requests: {error.message}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8!">
       {/* Header & Filters */}
-      <div className="flex justify-between items-center">
-        <h2 className={`text-xl font-semibold ${colors.text}`}>Validation Queue</h2>
-        <div className="flex items-center space-x-4">
+      <div className={`flex! justify-between! items-center! mb-8! pb-6! border-b-2! ${colors.border}`}>
+        <h2 className={`text-2xl! font-bold! ${colors.text}`}>Validation Queue</h2>
+        <div className="flex! items-center! space-x-4!">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={`px-3 py-2 border rounded-md text-sm ${colors.border} ${colors.background} ${colors.text}`}
+            className={`px-4! py-2! border! rounded-lg! text-sm! font-medium! ${colors.border} ${colors.background} ${colors.text} shadow-md! hover:shadow-lg! transition-shadow! cursor-pointer! focus:outline-none! focus:ring-2! focus:ring-blue-500!`}
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -110,21 +110,21 @@ export default function ValidationQueue() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex! justify-center! py-12!">
+          <div className="animate-spin! rounded-full! h-10! w-10! border-b-2! border-blue-600! dark:border-blue-400!"></div>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && (!requests || requests.length === 0) && (
-        <div className={`text-center py-12 ${colors.textSecondary}`}>
-          <p>No validation requests found.</p>
+        <div className={`text-center! py-16! ${colors.textSecondary} rounded-lg! border! ${colors.border} ${colors.background} shadow-md!`}>
+          <p className="text-lg! font-medium!">No validation requests found.</p>
         </div>
       )}
 
       {/* Request List */}
       {!isLoading && requests && requests.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-5!">
           {requests.map((request) => (
             <ValidationRequestCard
               key={request.validation_id}

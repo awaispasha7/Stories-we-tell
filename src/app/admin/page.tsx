@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
+import { isAdminEmail } from '@/lib/admin-utils'
 import ValidationQueue from '@/components/admin/ValidationQueue'
 import AdminStats from '@/components/admin/AdminStats'
 
@@ -14,12 +15,6 @@ export default function AdminPage() {
   const colors = getThemeColors(resolvedTheme)
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
 
-  // Check if user is admin (you can modify this logic as needed)
-  const checkAdminAccess = (userEmail: string) => {
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
-    return adminEmails.some(email => email.trim().toLowerCase() === userEmail.toLowerCase())
-  }
-
   useEffect(() => {
     if (isLoading) return
 
@@ -28,7 +23,7 @@ export default function AdminPage() {
       return
     }
 
-    const hasAccess = checkAdminAccess(user.email || '')
+    const hasAccess = isAdminEmail(user.email)
     setIsAuthorized(hasAccess)
 
     if (!hasAccess) {
@@ -38,17 +33,17 @@ export default function AdminPage() {
 
   if (isLoading || isAuthorized === null) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${colors.background}`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className={`min-h-screen! flex! items-center! justify-center! ${colors.background}`}>
+        <div className="animate-spin! rounded-full! h-12! w-12! border-b-2! border-blue-600!"></div>
       </div>
     )
   }
 
   if (!isAuthorized) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${colors.background}`}>
-        <div className={`text-center p-8 rounded-lg border ${colors.border}`}>
-          <h1 className={`text-2xl font-bold mb-4 ${colors.text}`}>Access Denied</h1>
+      <div className={`min-h-screen! flex! items-center! justify-center! ${colors.background}`}>
+        <div className={`text-center! p-8! rounded-lg! border! ${colors.border}`}>
+          <h1 className={`text-2xl! font-bold! mb-4! ${colors.text}`}>Access Denied</h1>
           <p className={colors.textSecondary}>You don't have permission to access this page.</p>
         </div>
       </div>
@@ -56,22 +51,22 @@ export default function AdminPage() {
   }
 
   return (
-    <div className={`min-h-screen ${colors.background}`}>
+    <div className={`min-h-screen! ${colors.background}`}>
       {/* Header */}
-      <div className={`border-b ${colors.border} ${colors.sidebarBackground}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+      <div className={`border-b! ${colors.border} ${colors.sidebarBackground} shadow-sm!`}>
+        <div className="max-w-7xl! mx-auto! px-6! sm:px-8! lg:px-10!">
+          <div className="flex! justify-between! items-center! py-8!">
             <div>
-              <h1 className={`text-3xl font-bold ${colors.text}`}>Admin Dashboard</h1>
-              <p className={colors.textSecondary}>Story Validation Management</p>
+              <h1 className={`text-3xl! font-bold! ${colors.text} mb-2!`}>Admin Dashboard</h1>
+              <p className={`${colors.textSecondary} text-sm!`}>Story Validation Management</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className={`text-sm ${colors.textSecondary}`}>
+            <div className="flex! items-center! gap-6!">
+              <span className={`text-sm! ${colors.textSecondary} font-medium! whitespace-nowrap!`}>
                 Welcome, {user?.display_name || user?.email}
               </span>
               <button
                 onClick={() => router.push('/chat')}
-                className={`px-4 py-2 text-sm rounded-md border ${colors.border} ${colors.textSecondary} hover:${colors.text} transition-colors`}
+                className={`px-5! py-2.5! text-sm! rounded-lg! border-2! ${colors.border} ${colors.textSecondary} hover:${colors.text} transition-all! hover:border-blue-500! hover:bg-blue-500/10! font-medium! whitespace-nowrap!`}
               >
                 Back to Chat
               </button>
@@ -81,15 +76,15 @@ export default function AdminPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl! mx-auto! px-6! sm:px-8! lg:px-10! py-10!">
+        <div className="grid! grid-cols-1! lg:grid-cols-4! gap-8!">
           {/* Stats Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1!">
             <AdminStats />
           </div>
 
           {/* Validation Queue */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3!">
             <ValidationQueue />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/lib/auth-context'
+import { isAdminEmail, getAdminRedirectPath, getDefaultRedirectPath } from '@/lib/admin-utils'
 import '../auth-styles.css'
 
 
@@ -22,7 +23,11 @@ export default function LoginPage() {
     onSuccess: () => {
       setShowSuccess(true)
       setTimeout(() => {
-        router.push('/chat')
+        // Redirect admins to admin panel, others to chat
+        const redirectPath = isAdminEmail(formData.email) 
+          ? getAdminRedirectPath() 
+          : getDefaultRedirectPath()
+        router.push(redirectPath)
       }, 3000)
     },
     onError: (err: Error) => {
