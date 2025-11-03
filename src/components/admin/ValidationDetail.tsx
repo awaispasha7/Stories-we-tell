@@ -13,7 +13,7 @@ interface ValidationRequest {
   generated_script: string
   client_email: string | null
   client_name: string | null
-  status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'sent_to_client'
+  status: 'pending' | 'approved' | 'rejected' | 'sent_to_client'
   created_at: string
   reviewed_at: string | null
   reviewed_by: string | null
@@ -68,7 +68,7 @@ export default function ValidationDetail({
     onReject(request.validation_id, reviewNotes)
   }
 
-  const canTakeAction = request.status === 'pending' || request.status === 'in_review'
+  const canTakeAction = request.status === 'pending'
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

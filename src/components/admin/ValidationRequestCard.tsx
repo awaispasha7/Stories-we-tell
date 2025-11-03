@@ -12,7 +12,7 @@ interface ValidationRequest {
   generated_script: string
   client_email: string | null
   client_name: string | null
-  status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'sent_to_client'
+  status: 'pending' | 'approved' | 'rejected' | 'sent_to_client'
   created_at: string
   reviewed_at: string | null
   reviewed_by: string | null
@@ -28,10 +28,11 @@ interface Props {
 
 const statusColors = {
   pending: 'bg-yellow-100! dark:bg-yellow-900/30! text-yellow-800! dark:text-yellow-300! border-yellow-300! dark:border-yellow-700!',
-  in_review: 'bg-blue-100! dark:bg-blue-900/30! text-blue-800! dark:text-blue-300! border-blue-300! dark:border-blue-700!',
   approved: 'bg-green-100! dark:bg-green-900/30! text-green-800! dark:text-green-300! border-green-300! dark:border-green-700!',
   rejected: 'bg-red-100! dark:bg-red-900/30! text-red-800! dark:text-red-300! border-red-300! dark:border-red-700!',
-  sent_to_client: 'bg-purple-100! dark:bg-purple-900/30! text-purple-800! dark:text-purple-300! border-purple-300! dark:border-purple-700!'
+  sent_to_client: 'bg-purple-100! dark:bg-purple-900/30! text-purple-800! dark:text-purple-300! border-purple-300! dark:border-purple-700!',
+  // Legacy support for existing records
+  in_review: 'bg-yellow-100! dark:bg-yellow-900/30! text-yellow-800! dark:text-yellow-300! border-yellow-300! dark:border-yellow-700!'
 }
 
 export default function ValidationRequestCard({ request, onSelect, isSelected }: Props) {

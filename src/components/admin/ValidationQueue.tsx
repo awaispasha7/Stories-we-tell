@@ -17,7 +17,7 @@ interface ValidationRequest {
   generated_script: string
   client_email: string | null
   client_name: string | null
-  status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'sent_to_client'
+  status: 'pending' | 'approved' | 'rejected' | 'sent_to_client'
   created_at: string
   reviewed_at: string | null
   reviewed_by: string | null
@@ -35,7 +35,7 @@ export default function ValidationQueue() {
 
   const { data: requests, isLoading, error } = useQuery({
     queryKey: ['validation-requests', statusFilter],
-    queryFn: () => adminApi.getValidationRequests(statusFilter === 'all' ? undefined : statusFilter),
+    queryFn: async () => await adminApi.getValidationRequests(statusFilter === 'all' ? undefined : statusFilter),
     refetchInterval: 30000 // Refetch every 30 seconds
   })
 
@@ -105,7 +105,6 @@ export default function ValidationQueue() {
           >
             <option value="all" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>All Status</option>
             <option value="pending" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Pending</option>
-            <option value="in_review" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>In Review</option>
             <option value="approved" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Approved</option>
             <option value="rejected" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Rejected</option>
             <option value="sent_to_client" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Sent to Client</option>

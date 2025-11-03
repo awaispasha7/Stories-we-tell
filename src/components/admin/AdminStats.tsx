@@ -10,7 +10,7 @@ export default function AdminStats() {
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: adminApi.getStats,
+    queryFn: () => adminApi.getStats(), // Bind context properly
     refetchInterval: 30000 // Refetch every 30 seconds
   })
 
@@ -50,13 +50,6 @@ export default function AdminStats() {
               <span className="text-yellow-700! dark:text-yellow-300! font-semibold!">Pending</span>
               <span className="font-bold! text-yellow-800! dark:text-yellow-200! text-xl!">
                 {stats?.pending_count || 0}
-              </span>
-            </div>
-            
-            <div className="flex! justify-between! items-center! p-4! bg-linear-to-r! from-blue-50! to-blue-100/50! dark:from-blue-900/20! dark:to-blue-800/10! rounded-lg! border! border-blue-200! dark:border-blue-700! shadow-sm! hover:shadow-md! transition-shadow!">
-              <span className="text-blue-700! dark:text-blue-300! font-semibold!">In Review</span>
-              <span className="font-bold! text-blue-800! dark:text-blue-200! text-xl!">
-                {stats?.in_review_count || 0}
               </span>
             </div>
             

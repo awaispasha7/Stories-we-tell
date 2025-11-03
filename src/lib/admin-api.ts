@@ -11,7 +11,7 @@ interface ValidationRequest {
   generated_script: string
   client_email: string | null
   client_name: string | null
-  status: 'pending' | 'in_review' | 'approved' | 'rejected' | 'sent_to_client'
+  status: 'pending' | 'approved' | 'rejected' | 'sent_to_client'
   created_at: string
   reviewed_at: string | null
   reviewed_by: string | null
