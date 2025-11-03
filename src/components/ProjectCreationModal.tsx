@@ -79,10 +79,8 @@ export function ProjectCreationModal({
   }
 
   const handleClose = () => {
-    if (isRequired) {
-      // If required, don't allow closing without creating
-      return
-    }
+    // Always allow closing - user can navigate freely
+    // Modal will reappear if they try to send a message without a project
     onClose()
   }
 
@@ -105,7 +103,7 @@ export function ProjectCreationModal({
         width: '100vw',
         height: '100vh'
       }}
-      onClick={isRequired ? undefined : handleClose}
+      onClick={handleClose}
     >
       <div 
         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl relative"

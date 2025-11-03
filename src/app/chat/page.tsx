@@ -507,31 +507,17 @@ export default function ChatPage() {
         trigger={loginModalTrigger}
       />
 
-      {/* Project Creation Modal - Required for authenticated users with no projects */}
-      {isAuthenticated && !isProjectsLoading && projects.length === 0 ? (
-        <ProjectCreationModal
-          isOpen={true}
-          onClose={() => {
-            // Cannot close if required (no projects exist)
-            if (!projectModalRequired) {
-              setShowProjectModal(false)
-            }
-          }}
-          onProjectCreated={handleProjectCreated}
-          isRequired={true}
-        />
-      ) : (
-        <ProjectCreationModal
-          isOpen={showProjectModal}
-          onClose={() => {
-            if (!projectModalRequired) {
-              setShowProjectModal(false)
-            }
-          }}
-          onProjectCreated={handleProjectCreated}
-          isRequired={projectModalRequired}
-        />
-      )}
+      {/* Project Creation Modal - Only show when explicitly triggered (e.g., message send or New Project button) */}
+      <ProjectCreationModal
+        isOpen={showProjectModal}
+        onClose={() => {
+          // Always allow closing - user can navigate freely
+          setShowProjectModal(false)
+          setProjectModalRequired(false)
+        }}
+        onProjectCreated={handleProjectCreated}
+        isRequired={false} // Never block - user should always be able to navigate
+      />
 
       {/* Sidebar Hint for Mobile Users */}
       {showSidebarHint && (
