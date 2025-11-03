@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { isAdminEmail } from '@/lib/admin-utils'
+import { ThemeSelector } from '@/components/ThemeSelector'
 import ValidationQueue from '@/components/admin/ValidationQueue'
 import AdminStats from '@/components/admin/AdminStats'
 
@@ -64,9 +65,11 @@ export default function AdminPage() {
               <span className={`text-sm! ${colors.textSecondary} font-medium! whitespace-nowrap!`}>
                 Welcome, {user?.display_name || user?.email}
               </span>
+              {/* Theme Selector */}
+              <ThemeSelector />
               <button
                 onClick={() => router.push('/chat')}
-                className={`px-5! py-2.5! text-sm! rounded-lg! border-2! ${colors.border} ${colors.textSecondary} hover:${colors.text} transition-all! hover:border-blue-500! hover:bg-blue-500/10! font-medium! whitespace-nowrap!`}
+                className={`px-5! py-2.5! text-sm! rounded-lg! border-2! ${colors.border} ${colors.textSecondary} hover:${colors.text} transition-all! hover:border-blue-500! hover:bg-blue-500/10! font-medium! whitespace-nowrap! hover:cursor-pointer!`}
               >
                 Back to Chat
               </button>

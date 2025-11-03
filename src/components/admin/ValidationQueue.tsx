@@ -96,14 +96,19 @@ export default function ValidationQueue() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={`px-4! py-2! border! rounded-lg! text-sm! font-medium! ${colors.border} ${colors.background} ${colors.text} shadow-md! hover:shadow-lg! transition-shadow! cursor-pointer! focus:outline-none! focus:ring-2! focus:ring-blue-500!`}
+            className={`px-4! py-2! border! rounded-lg! text-sm! font-medium! ${colors.border} shadow-md! hover:shadow-lg! transition-shadow! cursor-pointer! focus:outline-none! focus:ring-2! focus:ring-blue-500! text-gray-900! dark:text-gray-100! bg-white! dark:bg-gray-800!`}
+            style={{
+              colorScheme: resolvedTheme === 'dark' ? 'dark' : 'light',
+              backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff',
+              color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827'
+            }}
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in_review">In Review</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="sent_to_client">Sent to Client</option>
+            <option value="all" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>All Status</option>
+            <option value="pending" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Pending</option>
+            <option value="in_review" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>In Review</option>
+            <option value="approved" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Approved</option>
+            <option value="rejected" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Rejected</option>
+            <option value="sent_to_client" style={{ backgroundColor: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff', color: resolvedTheme === 'dark' ? '#f3f4f6' : '#111827' }}>Sent to Client</option>
           </select>
         </div>
       </div>
