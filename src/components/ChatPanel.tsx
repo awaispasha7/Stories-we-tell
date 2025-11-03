@@ -25,9 +25,10 @@ interface ChatPanelProps {
   _sessionId?: string
   _projectId?: string
   onSessionUpdate?: (sessionId: string, projectId?: string) => void
+  onShowProjectModal?: () => void
 }
 
-export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanelProps) {
+export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProjectModal }: ChatPanelProps) {
   const { user, isAuthenticated } = useAuth()
   const { 
     sessionId: hookSessionId, 
@@ -686,12 +687,17 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate }: ChatPanel
             })() : null
           })
           
-          // Show error toast - user needs to select/create a project
-          toast.error(
-            'Project Required',
-            'Please create or select a project before sending messages. Use the "New Project" button in the sidebar.',
-            5000
-          )
+          // Show project creation modal instead of toast
+          if (onShowProjectModal) {
+            onShowProjectModal()
+          } else {
+            // Fallback to toast if callback not provided
+            toast.error(
+              'Project Required',
+              'Please create or select a project before sending messages. Use the "New Project" button in the sidebar.',
+              5000
+            )
+          }
           setIsLoading(false)
           setIsProcessingMessage(false)
           setMessages(prev => prev.slice(0, -1)) // Remove the assistant message we just added

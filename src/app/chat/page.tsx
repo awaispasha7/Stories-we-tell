@@ -148,14 +148,8 @@ export default function ChatPage() {
       }
     }
     
-    // For authenticated users with no projects, show project creation modal
-    // Only show if projects have finished loading (not still loading)
-    if (isAuthenticated && user && !isProjectsLoading && projects.length === 0 && !showProjectModal && !currentProjectId) {
-      // Show modal immediately (no delay needed when project was deleted)
-      console.log('🆕 [PAGE] No projects available - showing project creation modal')
-      setProjectModalRequired(true)
-      setShowProjectModal(true)
-    }
+    // Don't auto-show modal on page load - let user interact with the page
+    // Modal will show when user tries to send a message (handled in ChatPanel)
   }, [isAuthenticated, user, projects, currentProjectId, currentSessionId, showProjectModal, isProjectsLoading])
 
   // Show login modal for anonymous users at session start
@@ -485,6 +479,11 @@ export default function ChatPage() {
                     if (projectId) {
                       setCurrentProjectId(projectId)
                     }
+                  }}
+                  onShowProjectModal={() => {
+                    console.log('🆕 [PAGE] Showing project modal from ChatPanel')
+                    setProjectModalRequired(true)
+                    setShowProjectModal(true)
                   }}
                 />
               </div>
