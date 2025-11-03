@@ -466,35 +466,27 @@ export default function ChatPage() {
             </div>
           </ResizableSidebar>
 
-          {/* Chat Area - Only show for anonymous users or authenticated users with a project */}
-          {!isAuthenticated || (isAuthenticated && (currentProjectId || isProjectsLoading)) ? (
-            <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
-              <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-                <ChatPanel 
-                  _sessionId={currentSessionId} 
-                  _projectId={currentProjectId} 
-                  onSessionUpdate={(sessionId, projectId) => {
-                    console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
-                    setCurrentSessionId(sessionId)
-                    if (projectId) {
-                      setCurrentProjectId(projectId)
-                    }
-                  }}
-                  onShowProjectModal={() => {
-                    console.log('🆕 [PAGE] Showing project modal from ChatPanel')
-                    setProjectModalRequired(true)
-                    setShowProjectModal(true)
-                  }}
-                />
-              </div>
+          {/* Chat Area - Always show so users can interact and get prompted to create project */}
+          <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
+            <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
+              <ChatPanel 
+                _sessionId={currentSessionId} 
+                _projectId={currentProjectId} 
+                onSessionUpdate={(sessionId, projectId) => {
+                  console.log('🔄 [PAGE] Session updated from ChatPanel:', sessionId)
+                  setCurrentSessionId(sessionId)
+                  if (projectId) {
+                    setCurrentProjectId(projectId)
+                  }
+                }}
+                onShowProjectModal={() => {
+                  console.log('🆕 [PAGE] Showing project modal from ChatPanel')
+                  setProjectModalRequired(true)
+                  setShowProjectModal(true)
+                }}
+              />
             </div>
-          ) : (
-            <div className={`flex-1 min-h-0 p-4 ${isSidebarCollapsed ? 'block' : 'hidden sm:block'}`}>
-              <div className={`w-full h-full ${colors.cardBackground} ${colors.cardBorder} border rounded-2xl shadow-lg overflow-hidden flex flex-col`}>
-                {/* Intentionally empty: global loader handles this state */}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
