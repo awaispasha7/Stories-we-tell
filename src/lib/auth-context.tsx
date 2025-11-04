@@ -247,9 +247,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message)
       }
       
+      // Clear all localStorage data
+      localStorage.removeItem('user')
+      localStorage.removeItem('stories_we_tell_session')
+      localStorage.removeItem('anonymous_session_id')
+      localStorage.removeItem('anonymous_project_id')
+      localStorage.removeItem('anonymous_session_expires_at')
+      
+      // Reset user state
       setUser(null)
+      
+      // Reset migration flags
+      setMigrationAttempted(false)
+      setUserSynced(false)
     } catch (error) {
       console.error('Logout error:', error)
+      // Even if logout fails, clear localStorage and reset state
+      localStorage.removeItem('user')
+      localStorage.removeItem('stories_we_tell_session')
+      localStorage.removeItem('anonymous_session_id')
+      localStorage.removeItem('anonymous_project_id')
+      localStorage.removeItem('anonymous_session_expires_at')
+      setUser(null)
+      setMigrationAttempted(false)
+      setUserSynced(false)
       throw error
     } finally {
       setIsLoading(false)

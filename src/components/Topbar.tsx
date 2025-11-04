@@ -38,9 +38,17 @@ export function Topbar() {
   }, [])
 
   const handleLogout = async () => {
-    await logout()
-    router.push('/auth/login')
-    setShowProfileDropdown(false)
+    try {
+      setShowProfileDropdown(false)
+      await logout()
+      // Clear any additional state and redirect to login
+      // Use window.location.href for a full page reset
+      window.location.href = '/auth/login'
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Still redirect even if logout fails
+      window.location.href = '/auth/login'
+    }
   }
 
   const [settingsInitialTab, setSettingsInitialTab] = useState<'chat' | 'account'>('chat')
