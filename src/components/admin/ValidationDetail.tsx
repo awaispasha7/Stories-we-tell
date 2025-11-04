@@ -316,9 +316,11 @@ export default function ValidationDetail({
                   <h3 className={`text-lg! sm:text-xl! md:text-2xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
                     Conversation History
                   </h3>
-                  <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-sans! leading-relaxed! overflow-x-auto!`}>
-                    {request.conversation_transcript}
-                  </pre>
+                  <div className={`w-full! overflow-visible!`}>
+                    <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-sans! leading-relaxed! overflow-x-auto! wrap-break-word! block! w-full!`}>
+                      {request.conversation_transcript}
+                    </pre>
+                  </div>
                 </div>
               )}
 
