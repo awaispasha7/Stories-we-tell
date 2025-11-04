@@ -22,10 +22,10 @@ interface ValidationRequest {
 interface AdminStats {
   total_requests: number
   pending_count: number
-  in_review_count: number
   approved_count: number
   rejected_count: number
   sent_count: number
+  failed_count?: number  // Optional for backwards compatibility
   avg_review_time: string
   today_requests: number
 }
