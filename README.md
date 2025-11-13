@@ -1,25 +1,90 @@
 # Frontend - Stories We Tell
 
-A modern Next.js frontend application for the Stories We Tell cinematic intake chatbot, built with TypeScript, Tailwind CSS, and React Query.
+A modern Next.js frontend application for the Stories We Tell cinematic intake chatbot, built with TypeScript, Tailwind CSS, and React Query. An AI-powered story development assistant that helps writers bring their narratives to life through conversational interaction.
 
-## Features
+## ✨ Key Features
 
-- **Next.js 15** with App Router
-- **TypeScript** for type safety
-- **Tailwind CSS v4** for styling
-- **React Query** for data fetching and state management
+### 🎭 Story Development
+- **AI-Powered Chat Interface**: Conversational story development with context-aware AI assistance
+- **Interactive Story Building**: Natural dialogue to develop characters, plot, and world-building
+- **Smart Dossier Generation**: Automatically extracts and structures story elements from conversations
+- **Real-time Story Analysis**: AI analyzes your story in real-time and provides intelligent feedback
+
+### 📊 Story Dossier System
+- **Automatic Story Extraction**: AI intelligently extracts characters, themes, locations, and plot points
+- **Structured Story Elements**: 
+  - Character profiles with relationships and arcs
+  - Key themes and motifs
+  - Important locations and settings
+  - Plot structure and story beats
+- **Live Updates**: Dossier updates as your story evolves through conversation
+- **Visual Story Map**: Clean, organized view of all story elements
+
+### 💬 Session Management
+- **Multi-Chat Support**: Manage multiple story projects simultaneously
+- **Session History**: Access and continue previous story conversations
+- **Persistent Sessions**: Your chats are automatically saved and synced
+- **Smart Session Creation**: New sessions created only when needed
+- **Session Metadata**: Track creation time, last message, and message count
+
+### 🔐 Authentication & User Management
+- **Supabase Authentication**: Secure login with email/password
+- **User Profiles**: Personalized experience with display names and avatars
+- **Anonymous Sessions**: Start chatting without signing up
+- **Session Migration**: Seamlessly migrate anonymous sessions to authenticated accounts
+- **Multi-device Sync**: Access your stories from any device
+
+### 🎨 User Interface
+- **Modern Design**: Clean, professional interface with smooth animations
+- **Dark/Light Theme**: Full theme support with system preference detection
+- **Responsive Layout**: Optimized for desktop, tablet, and mobile devices
+- **Resizable Sidebars**: Customize your workspace layout
+- **Touch-Friendly**: Optimized for touch interactions on mobile devices
+- **Keyboard Shortcuts**: Efficient navigation for power users
+
+### 🚀 Performance & Developer Experience
+- **Real-time Streaming**: Server-sent events for instant AI responses
+- **Optimistic Updates**: Instant UI feedback while waiting for server responses
+- **Smart Caching**: React Query for efficient data fetching and caching
+- **Type Safety**: Full TypeScript coverage for robust development
+- **Code Quality**: ESLint and TypeScript for code quality enforcement
+
+## 🛠️ Technical Stack
+
+- **Next.js 15** with App Router for modern React framework
+- **TypeScript** for type safety and better developer experience
+- **Tailwind CSS v4** for utility-first styling
+- **React Query** for server state management and caching
 - **Zustand** for client-side state management
-- **Lucide React** for icons
-- **Responsive Design** with mobile-first approach
-- **Dark Mode Support**
-- **Real-time Chat Interface**
-- **Character Dossier Sidebar**
+- **Supabase** for authentication and real-time database
+- **Lucide React** for beautiful, consistent icons
+- **SSE (Server-Sent Events)** for real-time AI streaming
+
+## 🎯 How It Works
+
+### For Writers
+
+1. **Start a Conversation**: Simply start chatting about your story idea
+2. **Develop Your Story**: The AI asks intelligent questions to help you flesh out characters, plot, and themes
+3. **Watch Your Dossier Grow**: Story elements are automatically extracted and organized
+4. **Refine and Iterate**: Continue conversations to develop your story further
+5. **Switch Between Projects**: Manage multiple stories with separate chat sessions
+
+### Behind the Scenes
+
+1. **Chat Interaction**: User sends messages through the chat interface
+2. **AI Processing**: Backend LLM processes the message with full conversation context
+3. **Intelligent Extraction**: AI decides when to extract story elements into dossier
+4. **Real-time Updates**: Frontend receives streaming responses and metadata
+5. **Persistent Storage**: Sessions, messages, and dossiers saved to Supabase
+6. **Smart Synchronization**: All changes synced across devices and sessions
 
 ## Prerequisites
 
 - Node.js 18+ 
 - npm, yarn, or pnpm
 - Backend API running (see backend README)
+- Supabase account and project (for authentication and database)
 
 ## Installation
 
@@ -45,8 +110,20 @@ A modern Next.js frontend application for the Stories We Tell cinematic intake c
 Create a `.env.local` file in the stories-we-tell directory:
 
 ```env
+# Backend API
 NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
+
+### Getting Supabase Credentials
+
+1. Go to [Supabase](https://supabase.com) and create a project
+2. Navigate to Project Settings → API
+3. Copy your Project URL and anon/public key
+4. Paste them into your `.env.local` file
 
 ## Running the Application
 
@@ -119,20 +196,47 @@ stories-we-tell/
 ## Key Components
 
 ### Topbar
-- Application header with branding
-- Version information
-- Responsive design with mobile support
+- Application header with branding and navigation
+- User authentication controls (sign in/sign up/sign out)
+- User profile display with avatar
+- Theme toggle (dark/light mode)
+- Responsive mobile menu
 
 ### ChatPanel  
-- Main chat interface
-- Message input and display
-- Real-time conversation handling
+- Main chat interface with streaming AI responses
+- Message input with auto-resize textarea
+- Real-time conversation handling with typing indicators
+- Persistent session management across messages
+- Support for authenticated and anonymous users
+- Message history loading from previous sessions
+- Smart session creation and continuation
+
+### SessionsSidebar
+- List of all user chat sessions
+- Session previews with first message
+- Session metadata (creation date, message count)
+- "New Chat" button with smooth animations
+- Session deletion with confirmation
+- Auto-refresh on session changes
+- Responsive mobile-friendly layout
 
 ### SidebarDossier
-- Character and story information display
-- Scene breakdowns
-- Metadata visualization
-- Responsive sidebar that hides on mobile
+- Real-time story dossier display
+- Structured story elements:
+  - **Characters**: Names, descriptions, relationships, arcs
+  - **Themes**: Central themes and motifs
+  - **Locations**: Settings and environments
+  - **Plot Points**: Key story beats and structure
+- Auto-refresh when dossier updates
+- Elegant loading states
+- Responsive collapsible sidebar
+
+### Authentication Components
+- Sign-in and sign-up forms
+- Email/password authentication via Supabase
+- User profile management
+- Session migration for anonymous users
+- Secure token-based authentication
 
 ## Styling
 
@@ -251,7 +355,7 @@ npm start
 
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel
 
 1. Connect your GitHub repository to Vercel
 2. Set environment variables in Vercel dashboard
