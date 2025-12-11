@@ -286,33 +286,11 @@ export default function ChatPage() {
       setLoginModalTrigger('new-story')
       setShowLoginModal(true)
     } else {
-      // For authenticated users, check if they have projects
-      if (projects.length === 0) {
-        // No projects - require creating one
-        console.log('🆕 [PAGE] No projects found, requiring project creation')
-        setProjectModalRequired(true)
-        setShowProjectModal(true)
-        return
-      }
-
-      // User has projects - clear session but keep most recent project selected
-      // Auto-select the most recent project for convenience
-      const mostRecentProject = projects[0] // Projects are ordered by updated_at DESC
-      
-      try {
-        localStorage.removeItem('stories_we_tell_session')
-        console.log('🆕 [PAGE] Cleared localStorage for new story')
-      } catch (error) {
-        console.error('Failed to clear localStorage:', error)
-      }
-      
-      setCurrentSessionId('')
-      setCurrentProjectId(mostRecentProject.project_id) // Auto-select most recent project
-      
-      console.log('🆕 [PAGE] Auto-selected project:', mostRecentProject.name, mostRecentProject.project_id)
-      
-      // Close sidebar on mobile after creating new story
-      setIsSidebarCollapsed(true)
+      // For authenticated users, always show project creation modal to create a new story/project
+      // This allows users to create unlimited stories, not restricted to existing projects
+      console.log('🆕 [PAGE] Opening project creation modal for new story')
+      setProjectModalRequired(false) // Not required, but we'll show it to create new project
+      setShowProjectModal(true)
     }
   }
 
