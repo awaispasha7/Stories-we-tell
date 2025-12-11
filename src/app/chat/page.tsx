@@ -365,6 +365,7 @@ export default function ChatPage() {
     }
   }
 
+  
   return (
     <DossierProvider>
       {/* Global loader overlay */}
