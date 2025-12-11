@@ -281,16 +281,37 @@ export default function ChatPage() {
     router.push('/auth/login')
   }
 
-  const handleNewStoryClick = async () => {
+  const handleNewStoryClick = async (projectId?: string) => {
     if (!isAuthenticated) {
       setLoginModalTrigger('new-story')
       setShowLoginModal(true)
     } else {
-      // For authenticated users, always show project creation modal to create a new story/project
-      // This allows users to create unlimited stories, not restricted to existing projects
-      console.log('🆕 [PAGE] Opening project creation modal for new story')
-      setProjectModalRequired(false) // Not required, but we'll show it to create new project
-      setShowProjectModal(true)
+      // If projectId is provided, create a new session in that existing project (New Chat)
+      if (projectId) {
+        console.log('💬 [PAGE] Creating new session in existing project:', projectId)
+        try {
+          localStorage.removeItem('stories_we_tell_session')
+          const sessionResponse = await sessionApi.getOrCreateSession(undefined, projectId) as { 
+            success?: boolean
+            session_id?: string
+            project_id?: string
+            is_authenticated?: boolean
+          }
+          
+          if (sessionResponse?.session_id) {
+            setCurrentSessionId(sessionResponse.session_id)
+            setCurrentProjectId(projectId)
+            console.log('✅ [PAGE] Created new session:', sessionResponse.session_id)
+          }
+        } catch (error) {
+          console.error('❌ [PAGE] Failed to create new session:', error)
+        }
+      } else {
+        // No projectId provided - show project creation modal to create a new story/project (New Story)
+        console.log('🆕 [PAGE] Opening project creation modal for new story')
+        setProjectModalRequired(false) // Not required, but we'll show it to create new project
+        setShowProjectModal(true)
+      }
     }
   }
 
