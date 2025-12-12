@@ -386,6 +386,7 @@ The application can be deployed to any platform that supports Next.js:
 
 ## Contributing
 
+
 1. Follow the existing code style and patterns
 2. Add TypeScript types for all new code
 3. Test responsive design on multiple screen sizes
