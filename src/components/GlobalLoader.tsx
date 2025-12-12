@@ -7,8 +7,39 @@ import { usePathname, useSearchParams } from 'next/navigation'
 
 export function GlobalLoader() {
   const { isLoading: authLoading } = useAuth()
-  const isFetching = useIsFetching()
-  const isMutating = useIsMutating()
+  
+  // Only track CRITICAL queries (not background refetches)
+  const criticalFetching = useIsFetching({
+    predicate: (query) => {
+      // Only show loader for queries marked as critical or initial loads
+      const key = query.queryKey
+      const isInitialLoad = !query.state.dataUpdatedAt && query.state.fetchStatus === 'fetching'
+      return (
+        Array.isArray(key) && (
+          key.includes('critical') ||
+          key.includes('initial') ||
+          // Session/project creation (only on initial load, not background refetches)
+          (key.includes('session') && isInitialLoad) ||
+          (key.includes('project') && isInitialLoad)
+        )
+      )
+    }
+  })
+  
+  // Only track CRITICAL mutations
+  const criticalMutating = useIsMutating({
+    predicate: (mutation) => {
+      // Only show loader for critical mutations
+      const key = mutation.options.mutationKey
+      return (
+        Array.isArray(key) && (
+          key.includes('critical') ||
+          key.includes('create') ||
+          key.includes('delete')
+        )
+      )
+    }
+  })
 
   // Route-change aware loading
   const pathname = usePathname()
@@ -19,15 +50,16 @@ export function GlobalLoader() {
   useEffect(() => {
     const current = `${pathname}?${searchParams?.toString() || ''}`
     if (lastLocationRef.current && lastLocationRef.current !== current) {
-      // Start a brief route-loading overlay; will auto-clear or be superseded by queries
+      // Start a brief route-loading overlay
       setRouteLoading(true)
-      const timeout = setTimeout(() => setRouteLoading(false), 800)
+      const timeout = setTimeout(() => setRouteLoading(false), 500) // Reduced from 800ms
       return () => clearTimeout(timeout)
     }
     lastLocationRef.current = current
   }, [pathname, searchParams])
 
-  const show = authLoading || isFetching > 0 || isMutating > 0 || routeLoading
+  // Only show loader for critical operations
+  const show = authLoading || criticalFetching > 0 || criticalMutating > 0 || routeLoading
   if (!show) return null
 
   return (

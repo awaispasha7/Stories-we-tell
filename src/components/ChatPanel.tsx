@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageBubble, BubbleProps } from './MessageBubble'
 import { Composer } from './Composer'
+import { StoryCompletionMessage } from './StoryCompletionMessage'
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useAuth } from '@/lib/auth-context'
 import { useSession } from '@/hooks/useSession'
@@ -10,6 +11,8 @@ import { sessionSyncManager } from '@/lib/session-sync'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
 import { CompletionModal } from '@/components/CompletionModal'
+import { useQuery } from '@tanstack/react-query'
+import { sessionApi, getUserHeaders } from '@/lib/api'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -177,6 +180,31 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   // Local state to track current session and project for this chat
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(_sessionId || undefined)
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(_projectId || undefined)
+  
+  // Listen for story completion events from backend
+  useEffect(() => {
+    const handleStoryCompleted = (event: CustomEvent) => {
+      const { session_id, project_id } = event.detail || {}
+      if (session_id === hookSessionId || session_id === currentSessionId || session_id === sessionIdRef.current) {
+        console.log('🎉 [CHAT] Story completed event received for session:', session_id)
+        setStoryCompleted(true)
+        setShowCompletion(true)
+        // Try to get title from dossier
+        try {
+          const stored = localStorage.getItem('dossier_snapshot')
+          if (stored) {
+            const snap = JSON.parse(stored)
+            if (snap && snap.title) setCompletedTitle(snap.title as string)
+          }
+        } catch {}
+      }
+    }
+    
+    window.addEventListener('storyCompleted', handleStoryCompleted as EventListener)
+    return () => {
+      window.removeEventListener('storyCompleted', handleStoryCompleted as EventListener)
+    }
+  }, [hookSessionId, currentSessionId])
   
   // Track previous session ID to detect changes
   const prevSessionIdRef = useRef<string | undefined>(_sessionId || undefined)
@@ -566,30 +594,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
     console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
     
-    // Check if story is completed - show helpful prompt instead of sending message
+    // Check if story is completed - prevent sending messages
     if (storyCompleted) {
-      console.log('📖 [CHAT] Story completed - showing prompt instead of sending message')
-      
-      // Add user message to UI
-      const userMessage: BubbleProps = { 
-        role: 'user', 
-        content: text,
-        attachedFiles: attachedFiles
-      }
-      setMessages(prev => [...prev, userMessage])
-      
-      // Add helpful assistant response based on auth status
-      const promptMessage: BubbleProps = {
-        role: 'assistant',
-        content: isAuthenticated 
-          ? "Your story is complete! 🎉 To start a new story, please click the \"New Project\" button in the sidebar."
-          : "Your story is complete! 🎉 To create more stories and save your progress, please sign up or log in. It's free and takes just a moment!"
-      }
-      
-      setTimeout(() => {
-        setMessages(prev => [...prev, promptMessage])
-      }, 500)
-      
+      console.log('📖 [CHAT] Story completed - message blocked')
+      toast.info('Your story is complete! Please create a new project to start a new story.')
       return
     }
     
@@ -883,6 +891,18 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
             if (snap && snap.title) setCompletedTitle(snap.title as string)
           }
         } catch {}
+        
+        // Dispatch event for other components
+        const sessionId = isAuthenticated ? (currentSessionId || hookSessionId) : (hookSessionId || sessionIdRef.current)
+        const projectId = isAuthenticated ? (currentProjectId || hookProjectId) : hookProjectId
+        if (sessionId) {
+          window.dispatchEvent(new CustomEvent('storyCompleted', {
+            detail: {
+              session_id: sessionId,
+              project_id: projectId
+            }
+          }))
+        }
       }
 
       if (assistantContent.trim() === '') {
@@ -1048,21 +1068,30 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         </div>
       </div>
 
-              {/* Enhanced Composer - Fixed at bottom */}
-              <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
-                <div className="w-full overflow-hidden">
-                  <Composer 
-                    onSend={handleSendMessage} 
-                    disabled={isLoading || isProcessingMessage} 
-                    sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
-                    projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
-                    editContent={editContent}
-                    isEditing={isEditing}
-                    onEditComplete={handleEditComplete}
-                    editAttachedFiles={editAttachedFiles}
+              {/* Enhanced Composer or Completion Message - Fixed at bottom */}
+              {storyCompleted ? (
+                <div className="border-t border-gray-200/50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm relative z-10 mt-auto">
+                  <StoryCompletionMessage 
+                    storyTitle={completedTitle}
+                    onNewStory={handleNewStory}
                   />
                 </div>
-              </div>
+              ) : (
+                <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
+                  <div className="w-full overflow-hidden">
+                    <Composer 
+                      onSend={handleSendMessage} 
+                      disabled={isLoading || isProcessingMessage} 
+                      sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
+                      projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
+                      editContent={editContent}
+                      isEditing={isEditing}
+                      onEditComplete={handleEditComplete}
+                      editAttachedFiles={editAttachedFiles}
+                    />
+                  </div>
+                </div>
+              )}
 
             {/* Completion Modal */}
             <CompletionModal

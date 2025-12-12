@@ -1,6 +1,7 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft } from 'lucide-react'
 // import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card' // Removed - using custom styling
 // import { Badge } from '@/components/ui/badge' // Removed - using custom styling
@@ -83,9 +84,35 @@ interface SidebarDossierProps {
 }
 
 export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossierProps) {
-  const { refreshTrigger } = useDossierRefresh()
+  const { refreshTrigger, refreshDossier } = useDossierRefresh()
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
+  const queryClient = useQueryClient()
+  
+  // Listen for dossier_updated events
+  useEffect(() => {
+    const handleDossierUpdated = (event: CustomEvent) => {
+      const { project_id } = event.detail || {}
+      if (project_id === projectId) {
+        console.log('🔄 [DOSSIER] Dossier updated event received, refreshing...')
+        // Invalidate and refetch
+        queryClient.invalidateQueries({ 
+          queryKey: ['dossier', project_id],
+          exact: false
+        })
+        queryClient.refetchQueries({ 
+          queryKey: ['dossier', project_id],
+          exact: false
+        })
+        refreshDossier(project_id)
+      }
+    }
+    
+    window.addEventListener('dossierUpdated', handleDossierUpdated as EventListener)
+    return () => {
+      window.removeEventListener('dossierUpdated', handleDossierUpdated as EventListener)
+    }
+  }, [projectId, queryClient, refreshDossier])
   
   const { data, isLoading } = useQuery({ 
     queryKey: ['dossier', sessionId, projectId, refreshTrigger], // Include session and project IDs

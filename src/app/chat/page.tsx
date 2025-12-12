@@ -38,7 +38,7 @@ export default function ChatPage() {
 
   // Fetch user projects to check availability
   const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ['critical', 'projects'], // Mark as critical for loader
     queryFn: async () => {
       if (!isAuthenticated || !user?.user_id) return { projects: [], count: 0 }
       try {
@@ -389,8 +389,8 @@ export default function ChatPage() {
   
   return (
     <DossierProvider>
-      {/* Global loader overlay */}
-      {(authLoading || (isAuthenticated && isProjectsLoading)) && (
+      {/* Global loader overlay - only on initial load */}
+      {(authLoading || (isAuthenticated && isProjectsLoading && !projectsData)) && (
         <div className="fixed inset-0 z-1000 flex items-center justify-center bg-white/70 dark:bg-black/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <div className="h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />

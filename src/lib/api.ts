@@ -33,6 +33,8 @@ const getUserHeaders = () => {
   return {}
 }
 
+export { getUserHeaders }
+
 export const api = ky.create({
   prefixUrl: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
   timeout: 30000,
