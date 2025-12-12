@@ -28,9 +28,10 @@ interface UploadDropzoneProps {
   sessionId?: string
   projectId?: string
   onFileAttached?: (file: AttachedFile) => void
+  disabled?: boolean // Add disabled prop
 }
 
-export function UploadDropzone({ sessionId: propSessionId, projectId: propProjectId, onFileAttached }: UploadDropzoneProps) {
+export function UploadDropzone({ sessionId: propSessionId, projectId: propProjectId, onFileAttached, disabled: propDisabled = false }: UploadDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -71,6 +72,13 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
       propProjectId
     })
 
+    // Check if disabled (story completed)
+    if (propDisabled) {
+      console.log('📤 [UPLOAD] Composer is disabled (story completed), blocking upload')
+      setError('Story is complete. Please create a new project to start a new story.')
+      return
+    }
+    
     // Wait for session to be ready, but allow uploads if we have a user (authenticated)
     if (sessionLoading) {
       console.log('📤 [UPLOAD] Session still loading, blocking upload')
@@ -189,29 +197,30 @@ export function UploadDropzone({ sessionId: propSessionId, projectId: propProjec
           "h-10 w-10 sm:h-[56px] sm:w-[56px] hover:scale-105 active:scale-95 transition-all duration-200 rounded-lg sm:rounded-xl border-2 border-dashed shadow-sm hover:shadow-md flex items-center justify-center backdrop-blur-sm",
           // Use consistent classes to prevent hydration mismatch
           isClient ? (
-            (sessionLoading || (!user && (!sessionId || !projectId))) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+            (propDisabled || sessionLoading || (!user && (!sessionId || !projectId))) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
           ) : "opacity-50 cursor-not-allowed", // Default server state
           isClient ? (
-            isDragging 
+            isDragging && !propDisabled
               ? "border-blue-500 bg-blue-50/80 dark:bg-blue-900/20" 
               : resolvedTheme === 'light'
                 ? "border-gray-300 bg-white/50 hover:border-blue-400 hover:bg-white/80"
                 : "border-slate-500 bg-slate-700/50 hover:border-sky-400 hover:bg-slate-600/80"
           ) : "border-gray-300 bg-white/50", // Default server state
-          isClient && uploading && "opacity-50 cursor-not-allowed"
+          isClient && (uploading || propDisabled) && "opacity-50 cursor-not-allowed"
         )}
         style={{
           width: isLargeScreen ? '56px' : '40px',
           height: isLargeScreen ? '56px' : '40px',
         }}
         onClick={() => {
+          if (propDisabled) return // Block if disabled
           if (!uploading && !sessionLoading && (user || (sessionId && projectId))) {
             if (fileInputRef.current) {
               fileInputRef.current.click()
             }
           }
         }}
-        disabled={!isClient || Boolean(uploading || sessionLoading || (!user && (!sessionId || !projectId)))}
+        disabled={!isClient || Boolean(propDisabled || uploading || sessionLoading || (!user && (!sessionId || !projectId)))}
       >
         {uploading ? (
           <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-sky-400 animate-spin" />

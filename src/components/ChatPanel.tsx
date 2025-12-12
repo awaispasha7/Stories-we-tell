@@ -226,6 +226,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       
       if (!sessionIdToCheck) {
         console.log('⏭️ [CHAT] No session ID for immediate completion check')
+        // Reset state if no session
+        setStoryCompleted(false)
+        storyCompletedRef.current = false
         return
       }
       
@@ -233,6 +236,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         sessionId: sessionIdToCheck,
         projectId: projectIdToCheck
       })
+      
+      // CRITICAL: Reset state BEFORE checking (optimistic unlock)
+      setStoryCompleted(false)
+      storyCompletedRef.current = false
       
       try {
         setCheckingCompletion(true)
@@ -246,7 +253,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         console.log('🔍 [CHAT] IMMEDIATE check result:', {
           story_completed: response.story_completed,
           isCompleted,
-          project_id: response.project_id
+          project_id: response.project_id,
+          sessionId: sessionIdToCheck
         })
         
         if (isCompleted) {
@@ -254,11 +262,17 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
           setStoryCompleted(true)
           storyCompletedRef.current = true
         } else {
+          console.log('⏭️ [CHAT] IMMEDIATE check - Story is NOT completed, unlocking composer')
           setStoryCompleted(false)
           storyCompletedRef.current = false
+          setShowCompletion(false)
+          setCompletedTitle(undefined)
         }
       } catch (error) {
         console.error('⚠️ [CHAT] Error in immediate completion check:', error)
+        // On error, default to NOT completed (safer)
+        setStoryCompleted(false)
+        storyCompletedRef.current = false
       } finally {
         setCheckingCompletion(false)
       }
@@ -266,7 +280,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     
     // Run immediately when component mounts or when session/project changes
     checkCompletionImmediately()
-  }, [_sessionId, _projectId]) // Only depend on props, not state
+  }, [_sessionId, _projectId, currentSessionId, currentProjectId]) // Check on both props AND state changes
   
   // Sync local state with props when they change
   // CRITICAL: Sync props to local state immediately when props change
@@ -430,9 +444,13 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         return
       }
       
-      // Session ID has changed - DON'T reset completion state yet
-      // Let the backend check determine if the story is completed
-      // We'll reset only if backend confirms it's NOT completed
+      // Session ID has changed - Reset completion state immediately
+      // We'll set it correctly based on backend response
+      console.log('🔄 [CHAT] Session ID changed - resetting completion state temporarily')
+      setStoryCompleted(false)
+      storyCompletedRef.current = false
+      setShowCompletion(false)
+      setCompletedTitle(undefined)
       prevSessionIdRef.current = currentSessionIdValue
       
       // If session ID is explicitly empty string (from props), reset to initial state (new chat)
@@ -644,6 +662,51 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     }
 
     loadSessionMessages()
+    
+    // CRITICAL: Trigger completion check after session/project switch
+    // This ensures we check completion status whenever session or project changes
+    const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
+    const projectIdToCheck = _projectId || projectIdRef.current || currentProjectId
+    
+    if (sessionIdToCheck) {
+      // Run completion check after a short delay to ensure backend has the latest data
+      const completionCheckTimer = setTimeout(async () => {
+        try {
+          console.log('🔄 [CHAT] Post-switch completion check', {
+            sessionId: sessionIdToCheck,
+            projectId: projectIdToCheck
+          })
+          const { sessionApi } = await import('@/lib/api')
+          const response = await sessionApi.getSessionMessages(sessionIdToCheck, 1, 0) as {
+            story_completed?: boolean
+            project_id?: string
+          }
+          const isCompleted = Boolean(response.story_completed) === true
+          console.log('🔄 [CHAT] Post-switch check result:', {
+            sessionId: sessionIdToCheck,
+            projectId: projectIdToCheck,
+            story_completed: response.story_completed,
+            isCompleted
+          })
+          if (isCompleted) {
+            setStoryCompleted(true)
+            storyCompletedRef.current = true
+          } else {
+            setStoryCompleted(false)
+            storyCompletedRef.current = false
+            setShowCompletion(false)
+            setCompletedTitle(undefined)
+          }
+        } catch (error) {
+          console.error('⚠️ [CHAT] Error in post-switch completion check:', error)
+          // Default to NOT completed on error
+          setStoryCompleted(false)
+          storyCompletedRef.current = false
+        }
+      }, 200) // Small delay to ensure backend is ready
+      
+      return () => clearTimeout(completionCheckTimer)
+    }
   }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, currentProjectId, user])
 
   const getDynamicTypingMessage = (userMessage: string) => {
@@ -1226,7 +1289,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
 
               {/* Enhanced Composer - Always visible, disabled when story is completed */}
               <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
-                <div className="w-full overflow-hidden">
+                <div className="w-full overflow-visible">
                   {(() => {
                     const composerDisabled = Boolean(storyCompleted) || Boolean(storyCompletedRef.current) || checkingCompletion || isLoading || isProcessingMessage
                     console.log('🎯 [CHAT] Composer disabled prop:', {

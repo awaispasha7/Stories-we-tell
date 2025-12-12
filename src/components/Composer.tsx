@@ -150,11 +150,21 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
   // }, [text])
 
   return (
-    <div className="p-2 sm:p-3 relative group">
+    <div className="p-2 sm:p-3 relative group" style={{ overflow: 'visible', zIndex: 10 }}>
       {/* Hover tooltip when disabled with message */}
       {disabled && disabledMessage && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 max-w-xs text-center">
-          <div className="whitespace-normal">{disabledMessage}</div>
+        <div 
+          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none text-center whitespace-normal" 
+          style={{ 
+            minWidth: '200px',
+            maxWidth: '320px',
+            wordWrap: 'break-word',
+            zIndex: 9999,
+            left: '50%',
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <div className="whitespace-normal" style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}>{disabledMessage}</div>
           {/* Tooltip arrow */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
             <div className="w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
@@ -169,8 +179,8 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
         </div>
       )}
       
-      <div className={`relative flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible ${disabled ? 'opacity-60 pointer-events-none' : ''}`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
-        {!disabled && <UploadDropzone sessionId={sessionId} projectId={projectId} onFileAttached={handleFileAttached} />}
+      <div className={`relative flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible ${disabled ? 'opacity-60' : ''}`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
+        <UploadDropzone sessionId={sessionId} projectId={projectId} onFileAttached={handleFileAttached} disabled={disabled} />
           <div className="relative">
             {!showAudioRecorder ? (
               // Initial state - just the mic button
