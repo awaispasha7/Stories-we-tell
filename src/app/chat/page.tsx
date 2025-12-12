@@ -301,6 +301,17 @@ export default function ChatPage() {
           if (sessionResponse?.session_id) {
             setCurrentSessionId(sessionResponse.session_id)
             setCurrentProjectId(projectId)
+            
+            // Dispatch event and refetch sidebar
+            window.dispatchEvent(new CustomEvent('sessionUpdated', {
+              detail: {
+                sessionId: sessionResponse.session_id,
+                projectId: projectId
+              }
+            }))
+            await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+            await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+            
             console.log('✅ [PAGE] Created new session:', sessionResponse.session_id)
           }
         } catch (error) {
@@ -374,6 +385,15 @@ export default function ChatPage() {
             projectId: projectId
           }
         }))
+        
+        // Force sidebar to refetch immediately
+        await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+        await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+        
+        // Optional: Reload page to ensure everything is in sync (uncomment if needed)
+        // setTimeout(() => {
+        //   window.location.reload()
+        // }, 500)
         
         console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
         console.log('🆕 [PAGE] With session:', sessionResponse.session_id)

@@ -79,6 +79,16 @@ export function SessionsSidebar({
     }
   }, [currentProjectId, currentSessionId])
 
+  // Force refetch sidebar data when current project/session changes
+  // This ensures markers update immediately without page refresh
+  useEffect(() => {
+    if (currentProjectId || currentSessionId) {
+      console.log('🔄 [SIDEBAR] Current project/session changed, refetching sidebar data:', { currentProjectId, currentSessionId })
+      queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+      queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+    }
+  }, [currentProjectId, currentSessionId, queryClient])
+
   // Listen for session updates to refresh the projects list
   useEffect(() => {
     const handleSessionUpdate = () => {
