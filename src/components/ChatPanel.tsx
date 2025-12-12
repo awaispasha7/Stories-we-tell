@@ -360,9 +360,14 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
             const { sessionApi } = await import('@/lib/api')
             const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 1, 0) as { 
               messages?: unknown[]
-              story_completed?: boolean 
+              story_completed?: boolean
+              project_id?: string
             }
             if (messagesResponse?.story_completed !== undefined) {
+              console.log('🔄 [CHAT] Re-checking completion status:', {
+                story_completed: messagesResponse.story_completed,
+                project_id: messagesResponse.project_id
+              })
               setStoryCompleted(messagesResponse.story_completed)
               storyCompletedRef.current = messagesResponse.story_completed // Update ref immediately
             }
@@ -427,9 +432,13 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         console.log('📋 ChatPanel messages response:', messagesResponse)
         
         // Check if story is completed - CRITICAL: Set immediately before processing messages
-        const responseData = messagesResponse as { messages?: unknown[]; story_completed?: boolean }
+        // Backend now checks PROJECT-level completion (if ANY session in project is completed, all are locked)
+        const responseData = messagesResponse as { messages?: unknown[]; story_completed?: boolean; project_id?: string }
         if (responseData.story_completed) {
-          console.log('✅ [CHAT] Session is marked as completed in backend')
+          console.log('✅ [CHAT] Project/Session is marked as completed in backend', {
+            project_id: responseData.project_id,
+            session_id: sessionIdToUse
+          })
           setStoryCompleted(true)
           storyCompletedRef.current = true // Update ref immediately for synchronous checks
           // Fetch title from backend dossier if projectId is available
@@ -651,11 +660,15 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         const { sessionApi } = await import('@/lib/api')
         const messagesResponse = await sessionApi.getSessionMessages(sessionIdToCheck, 1, 0) as { 
           messages?: unknown[]
-          story_completed?: boolean 
+          story_completed?: boolean
+          project_id?: string
         }
         
         if (messagesResponse?.story_completed) {
-          console.log('📖 [CHAT] Story completed (backend check) - message blocked')
+          console.log('📖 [CHAT] Story completed (backend PROJECT check) - message blocked', {
+            project_id: messagesResponse.project_id,
+            session_id: sessionIdToCheck
+          })
           setStoryCompleted(true) // Update local state
           storyCompletedRef.current = true // Update ref immediately
           toast.info('Your story is complete! Please create a new project to start a new story.')
