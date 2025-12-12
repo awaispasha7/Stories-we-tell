@@ -13,6 +13,7 @@ import { useToast } from '@/components/Toast'
 import { CompletionModal } from '@/components/CompletionModal'
 import { useQuery } from '@tanstack/react-query'
 import { sessionApi, getUserHeaders } from '@/lib/api'
+import { useTheme } from '@/lib/theme-context'
 // import { useChatStore } from '@/lib/store' // Unused for now
 // import { Loader2 } from 'lucide-react' // Unused import
 
@@ -41,6 +42,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   } = useSession(_sessionId, _projectId)
   const router = useRouter()
   const toast = useToast()
+  const { resolvedTheme } = useTheme()
   
   // Action button handlers for interactive chat buttons
   const handleSignup = () => {
@@ -1069,7 +1071,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
                 {/* <span className="text-xs font-bold text-green-800">SW</span> */}
               </div>
               <div className="flex items-center pt-2">
-                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
+                <span className={`text-sm font-medium whitespace-nowrap ${
+                  resolvedTheme === 'dark' 
+                    ? 'text-gray-200' 
+                    : 'text-gray-500'
+                }`}>
                   {typingMessage.split('').map((char, index) => (
                     <span 
                       key={index}
