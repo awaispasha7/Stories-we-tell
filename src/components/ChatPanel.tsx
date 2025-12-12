@@ -183,14 +183,22 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         console.log('🎉 [CHAT] Story completed event received for session:', session_id)
         setStoryCompleted(true)
         setShowCompletion(true)
-        // Try to get title from dossier
-        try {
-          const stored = localStorage.getItem('dossier_snapshot')
-          if (stored) {
-            const snap = JSON.parse(stored)
-            if (snap && snap.title) setCompletedTitle(snap.title as string)
-          }
-        } catch {}
+        // Fetch title from backend dossier if projectId is available
+        const projectId = _projectId || projectIdRef.current || currentProjectId || project_id
+        if (projectId) {
+          (async () => {
+            try {
+              const { api } = await import('@/lib/api')
+              const dossierResponse = await api.get(`api/v1/dossiers/${projectId}`).json<any>()
+              const snapshot = dossierResponse?.snapshot_json || dossierResponse || {}
+              if (snapshot.title) {
+                setCompletedTitle(snapshot.title)
+              }
+            } catch (err) {
+              console.error('Failed to fetch dossier title:', err)
+            }
+          })()
+        }
       }
     }
     
@@ -333,38 +341,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
-      // Reset completion state when session changes
-      setStoryCompleted(false)
-      setShowCompletion(false)
-      setCompletedTitle(undefined)
-      
-      // Determine which session ID to use: prop > ref > state > localStorage
+      // Determine which session ID to use: prop > ref > state
       // Refs are updated immediately when props change, so they're most reliable
-      const sessionIdToUse = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
-        try {
-          const stored = localStorage.getItem('stories_we_tell_session')
-          if (stored) {
-            const parsed = JSON.parse(stored)
-            return parsed.sessionId || undefined
-          }
-        } catch (e) {
-          console.error('Error reading localStorage:', e)
-        }
-        return undefined
-      })() : undefined)
-      
-      const projectIdToUse = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
-        try {
-          const stored = localStorage.getItem('stories_we_tell_session')
-          if (stored) {
-            const parsed = JSON.parse(stored)
-            return parsed.projectId || undefined
-          }
-        } catch (e) {
-          console.error('Error reading localStorage:', e)
-        }
-        return undefined
-      })() : undefined)
+      const sessionIdToUse = _sessionId || sessionIdRef.current || currentSessionId
+      const projectIdToUse = _projectId || projectIdRef.current || currentProjectId
       
       // Check if session ID has actually changed
       const currentSessionIdValue = sessionIdToUse || undefined
@@ -373,7 +353,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         return
       }
       
-      // Session ID has changed, update the ref
+      // Session ID has changed, reset completion state and update the ref
+      setStoryCompleted(false)
+      setShowCompletion(false)
+      setCompletedTitle(undefined)
       prevSessionIdRef.current = currentSessionIdValue
       
       // If session ID is explicitly empty string (from props), reset to initial state (new chat)
@@ -421,14 +404,19 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         if (responseData.story_completed) {
           console.log('✅ [CHAT] Session is marked as completed in backend')
           setStoryCompleted(true)
-          // Try to get title from dossier
-          try {
-            const stored = localStorage.getItem('dossier_snapshot')
-            if (stored) {
-              const snap = JSON.parse(stored)
-              if (snap && snap.title) setCompletedTitle(snap.title as string)
+          // Fetch title from backend dossier if projectId is available
+          if (projectIdToUse) {
+            try {
+              const { api } = await import('@/lib/api')
+              const dossierResponse = await api.get(`api/v1/dossiers/${projectIdToUse}`).json<any>()
+              const snapshot = dossierResponse?.snapshot_json || dossierResponse || {}
+              if (snapshot.title) {
+                setCompletedTitle(snapshot.title)
+              }
+            } catch (err) {
+              console.error('Failed to fetch dossier title:', err)
             }
-          } catch {}
+          }
         }
         
         // Handle backend response structure: { success: true, messages: [...] }
@@ -613,10 +601,33 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     console.log('💬 [CHAT] sessionIdRef:', sessionIdRef.current, 'projectIdRef:', projectIdRef.current)
     
     // Check if story is completed - prevent sending messages
+    // Check both local state and backend to ensure accuracy
     if (storyCompleted) {
-      console.log('📖 [CHAT] Story completed - message blocked')
+      console.log('📖 [CHAT] Story completed (local state) - message blocked')
       toast.info('Your story is complete! Please create a new project to start a new story.')
       return
+    }
+    
+    // Double-check with backend before sending (if we have a session ID)
+    const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
+    if (sessionIdToCheck) {
+      try {
+        const { sessionApi } = await import('@/lib/api')
+        const messagesResponse = await sessionApi.getSessionMessages(sessionIdToCheck, 1, 0) as { 
+          messages?: unknown[]
+          story_completed?: boolean 
+        }
+        
+        if (messagesResponse?.story_completed) {
+          console.log('📖 [CHAT] Story completed (backend check) - message blocked')
+          setStoryCompleted(true) // Update local state
+          toast.info('Your story is complete! Please create a new project to start a new story.')
+          return
+        }
+      } catch (error) {
+        console.error('⚠️ [CHAT] Error checking story completion status:', error)
+        // Continue anyway - backend will reject if story is completed
+      }
     }
     
     setIsProcessingMessage(true)
@@ -656,79 +667,17 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       // CRITICAL: Prioritize refs for immediate access (bypasses React state async updates)
       // This ensures that when a new project is created, messages go to the correct project immediately
       let sessionId, projectId
-      if (isAuthenticated) {
-        // For authenticated users, prioritize: props > refs > state > localStorage
-        // Refs are updated immediately when props change, so they're most reliable
-        sessionId = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
-          try {
-            const stored = localStorage.getItem('stories_we_tell_session')
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              return parsed.sessionId || null
-            }
-          } catch {}
-          return null
-        })() : null)
-        
-        projectId = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
-          try {
-            const stored = localStorage.getItem('stories_we_tell_session')
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              return parsed.projectId || null
-            }
-          } catch {}
-          return null
-        })() : null)
-        
-        console.log('💬 [CHAT] Using IDs for message:', { 
-          sessionId, 
-          projectId,
-          fromProps: { sessionId: _sessionId, projectId: _projectId },
-          fromRefs: { sessionId: sessionIdRef.current, projectId: projectIdRef.current },
-          fromState: { sessionId: currentSessionId, projectId: currentProjectId }
-        })
-      } else {
-        // For anonymous users, try multiple sources to find session data
-        sessionId = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
-          try {
-            const stored = localStorage.getItem('stories_we_tell_session')
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              return parsed.sessionId || null
-            }
-          } catch {}
-          return null
-        })() : null)
-        
-        projectId = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
-          try {
-            const stored = localStorage.getItem('stories_we_tell_session')
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              return parsed.projectId || null
-            }
-          } catch {}
-          return null
-        })() : null)
-        
-        // If still no session, try to get from localStorage (for demo users)
-        if (!sessionId) {
-          try {
-            const stored = typeof window !== 'undefined' ? localStorage.getItem('stories_we_tell_session') : null
-            if (stored) {
-              const parsed = JSON.parse(stored)
-              if (parsed.sessionId) {
-                sessionId = parsed.sessionId
-                projectId = parsed.projectId
-                console.log('💬 [CHAT] Restored session from localStorage for anonymous user:', sessionId)
-              }
-            }
-          } catch (error) {
-            console.error('Error parsing localStorage session:', error)
-          }
-        }
-      }
+      // Use props > refs > state (database is source of truth, not localStorage)
+      sessionId = _sessionId || sessionIdRef.current || currentSessionId
+      projectId = _projectId || projectIdRef.current || currentProjectId
+      
+      console.log('💬 [CHAT] Using IDs for message:', { 
+        sessionId, 
+        projectId,
+        fromProps: { sessionId: _sessionId, projectId: _projectId },
+        fromRefs: { sessionId: sessionIdRef.current, projectId: projectIdRef.current },
+        fromState: { sessionId: currentSessionId, projectId: currentProjectId }
+      })
       
       console.log('💬 [CHAT] Using sessionId:', sessionId, 'projectId:', projectId)
       
@@ -739,19 +688,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
           console.error('💬 [CHAT] Available project sources:', {
             currentProjectId,
             propProjectId: _projectId,
-            refProjectId: projectIdRef.current,
-            localStorageProjectId: typeof window !== 'undefined' ? (() => {
-              try {
-                const stored = localStorage.getItem('stories_we_tell_session')
-                if (stored) {
-                  const parsed = JSON.parse(stored)
-                  return parsed.projectId || null
-                }
-              } catch (e) {
-                return null
-              }
-              return null
-            })() : null
+            refProjectId: projectIdRef.current
           })
           
           // Show project creation modal instead of toast
@@ -778,17 +715,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         console.error('💬 [CHAT] Available session sources:', {
           propSessionId: _sessionId,
           sessionIdRef: sessionIdRef.current,
-          currentSessionId,
-          localStorageSession: typeof window !== 'undefined' ? (() => {
-            try {
-              const stored = localStorage.getItem('stories_we_tell_session')
-              if (stored) {
-                const parsed = JSON.parse(stored)
-                return parsed.sessionId || null
-              }
-            } catch {}
-            return null
-          })() : null
+          currentSessionId
         })
         // Don't proceed without a session - this prevents creating new sessions
         throw new Error('No session ID available - cannot send message')
@@ -1022,11 +949,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       }
       dossierDispatchTimerRef.current = window.setTimeout(() => {
         triggerRefresh()
-        try {
-          const stored = localStorage.getItem('stories_we_tell_session')
-          const proj = (stored ? JSON.parse(stored)?.projectId : _projectId || projectIdRef.current || currentProjectId) || undefined
+        // Use props/refs/state for projectId (database is source of truth)
+        const proj = _projectId || projectIdRef.current || currentProjectId || undefined
+        if (proj) {
           window.dispatchEvent(new CustomEvent('dossierUpdated', { detail: { projectId: proj } }))
-        } catch {}
+        }
       }, 1600) // keep tight but avoid double-dispatches
     }
   }

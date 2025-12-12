@@ -159,8 +159,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         console.log('📋 Mapped dossier data:', mapped)
         console.log('📋 Characters count:', mapped.characters?.length || 0)
         console.log('📋 Scenes count:', mapped.scenes?.length || 0)
-        // Cache a copy for other consumers
-        try { localStorage.setItem('dossier_snapshot', JSON.stringify(mapped)) } catch {}
+        // Don't cache dossier in localStorage - database is source of truth
         return mapped
       } catch (err) {
         console.error('❌ Error fetching dossier:', err)
