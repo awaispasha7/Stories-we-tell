@@ -349,7 +349,24 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       // Check if session ID has actually changed
       const currentSessionIdValue = sessionIdToUse || undefined
       if (currentSessionIdValue === prevSessionIdRef.current) {
-        // Session ID hasn't changed, don't reset anything
+        // Session ID hasn't changed, but still check completion status from backend
+        // This ensures state is correct even if we missed an update
+        if (sessionIdToUse) {
+          (async () => {
+            try {
+              const { sessionApi } = await import('@/lib/api')
+              const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 1, 0) as { 
+                messages?: unknown[]
+                story_completed?: boolean 
+              }
+              if (messagesResponse?.story_completed !== undefined) {
+                setStoryCompleted(messagesResponse.story_completed)
+              }
+            } catch (err) {
+              console.error('Failed to check completion status:', err)
+            }
+          })()
+        }
         return
       }
       
@@ -878,23 +895,33 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       if (completed) {
         setShowCompletion(true)
         setStoryCompleted(true)
-        // try to read current dossier title from localStorage cache if present
-        try {
-          const stored = localStorage.getItem('dossier_snapshot')
-          if (stored) {
-            const snap = JSON.parse(stored)
-            if (snap && snap.title) setCompletedTitle(snap.title as string)
-          }
-        } catch {}
         
         // Dispatch event for other components
         const sessionId = _sessionId || sessionIdRef.current || currentSessionId
         const projectId = _projectId || projectIdRef.current || currentProjectId
+        
+        // Fetch title from backend dossier if projectId is available
+        if (projectId) {
+          (async () => {
+            try {
+              const { api } = await import('@/lib/api')
+              const dossierResponse = await api.get(`api/v1/dossiers/${projectId}`).json<any>()
+              const snapshot = dossierResponse?.snapshot_json || dossierResponse || {}
+              if (snapshot.title) {
+                setCompletedTitle(snapshot.title)
+              }
+            } catch (err) {
+              console.error('Failed to fetch dossier title:', err)
+            }
+          })()
+        }
+        
         if (sessionId) {
           window.dispatchEvent(new CustomEvent('storyCompleted', {
             detail: {
               session_id: sessionId,
-              project_id: projectId
+              project_id: projectId,
+              timestamp: new Date().toISOString()
             }
           }))
         }
@@ -913,8 +940,30 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       
       // Ensure loading state is cleared
       setIsLoading(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error)
+      
+      // Check if backend rejected because story is completed (400 error)
+      const statusCode = error?.response?.status || error?.status
+      const errorDetail = error?.response?.data?.detail || error?.response?.data?.message || error?.message || ''
+      
+      if (statusCode === 400 && (errorDetail.includes('completed') || errorDetail.includes('Story is already completed'))) {
+        console.log('📖 [CHAT] Backend rejected: Story is completed')
+        setStoryCompleted(true)
+        setShowCompletion(true)
+        toast.info('Your story is complete! Please create a new project to start a new story.')
+        
+        // Remove the user message and assistant placeholder
+        setMessages(prev => {
+          // Remove last 2 messages (user message + assistant placeholder)
+          const newMessages = prev.slice(0, -2)
+          return newMessages
+        })
+        setIsLoading(false)
+        setIsProcessingMessage(false)
+        setTypingMessage('')
+        return
+      }
       
       // Show specific error message for session issues
       let errorContent = "I'm sorry, I encountered an error. Please make sure the backend server is running and try again."

@@ -84,7 +84,13 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
   }, [attachedFiles.length])
 
   const handleSend = () => {
-    if ((!text.trim() && attachedFiles.length === 0) || disabled) return
+    // Double-check disabled state before sending
+    if (disabled) {
+      console.log('🚫 [COMPOSER] Send blocked - composer is disabled')
+      return
+    }
+    if (!text.trim() && attachedFiles.length === 0) return
+    
     onSend(text.trim(), attachedFiles.length > 0 ? attachedFiles : undefined)
     setText('')
     setAttachedFiles([])
@@ -97,6 +103,11 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
+      // Double-check disabled state
+      if (disabled) {
+        console.log('🚫 [COMPOSER] Enter key blocked - composer is disabled')
+        return
+      }
       handleSend()
     }
   }
