@@ -336,7 +336,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       
       {/* Loading Indicator - Shows at top when dossier is being updated */}
       {isFetching && data && (
-        <div className="sticky top-0 z-10 mb-4 -mt-4 -mx-4 sm:-mx-8 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-4 pb-2 bg-gradient-to-b from-white/95 via-white/90 to-transparent dark:from-gray-900/95 dark:via-gray-900/90 backdrop-blur-sm transition-all duration-300">
+        <div className="sticky top-0 z-10 mb-4 -mt-4 -mx-4 sm:-mx-8 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-4 pb-2 bg-linear-to-b from-white/95 via-white/90 to-transparent dark:from-gray-900/95 dark:via-gray-900/90 backdrop-blur-sm transition-all duration-300">
           <div className="flex items-center gap-2 text-sm">
             <div className="relative flex items-center justify-center">
               <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
