@@ -337,6 +337,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   // Load existing messages when session changes
   useEffect(() => {
     const loadSessionMessages = async () => {
+      // Reset completion state when session changes
+      setStoryCompleted(false)
+      setShowCompletion(false)
+      setCompletedTitle(undefined)
+      
       // Determine which session ID to use: prop > hook > current state > localStorage
       const sessionIdToUse = _sessionId || hookSessionId || currentSessionId || (typeof window !== 'undefined' ? (() => {
         try {
@@ -414,8 +419,23 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 50, 0)
         console.log('📋 ChatPanel messages response:', messagesResponse)
         
+        // Check if story is completed
+        const responseData = messagesResponse as { messages?: unknown[]; story_completed?: boolean }
+        if (responseData.story_completed) {
+          console.log('✅ [CHAT] Session is marked as completed in backend')
+          setStoryCompleted(true)
+          // Try to get title from dossier
+          try {
+            const stored = localStorage.getItem('dossier_snapshot')
+            if (stored) {
+              const snap = JSON.parse(stored)
+              if (snap && snap.title) setCompletedTitle(snap.title as string)
+            }
+          } catch {}
+        }
+        
         // Handle backend response structure: { success: true, messages: [...] }
-        const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
+        const messages = responseData?.messages || []
         
         if (messages && Array.isArray(messages)) {
           if (messages.length > 0) {
