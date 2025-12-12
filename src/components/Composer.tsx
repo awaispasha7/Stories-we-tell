@@ -30,6 +30,11 @@ interface ComposerProps {
 }
 
 export function Composer({ onSend, disabled = false, disabledMessage, sessionId, projectId, editContent, isEditing, onEditComplete, editAttachedFiles }: ComposerProps) {
+  // DEBUG: Log when disabled prop changes
+  useEffect(() => {
+    console.log('🎯 [COMPOSER] Disabled prop changed:', disabled, 'Type:', typeof disabled)
+  }, [disabled])
+  
   const [text, setText] = useState('')
   const [showAudioRecorder, setShowAudioRecorder] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)

@@ -430,12 +430,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         return
       }
       
-      // Session ID has changed, reset completion state and update the ref
-      setStoryCompleted(false)
-      storyCompletedRef.current = false // Reset ref immediately
-      setShowCompletion(false)
-      setCompletedTitle(undefined)
-      setCheckingCompletion(false)
+      // Session ID has changed - DON'T reset completion state yet
+      // Let the backend check determine if the story is completed
+      // We'll reset only if backend confirms it's NOT completed
       prevSessionIdRef.current = currentSessionIdValue
       
       // If session ID is explicitly empty string (from props), reset to initial state (new chat)
@@ -1230,17 +1227,30 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
               {/* Enhanced Composer - Always visible, disabled when story is completed */}
               <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
                 <div className="w-full overflow-hidden">
-                  <Composer 
-                    onSend={handleSendMessage} 
-                    disabled={storyCompleted || storyCompletedRef.current || checkingCompletion || isLoading || isProcessingMessage}
-                    disabledMessage={storyCompleted ? "Your story is complete! Please create a new project to start a new story." : undefined}
-                    sessionId={_sessionId || sessionIdRef.current || currentSessionId || undefined} 
-                    projectId={_projectId || projectIdRef.current || currentProjectId || undefined}
-                    editContent={editContent}
-                    isEditing={isEditing}
-                    onEditComplete={handleEditComplete}
-                    editAttachedFiles={editAttachedFiles}
-                  />
+                  {(() => {
+                    const composerDisabled = Boolean(storyCompleted) || Boolean(storyCompletedRef.current) || checkingCompletion || isLoading || isProcessingMessage
+                    console.log('🎯 [CHAT] Composer disabled prop:', {
+                      storyCompleted,
+                      storyCompletedRef: storyCompletedRef.current,
+                      checkingCompletion,
+                      isLoading,
+                      isProcessingMessage,
+                      finalDisabled: composerDisabled
+                    })
+                    return (
+                      <Composer 
+                        onSend={handleSendMessage} 
+                        disabled={composerDisabled}
+                        disabledMessage={storyCompleted ? "Your story is complete! Please create a new project to start a new story." : undefined}
+                        sessionId={_sessionId || sessionIdRef.current || currentSessionId || undefined} 
+                        projectId={_projectId || projectIdRef.current || currentProjectId || undefined}
+                        editContent={editContent}
+                        isEditing={isEditing}
+                        onEditComplete={handleEditComplete}
+                        editAttachedFiles={editAttachedFiles}
+                      />
+                    )
+                  })()}
                 </div>
               </div>
 
