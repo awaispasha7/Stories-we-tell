@@ -14,6 +14,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'Stories We Tell',
   description: 'Cinematic intake chatbot',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+    shortcut: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
