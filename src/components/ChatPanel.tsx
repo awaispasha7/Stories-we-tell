@@ -218,6 +218,56 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   const projectIdRef = useRef<string | undefined>(_projectId || undefined)
   
+  // CRITICAL: Immediate completion check on mount and when project changes
+  useEffect(() => {
+    const checkCompletionImmediately = async () => {
+      const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
+      const projectIdToCheck = _projectId || projectIdRef.current || currentProjectId
+      
+      if (!sessionIdToCheck) {
+        console.log('⏭️ [CHAT] No session ID for immediate completion check')
+        return
+      }
+      
+      console.log('🔍 [CHAT] IMMEDIATE completion check on mount/update', {
+        sessionId: sessionIdToCheck,
+        projectId: projectIdToCheck
+      })
+      
+      try {
+        setCheckingCompletion(true)
+        const { sessionApi } = await import('@/lib/api')
+        const response = await sessionApi.getSessionMessages(sessionIdToCheck, 1, 0) as {
+          story_completed?: boolean
+          project_id?: string
+        }
+        
+        const isCompleted = Boolean(response.story_completed) === true
+        console.log('🔍 [CHAT] IMMEDIATE check result:', {
+          story_completed: response.story_completed,
+          isCompleted,
+          project_id: response.project_id
+        })
+        
+        if (isCompleted) {
+          console.log('🔒 [CHAT] IMMEDIATE LOCK - Story is completed, locking composer NOW')
+          setStoryCompleted(true)
+          storyCompletedRef.current = true
+        } else {
+          setStoryCompleted(false)
+          storyCompletedRef.current = false
+        }
+      } catch (error) {
+        console.error('⚠️ [CHAT] Error in immediate completion check:', error)
+      } finally {
+        setCheckingCompletion(false)
+      }
+    }
+    
+    // Run immediately when component mounts or when session/project changes
+    checkCompletionImmediately()
+  }, [_sessionId, _projectId]) // Only depend on props, not state
+  
   // Sync local state with props when they change
   // CRITICAL: Sync props to local state immediately when props change
   // This ensures we use the correct project/session even if localStorage has stale data
@@ -429,15 +479,26 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       try {
         const { sessionApi } = await import('@/lib/api')
         const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 50, 0)
-        console.log('📋 ChatPanel messages response:', messagesResponse)
+        console.log('📋 [CHAT] Full messages response:', JSON.stringify(messagesResponse, null, 2))
         
         // Check if story is completed - CRITICAL: Set immediately before processing messages
         // Backend now checks PROJECT-level completion (if ANY session in project is completed, all are locked)
-        const responseData = messagesResponse as { messages?: unknown[]; story_completed?: boolean; project_id?: string }
-        if (responseData.story_completed) {
-          console.log('✅ [CHAT] Project/Session is marked as completed in backend', {
+        const responseData = messagesResponse as { messages?: unknown[]; story_completed?: boolean; project_id?: string; success?: boolean }
+        console.log('🔍 [CHAT] Completion check - story_completed value:', responseData.story_completed, 'Type:', typeof responseData.story_completed)
+        console.log('🔍 [CHAT] Full responseData:', {
+          hasMessages: !!responseData.messages,
+          story_completed: responseData.story_completed,
+          project_id: responseData.project_id,
+          success: responseData.success
+        })
+        
+        // Check completion status - ensure it's a boolean
+        const isCompleted = Boolean(responseData.story_completed) === true
+        if (isCompleted) {
+          console.log('✅ [CHAT] Project/Session is marked as completed in backend - LOCKING COMPOSER', {
             project_id: responseData.project_id,
-            session_id: sessionIdToUse
+            session_id: sessionIdToUse,
+            story_completed: responseData.story_completed
           })
           setStoryCompleted(true)
           storyCompletedRef.current = true // Update ref immediately for synchronous checks
@@ -453,6 +514,18 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
             } catch (err) {
               console.error('Failed to fetch dossier title:', err)
             }
+          }
+        } else {
+          console.log('⏭️ [CHAT] Story is NOT completed, allowing messages', {
+            story_completed: responseData.story_completed,
+            project_id: responseData.project_id,
+            isCompleted: isCompleted
+          })
+          // Ensure we reset completion state if backend says it's not completed
+          if (storyCompleted || storyCompletedRef.current) {
+            console.log('🔄 [CHAT] Resetting completion state - backend says story is not completed')
+            setStoryCompleted(false)
+            storyCompletedRef.current = false
           }
         }
         
