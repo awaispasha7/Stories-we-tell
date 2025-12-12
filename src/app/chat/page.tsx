@@ -363,8 +363,18 @@ export default function ChatPage() {
         }
         
         // Now set state AFTER projects are refetched - ensures deletion check won't trigger
+        // Set both together to ensure ChatPanel gets updated props
         setCurrentProjectId(projectId)
         setCurrentSessionId(sessionResponse.session_id)
+        
+        // Dispatch event to trigger sidebar refresh
+        window.dispatchEvent(new CustomEvent('sessionUpdated', {
+          detail: {
+            sessionId: sessionResponse.session_id,
+            projectId: projectId
+          }
+        }))
+        
         console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
         console.log('🆕 [PAGE] With session:', sessionResponse.session_id)
       } else {

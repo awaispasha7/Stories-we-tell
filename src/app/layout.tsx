@@ -15,8 +15,13 @@ export const metadata = {
   title: 'Stories We Tell',
   description: 'Cinematic intake chatbot',
   icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
     shortcut: '/favicon.ico',
   },
 }

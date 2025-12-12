@@ -6,8 +6,6 @@ import { Composer } from './Composer'
 import { StoryCompletionMessage } from './StoryCompletionMessage'
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useAuth } from '@/lib/auth-context'
-import { useSession } from '@/hooks/useSession'
-import { sessionSyncManager } from '@/lib/session-sync'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
 import { CompletionModal } from '@/components/CompletionModal'
@@ -34,12 +32,6 @@ interface ChatPanelProps {
 
 export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProjectModal }: ChatPanelProps) {
   const { user, isAuthenticated } = useAuth()
-  const { 
-    sessionId: hookSessionId, 
-    projectId: hookProjectId,
-    isSessionExpired, 
-    getSessionInfo 
-  } = useSession(_sessionId, _projectId)
   const router = useRouter()
   const toast = useToast()
   const { resolvedTheme } = useTheme()
@@ -187,7 +179,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   useEffect(() => {
     const handleStoryCompleted = (event: CustomEvent) => {
       const { session_id, project_id } = event.detail || {}
-      if (session_id === hookSessionId || session_id === currentSessionId || session_id === sessionIdRef.current) {
+      if (session_id === currentSessionId || session_id === sessionIdRef.current || session_id === _sessionId) {
         console.log('🎉 [CHAT] Story completed event received for session:', session_id)
         setStoryCompleted(true)
         setShowCompletion(true)
@@ -206,13 +198,14 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     return () => {
       window.removeEventListener('storyCompleted', handleStoryCompleted as EventListener)
     }
-  }, [hookSessionId, currentSessionId])
+  }, [currentSessionId, _sessionId])
   
   // Track previous session ID to detect changes
   const prevSessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   
-  // Use ref to store session ID for immediate access (bypasses React state async updates)
+  // Use refs to store session and project IDs for immediate access (bypasses React state async updates)
   const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
+  const projectIdRef = useRef<string | undefined>(_projectId || undefined)
   
   // Sync local state with props when they change
   // CRITICAL: Sync props to local state immediately when props change
@@ -226,6 +219,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     if (_projectId && _projectId !== currentProjectId) {
       console.log('🔄 [CHAT] Syncing projectId from props:', _projectId)
       setCurrentProjectId(_projectId)
+      projectIdRef.current = _projectId
       // Also update localStorage to match props (ensures consistency)
       try {
         const stored = localStorage.getItem('stories_we_tell_session')
@@ -244,7 +238,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         console.error('Failed to sync localStorage with props:', e)
       }
     }
-  }, [_sessionId, _projectId])
+  }, [_sessionId, _projectId, currentSessionId, currentProjectId])
 
   // Sync local state with localStorage session changes
   useEffect(() => {
@@ -344,8 +338,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       setShowCompletion(false)
       setCompletedTitle(undefined)
       
-      // Determine which session ID to use: prop > hook > current state > localStorage
-      const sessionIdToUse = _sessionId || hookSessionId || currentSessionId || (typeof window !== 'undefined' ? (() => {
+      // Determine which session ID to use: prop > ref > state > localStorage
+      // Refs are updated immediately when props change, so they're most reliable
+      const sessionIdToUse = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
         try {
           const stored = localStorage.getItem('stories_we_tell_session')
           if (stored) {
@@ -358,7 +353,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         return undefined
       })() : undefined)
       
-      const projectIdToUse = _projectId || hookProjectId || currentProjectId || (typeof window !== 'undefined' ? (() => {
+      const projectIdToUse = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
         try {
           const stored = localStorage.getItem('stories_we_tell_session')
           if (stored) {
@@ -533,26 +528,26 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
             setCurrentSessionId('')
             setCurrentProjectId('')
             sessionIdRef.current = ''
+            projectIdRef.current = ''
             
-            // Trigger sync manager to clean up and find a valid session
-            sessionSyncManager.forceSync()
+            // Clear localStorage and notify parent
+            try {
+              localStorage.removeItem('stories_we_tell_session')
+            } catch (e) {
+              console.error('Failed to clear session from localStorage:', e)
+            }
+            
+            // Notify parent component about invalid session
+            if (onSessionUpdate) {
+              onSessionUpdate('', '')
+            }
           }
         }
       }
     }
 
     loadSessionMessages()
-  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, hookSessionId, hookProjectId, currentProjectId, user])
-
-  // Sync hook session values with local state
-  useEffect(() => {
-    if (hookSessionId && hookProjectId) {
-      console.log('🔄 [CHAT] Syncing hook session values:', hookSessionId, hookProjectId)
-      setCurrentSessionId(hookSessionId)
-      setCurrentProjectId(hookProjectId)
-      sessionIdRef.current = hookSessionId
-    }
-  }, [hookSessionId, hookProjectId])
+  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, currentProjectId, user])
 
   const getDynamicTypingMessage = (userMessage: string) => {
     const message = userMessage.toLowerCase()
@@ -612,9 +607,10 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     }
     
     console.log('💬 [CHAT] handleSendMessage called with text:', text.substring(0, 50) + '...')
-    console.log('💬 [CHAT] isAuthenticated:', isAuthenticated, 'hookSessionId:', hookSessionId, 'hookProjectId:', hookProjectId)
+    console.log('💬 [CHAT] isAuthenticated:', isAuthenticated)
     console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
     console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
+    console.log('💬 [CHAT] sessionIdRef:', sessionIdRef.current, 'projectIdRef:', projectIdRef.current)
     
     // Check if story is completed - prevent sending messages
     if (storyCompleted) {
@@ -624,12 +620,6 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     }
     
     setIsProcessingMessage(true)
-
-    // Check if session is expired for anonymous users
-    if (!isAuthenticated && isSessionExpired) {
-      setShowSignInPrompt(true)
-      return
-    }
 
     // Add user message with attached files
     const userMessage: BubbleProps = { 
@@ -662,18 +652,65 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
-      // Use session info from useSession hook for both authenticated and anonymous users
+      // Use session info - simplified: props > refs > state > localStorage
+      // CRITICAL: Prioritize refs for immediate access (bypasses React state async updates)
+      // This ensures that when a new project is created, messages go to the correct project immediately
       let sessionId, projectId
       if (isAuthenticated) {
-        // For authenticated users, prioritize props > local state > hook values
-        // This ensures that when a new project is created, messages go to the correct project
-        sessionId = _sessionId || currentSessionId || hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
-        projectId = _projectId || currentProjectId || hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
+        // For authenticated users, prioritize: props > refs > state > localStorage
+        // Refs are updated immediately when props change, so they're most reliable
+        sessionId = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
+          try {
+            const stored = localStorage.getItem('stories_we_tell_session')
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              return parsed.sessionId || null
+            }
+          } catch {}
+          return null
+        })() : null)
+        
+        projectId = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
+          try {
+            const stored = localStorage.getItem('stories_we_tell_session')
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              return parsed.projectId || null
+            }
+          } catch {}
+          return null
+        })() : null)
+        
+        console.log('💬 [CHAT] Using IDs for message:', { 
+          sessionId, 
+          projectId,
+          fromProps: { sessionId: _sessionId, projectId: _projectId },
+          fromRefs: { sessionId: sessionIdRef.current, projectId: projectIdRef.current },
+          fromState: { sessionId: currentSessionId, projectId: currentProjectId }
+        })
       } else {
         // For anonymous users, try multiple sources to find session data
-        // This ensures consistency with upload component
-        sessionId = hookSessionId || sessionIdRef.current || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null)
-        projectId = hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null)
+        sessionId = _sessionId || sessionIdRef.current || currentSessionId || (typeof window !== 'undefined' ? (() => {
+          try {
+            const stored = localStorage.getItem('stories_we_tell_session')
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              return parsed.sessionId || null
+            }
+          } catch {}
+          return null
+        })() : null)
+        
+        projectId = _projectId || projectIdRef.current || currentProjectId || (typeof window !== 'undefined' ? (() => {
+          try {
+            const stored = localStorage.getItem('stories_we_tell_session')
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              return parsed.projectId || null
+            }
+          } catch {}
+          return null
+        })() : null)
         
         // If still no session, try to get from localStorage (for demo users)
         if (!sessionId) {
@@ -700,9 +737,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         if (!projectId) {
           console.error('💬 [CHAT] ERROR: Authenticated user needs a project_id!')
           console.error('💬 [CHAT] Available project sources:', {
-            hookProjectId,
             currentProjectId,
             propProjectId: _projectId,
+            refProjectId: projectIdRef.current,
             localStorageProjectId: typeof window !== 'undefined' ? (() => {
               try {
                 const stored = localStorage.getItem('stories_we_tell_session')
@@ -739,10 +776,19 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       if (!sessionId) {
         console.error('💬 [CHAT] ERROR: No session ID available! This will create a new session.')
         console.error('💬 [CHAT] Available session sources:', {
-          hookSessionId,
+          propSessionId: _sessionId,
           sessionIdRef: sessionIdRef.current,
           currentSessionId,
-          localStorageSession: typeof window !== 'undefined' ? localStorage.getItem('anonymous_session_id') : null
+          localStorageSession: typeof window !== 'undefined' ? (() => {
+            try {
+              const stored = localStorage.getItem('stories_we_tell_session')
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                return parsed.sessionId || null
+              }
+            } catch {}
+            return null
+          })() : null
         })
         // Don't proceed without a session - this prevents creating new sessions
         throw new Error('No session ID available - cannot send message')
@@ -915,8 +961,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         } catch {}
         
         // Dispatch event for other components
-        const sessionId = isAuthenticated ? (currentSessionId || hookSessionId) : (hookSessionId || sessionIdRef.current)
-        const projectId = isAuthenticated ? (currentProjectId || hookProjectId) : hookProjectId
+        const sessionId = _sessionId || sessionIdRef.current || currentSessionId
+        const projectId = _projectId || projectIdRef.current || currentProjectId
         if (sessionId) {
           window.dispatchEvent(new CustomEvent('storyCompleted', {
             detail: {
@@ -978,7 +1024,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         triggerRefresh()
         try {
           const stored = localStorage.getItem('stories_we_tell_session')
-          const proj = (stored ? JSON.parse(stored)?.projectId : currentProjectId || hookProjectId || _projectId) || undefined
+          const proj = (stored ? JSON.parse(stored)?.projectId : _projectId || projectIdRef.current || currentProjectId) || undefined
           window.dispatchEvent(new CustomEvent('dossierUpdated', { detail: { projectId: proj } }))
         } catch {}
       }, 1600) // keep tight but avoid double-dispatches
@@ -997,7 +1043,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 custom-scrollbar">
-        <div className="w-full px-6 py-4" key={currentSessionId || hookSessionId || _sessionId || 'no-session'}>
+        <div className="w-full px-6 py-4" key={_sessionId || sessionIdRef.current || currentSessionId || 'no-session'}>
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <div className="w-16 h-16 bg-linear-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
@@ -1108,8 +1154,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
                     <Composer 
                       onSend={handleSendMessage} 
                       disabled={isLoading || isProcessingMessage} 
-                      sessionId={isAuthenticated ? (currentSessionId || hookSessionId || undefined) : (hookSessionId || sessionIdRef.current || undefined)} 
-                      projectId={isAuthenticated ? (currentProjectId || hookProjectId || undefined) : (hookProjectId || (typeof window !== 'undefined' ? localStorage.getItem('anonymous_project_id') : null) || undefined)}
+                      sessionId={_sessionId || sessionIdRef.current || currentSessionId || undefined} 
+                      projectId={_projectId || projectIdRef.current || currentProjectId || undefined}
                       editContent={editContent}
                       isEditing={isEditing}
                       onEditComplete={handleEditComplete}
