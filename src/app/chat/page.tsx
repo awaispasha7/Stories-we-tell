@@ -386,14 +386,24 @@ export default function ChatPage() {
           }
         }))
         
-        // Force sidebar to refetch immediately
+        // Force sidebar to refetch immediately and wait for it
+        console.log('🔄 [PAGE] Forcing sidebar refetch after project creation...')
         await queryClient.invalidateQueries({ queryKey: ['projectsSidebar'] })
+        const refetchResult = await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
+        console.log('✅ [PAGE] Sidebar refetch completed:', refetchResult)
+        
+        // Wait a bit for React to process state updates and re-render
+        await new Promise(resolve => setTimeout(resolve, 150))
+        
+        // Force another refetch to ensure markers are updated
         await queryClient.refetchQueries({ queryKey: ['projectsSidebar'] })
         
-        // Optional: Reload page to ensure everything is in sync (uncomment if needed)
-        // setTimeout(() => {
-        //   window.location.reload()
-        // }, 500)
+        // Trigger a page refresh to ensure sidebar markers are updated correctly
+        // This is the most reliable way to ensure the UI is in sync after project creation
+        console.log('🔄 [PAGE] Triggering page refresh to ensure sidebar markers are updated')
+        setTimeout(() => {
+          window.location.reload()
+        }, 200)
         
         console.log('🆕 [PAGE] Switched to new project:', projectName, projectId)
         console.log('🆕 [PAGE] With session:', sessionResponse.session_id)

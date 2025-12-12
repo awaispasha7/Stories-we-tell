@@ -165,6 +165,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   const [completedTitle, setCompletedTitle] = useState<string | undefined>(undefined)
   const [checkingCompletion, setCheckingCompletion] = useState(false) // Track if we're checking completion status
   const storyCompletedRef = useRef(false) // Ref for immediate access to completion status
+  const lastCompletionCheckRef = useRef<string>('') // Track last checked session+project combo to avoid duplicate checks
+  const completionCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Debounce completion checks
   
   // Edit functionality state
   const [editContent, setEditContent] = useState<string>('')
@@ -413,36 +415,15 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       const sessionIdToUse = _sessionId || sessionIdRef.current || currentSessionId
       const projectIdToUse = _projectId || projectIdRef.current || currentProjectId
       
-      // Check if session ID has actually changed
-      const currentSessionIdValue = sessionIdToUse || undefined
-      if (currentSessionIdValue === prevSessionIdRef.current) {
-        // Session ID hasn't changed, but still check completion status from backend
-        // This ensures state is correct even if we missed an update
-        if (sessionIdToUse) {
-          setCheckingCompletion(true) // Block composer while checking
-          try {
-            const { sessionApi } = await import('@/lib/api')
-            const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 1, 0) as { 
-              messages?: unknown[]
-              story_completed?: boolean
-              project_id?: string
-            }
-            if (messagesResponse?.story_completed !== undefined) {
-              console.log('🔄 [CHAT] Re-checking completion status:', {
-                story_completed: messagesResponse.story_completed,
-                project_id: messagesResponse.project_id
-              })
-              setStoryCompleted(messagesResponse.story_completed)
-              storyCompletedRef.current = messagesResponse.story_completed // Update ref immediately
-            }
-          } catch (err) {
-            console.error('Failed to check completion status:', err)
-          } finally {
-            setCheckingCompletion(false)
-          }
+        // Check if session ID has actually changed
+        const currentSessionIdValue = sessionIdToUse || undefined
+        const checkKey = `${sessionIdToUse || ''}:${projectIdToUse || ''}`
+        
+        if (currentSessionIdValue === prevSessionIdRef.current && checkKey === lastCompletionCheckRef.current) {
+          // Session ID hasn't changed AND we've already checked this combo - skip duplicate check
+          console.log('⏭️ [CHAT] Session unchanged and already checked, skipping duplicate load')
+          return
         }
-        return
-      }
       
       // Session ID has changed - Reset completion state immediately
       // We'll set it correctly based on backend response
@@ -509,6 +490,9 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         
         // Check completion status - ensure it's a boolean
         const isCompleted = Boolean(responseData.story_completed) === true
+        const checkKey = `${sessionIdToUse || ''}:${projectIdToUse || ''}`
+        lastCompletionCheckRef.current = checkKey // Mark that we've checked this combo
+        
         if (isCompleted) {
           console.log('✅ [CHAT] Project/Session is marked as completed in backend - LOCKING COMPOSER', {
             project_id: responseData.project_id,
@@ -662,51 +646,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     }
 
     loadSessionMessages()
-    
-    // CRITICAL: Trigger completion check after session/project switch
-    // This ensures we check completion status whenever session or project changes
-    const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
-    const projectIdToCheck = _projectId || projectIdRef.current || currentProjectId
-    
-    if (sessionIdToCheck) {
-      // Run completion check after a short delay to ensure backend has the latest data
-      const completionCheckTimer = setTimeout(async () => {
-        try {
-          console.log('🔄 [CHAT] Post-switch completion check', {
-            sessionId: sessionIdToCheck,
-            projectId: projectIdToCheck
-          })
-          const { sessionApi } = await import('@/lib/api')
-          const response = await sessionApi.getSessionMessages(sessionIdToCheck, 1, 0) as {
-            story_completed?: boolean
-            project_id?: string
-          }
-          const isCompleted = Boolean(response.story_completed) === true
-          console.log('🔄 [CHAT] Post-switch check result:', {
-            sessionId: sessionIdToCheck,
-            projectId: projectIdToCheck,
-            story_completed: response.story_completed,
-            isCompleted
-          })
-          if (isCompleted) {
-            setStoryCompleted(true)
-            storyCompletedRef.current = true
-          } else {
-            setStoryCompleted(false)
-            storyCompletedRef.current = false
-            setShowCompletion(false)
-            setCompletedTitle(undefined)
-          }
-        } catch (error) {
-          console.error('⚠️ [CHAT] Error in post-switch completion check:', error)
-          // Default to NOT completed on error
-          setStoryCompleted(false)
-          storyCompletedRef.current = false
-        }
-      }, 200) // Small delay to ensure backend is ready
-      
-      return () => clearTimeout(completionCheckTimer)
-    }
+    // Note: Completion check is already handled in loadSessionMessages and the immediate check useEffect
+    // No need for a separate post-switch check to avoid duplicate API calls
   }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, currentProjectId, user])
 
   const getDynamicTypingMessage = (userMessage: string) => {
