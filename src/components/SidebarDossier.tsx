@@ -554,33 +554,39 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               Hero Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
-            <div className="space-y-4">
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
+            <div className="divide-y" style={{ 
+              borderColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.5)' : 'rgba(75, 85, 99, 0.5)'
+            }}>
               {d.heroes.map((hero: HeroData, idx: number) => (
-                <div key={idx} className={`${colors.backgroundTertiary} p-4 rounded-lg border ${colors.border}`}>
-                  <div className="flex items-start gap-3">
+                <div key={idx} className={`${colors.backgroundTertiary} p-5 ${idx !== (d.heroes?.length || 0) - 1 ? 'border-b' : ''}`} style={{
+                  borderBottomColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.8)' : 'rgba(75, 85, 99, 0.8)'
+                }}>
+                  <div className="flex items-start gap-4">
                     {hero.photo_url && (
                       <img 
                         src={hero.photo_url} 
                         alt={hero.name || 'Hero'} 
-                        className="w-16 h-16 rounded-lg object-cover border-2 border-blue-300 dark:border-blue-600"
+                        className="w-16 h-16 rounded-lg object-cover border-2 border-blue-300 dark:border-blue-600 shrink-0"
                       />
                     )}
-                    <div className="flex-1">
-                      <div className={`font-semibold text-base ${colors.text}`}>{hero.name || 'Unnamed Hero'}</div>
-                      {hero.age_at_story && (
-                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>Age: {hero.age_at_story}</div>
-                      )}
-                      {hero.relationship_to_user && (
-                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>Relationship: {hero.relationship_to_user}</div>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-semibold text-base ${colors.text} mb-1.5`}>{hero.name || 'Unnamed Hero'}</div>
+                      <div className="space-y-1">
+                        {hero.age_at_story && (
+                          <div className={`text-xs ${colors.textTertiary}`}>Age: {hero.age_at_story}</div>
+                        )}
+                        {hero.relationship_to_user && (
+                          <div className={`text-xs ${colors.textTertiary}`}>Relationship: {hero.relationship_to_user}</div>
+                        )}
+                      </div>
                       {hero.physical_descriptors && (
-                        <div className={`text-xs ${colors.textSecondary} mt-2`}>
+                        <div className={`text-xs ${colors.textSecondary} mt-2.5`}>
                           <span className={`font-semibold ${colors.text}`}>Physical:</span> {hero.physical_descriptors}
                         </div>
                       )}
                       {hero.personality_traits && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1`}>
+                        <div className={`text-xs ${colors.textSecondary} mt-1.5`}>
                           <span className={`font-semibold ${colors.text}`}>Personality:</span> {hero.personality_traits}
                         </div>
                       )}
@@ -602,22 +608,26 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               Supporting Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
-            <div className="space-y-3">
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
+            <div className="divide-y" style={{ 
+              borderColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.5)' : 'rgba(75, 85, 99, 0.5)'
+            }}>
               {d.supporting_characters.map((char: SupportingCharacterData, idx: number) => (
-                <div key={idx} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                  <div className="flex items-start gap-3">
+                <div key={idx} className={`${colors.backgroundTertiary} p-4 ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'border-b' : ''}`} style={{
+                  borderBottomColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.8)' : 'rgba(75, 85, 99, 0.8)'
+                }}>
+                  <div className="flex items-start gap-4">
                     {char.photo_url && (
                       <img 
                         src={char.photo_url} 
                         alt={char.name || 'Character'} 
-                        className="w-12 h-12 rounded-lg object-cover border-2 border-purple-300 dark:border-purple-600"
+                        className="w-12 h-12 rounded-lg object-cover border-2 border-purple-300 dark:border-purple-600 shrink-0"
                       />
                     )}
-                    <div className="flex-1">
-                      <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-semibold ${colors.text} mb-1`}>{char.name || 'Unnamed Character'}</div>
                       {char.role && (
-                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                        <div className={`text-xs ${colors.textTertiary} mb-1.5`}>{char.role}</div>
                       )}
                       {char.description && (
                         <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
