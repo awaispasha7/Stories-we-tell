@@ -32,13 +32,39 @@ const getUserHeaders = () => {
 import { useDossierRefresh } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 
+interface HeroData {
+  name?: string
+  age_at_story?: number | string
+  relationship_to_user?: string
+  physical_descriptors?: string
+  personality_traits?: string
+  photo_url?: string
+  [key: string]: any
+}
+
+interface SupportingCharacterData {
+  name?: string
+  role?: string
+  description?: string
+  photo_url?: string
+  [key: string]: any
+}
+
+interface AudienceData {
+  who_will_see_first?: string
+  desired_feeling?: string
+  [key: string]: any
+}
+
 interface DossierData {
   title: string
   logline: string
   genre: string
   tone: string
   scenes: SceneData[]
-  characters: CharacterData[]
+  characters: CharacterData[]  // Legacy format
+  heroes?: HeroData[]  // New: Primary characters
+  supporting_characters?: SupportingCharacterData[]  // New: Secondary characters
   locations: string[]
   project_id?: string  // Include project_id for visibility
   // Extended optional fields mirrored from snapshot_json
@@ -49,12 +75,25 @@ interface DossierData {
   story_location?: string
   story_timeframe?: string
   story_world_type?: string
+  season_time_of_year?: string
+  environmental_details?: string
   problem_statement?: string
   subject_full_name?: string
   subject_brief_description?: string
   subject_exists_real_world?: boolean
   writer_connection_place_time?: string
   subject_relationship_to_writer?: string
+  story_type?: string  // New: romantic, childhood_drama, fantasy, etc.
+  audience?: AudienceData  // New: who_will_see_first, desired_feeling
+  perspective?: string  // New: first_person, narrator_voice, etc.
+  synopsis?: string  // New: 500-800 word synopsis
+  full_script?: string  // New: Full script with dialogue, VO
+  dialogue?: any[]  // New: Dialogue lines
+  voiceover_script?: any  // New: VO script
+  shot_list?: any  // New: Shot list
+  camera_logic?: any  // New: Camera logic
+  scene_math?: any  // New: Scene math
+  micro_prompts?: any[]  // New: Micro-prompts
   [key: string]: any
 }
 
@@ -138,7 +177,9 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           genre: snapshot.genre || '',
           tone: snapshot.tone || '',
           scenes: snapshot.scenes || [],
-          characters: snapshot.characters || [],
+          characters: snapshot.characters || [],  // Legacy format
+          heroes: snapshot.heroes || [],  // New: Primary characters
+          supporting_characters: snapshot.supporting_characters || [],  // New: Secondary characters
           locations: snapshot.locations || [],
           project_id: projectId,
           // Extended fields from snapshot_json
@@ -150,11 +191,24 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           story_location: snapshot.story_location,
           story_timeframe: snapshot.story_timeframe,
           story_world_type: snapshot.story_world_type,
+          season_time_of_year: snapshot.season_time_of_year,
+          environmental_details: snapshot.environmental_details,
           subject_full_name: snapshot.subject_full_name,
           subject_brief_description: snapshot.subject_brief_description,
           subject_exists_real_world: snapshot.subject_exists_real_world,
           writer_connection_place_time: snapshot.writer_connection_place_time,
-          subject_relationship_to_writer: snapshot.subject_relationship_to_writer
+          subject_relationship_to_writer: snapshot.subject_relationship_to_writer,
+          story_type: snapshot.story_type,  // New
+          audience: snapshot.audience,  // New
+          perspective: snapshot.perspective,  // New
+          synopsis: snapshot.synopsis,  // New
+          full_script: snapshot.full_script,  // New
+          dialogue: snapshot.dialogue,  // New
+          voiceover_script: snapshot.voiceover_script,  // New
+          shot_list: snapshot.shot_list,  // New
+          camera_logic: snapshot.camera_logic,  // New
+          scene_math: snapshot.scene_math,  // New
+          micro_prompts: snapshot.micro_prompts  // New
         }
         console.log('📋 Mapped dossier data:', mapped)
         console.log('📋 Characters count:', mapped.characters?.length || 0)
@@ -491,39 +545,205 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         </div>
       )}
       
-      {/* Characters Card */}
-      <div>
-        <div className="pb-3">
+      {/* Heroes Card (Primary Characters) */}
+      {(d.heroes && d.heroes.length > 0) && (
+        <div>
+          <div className="pb-3">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              Hero Characters
+            </h3>
+          </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
+            <div className="space-y-4">
+              {d.heroes.map((hero: HeroData, idx: number) => (
+                <div key={idx} className={`${colors.backgroundTertiary} p-4 rounded-lg border ${colors.border}`}>
+                  <div className="flex items-start gap-3">
+                    {hero.photo_url && (
+                      <img 
+                        src={hero.photo_url} 
+                        alt={hero.name || 'Hero'} 
+                        className="w-16 h-16 rounded-lg object-cover border-2 border-blue-300 dark:border-blue-600"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className={`font-semibold text-base ${colors.text}`}>{hero.name || 'Unnamed Hero'}</div>
+                      {hero.age_at_story && (
+                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>Age: {hero.age_at_story}</div>
+                      )}
+                      {hero.relationship_to_user && (
+                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>Relationship: {hero.relationship_to_user}</div>
+                      )}
+                      {hero.physical_descriptors && (
+                        <div className={`text-xs ${colors.textSecondary} mt-2`}>
+                          <span className={`font-semibold ${colors.text}`}>Physical:</span> {hero.physical_descriptors}
+                        </div>
+                      )}
+                      {hero.personality_traits && (
+                        <div className={`text-xs ${colors.textSecondary} mt-1`}>
+                          <span className={`font-semibold ${colors.text}`}>Personality:</span> {hero.personality_traits}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supporting Characters Card */}
+      {(d.supporting_characters && d.supporting_characters.length > 0) && (
+        <div>
+          <div className="pb-3">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              Supporting Characters
+            </h3>
+          </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
+            <div className="space-y-3">
+              {d.supporting_characters.map((char: SupportingCharacterData, idx: number) => (
+                <div key={idx} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                  <div className="flex items-start gap-3">
+                    {char.photo_url && (
+                      <img 
+                        src={char.photo_url} 
+                        alt={char.name || 'Character'} 
+                        className="w-12 h-12 rounded-lg object-cover border-2 border-purple-300 dark:border-purple-600"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                      {char.role && (
+                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                      )}
+                      {char.description && (
+                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Characters Card (Legacy - for backward compatibility) */}
+      {(!d.heroes || d.heroes.length === 0) && (!d.supporting_characters || d.supporting_characters.length === 0) && (
+        <div>
+          <div className="pb-3">
             <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               Characters
             </h3>
-        </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`} style={{ padding: '0.75rem' }}>
-          <div>
-            {(d.characters ?? []).length > 0 ? (
-              <div className="space-y-3">
-                {d.characters.map((char: CharacterData, idx: number) => (
-                  <div key={char.character_id || `${idx}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                    <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
-                    {char.role && (
-                      <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
-                    )}
-                    {char.description && (
-                      <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                <div className={`font-semibold ${colors.text}`}>No characters yet</div>
-                <div className={`text-xs ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
-              </div>
-            )}
+          </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
+            <div>
+              {(d.characters ?? []).length > 0 ? (
+                <div className="space-y-3">
+                  {d.characters.map((char: CharacterData, idx: number) => (
+                    <div key={char.character_id || `${idx}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                      <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                      {char.role && (
+                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                      )}
+                      {char.description && (
+                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
+                  <div className={`font-semibold ${colors.text}`}>No characters yet</div>
+                  <div className={`text-xs ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Story Type & Perspective Card */}
+      {(d.story_type || d.perspective || d.audience) && (
+        <div>
+          <div className="pb-3">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              Story Style & Perspective
+            </h3>
+          </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
+            <div className="space-y-3">
+              {d.story_type && (
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Story Type</div>
+                  <div className={`text-sm font-semibold ${colors.text}`}>
+                    <span className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs">
+                      {d.story_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {d.perspective && (
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Perspective</div>
+                  <div className={`text-sm ${colors.text}`}>
+                    {d.perspective.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </div>
+                </div>
+              )}
+              {d.audience && typeof d.audience === 'object' && (
+                <>
+                  {d.audience.who_will_see_first && (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Audience</div>
+                      <div className={`text-sm ${colors.text} max-w-[70%] text-right`}>{d.audience.who_will_see_first}</div>
+                    </div>
+                  )}
+                  {d.audience.desired_feeling && (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Desired Feeling</div>
+                      <div className={`text-sm ${colors.text} max-w-[70%] text-right`}>{d.audience.desired_feeling}</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Setting Details */}
+      {(d.season_time_of_year || d.environmental_details) && (
+        <div>
+          <div className="pb-3">
+            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
+              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+              Setting Details
+            </h3>
+          </div>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
+            <div className="space-y-3">
+              {d.season_time_of_year && (
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Season/Time of Year</div>
+                  <div className={`text-sm ${colors.text}`}>{d.season_time_of_year}</div>
+                </div>
+              )}
+              {d.environmental_details && (
+                <div className="flex items-start justify-between gap-3">
+                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Environmental Details</div>
+                  <div className={`text-sm ${colors.text} max-w-[70%] text-right whitespace-pre-wrap`}>{d.environmental_details}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
