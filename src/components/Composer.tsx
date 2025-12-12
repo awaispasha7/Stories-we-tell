@@ -164,8 +164,8 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
         </div>
       )}
       
-      <div className={`relative flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible ${disabled ? 'opacity-60' : ''}`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
-        <UploadDropzone sessionId={sessionId} projectId={projectId} onFileAttached={handleFileAttached} />
+      <div className={`relative flex items-center backdrop-blur-sm rounded-t-none rounded-b-2xl p-1.5 sm:p-2 md:p-3 border ${colors.glassBorder} shadow-lg overflow-visible ${disabled ? 'opacity-60 pointer-events-none' : ''}`} style={{ backgroundColor: resolvedTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgb(83, 93, 108)' }}>
+        {!disabled && <UploadDropzone sessionId={sessionId} projectId={projectId} onFileAttached={handleFileAttached} />}
           <div className="relative">
             {!showAudioRecorder ? (
               // Initial state - just the mic button
@@ -228,20 +228,26 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
             <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={e => {
+              if (disabled) return // Block input changes when disabled
+              setText(e.target.value)
+            }}
             onKeyDown={handleKeyDown}
-            onClick={() => textareaRef.current?.focus()}
+            onClick={() => {
+              if (disabled) return // Block focus when disabled
+              textareaRef.current?.focus()
+            }}
             placeholder={isSmallScreen ? "Take me to the mo…" : "Take me to the moment your story begins…"}
             className={cn(
               `composer-textarea flex-1 min-w-0 resize-none border-0 ${colors.inputBackground} backdrop-blur-sm focus:${colors.inputBackground} rounded-lg sm:rounded-xl transition-all duration-200 text-xs sm:text-sm md:text-base ${colors.text} px-2 sm:px-3 py-2 sm:py-3`,
               resolvedTheme === 'light' 
                 ? 'placeholder-gray-500 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base' 
                 : 'placeholder-slate-300 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base',
-              disabled && "opacity-50 cursor-not-allowed"
+              disabled && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
             style={{
-              caretColor: '#3b82f6',
-              cursor: 'text',
+              caretColor: disabled ? 'transparent' : '#3b82f6',
+              cursor: disabled ? 'not-allowed' : 'text',
               outline: 'none',
               textAlign: 'left',
               lineHeight: '1.4',
@@ -255,6 +261,7 @@ export function Composer({ onSend, disabled = false, disabledMessage, sessionId,
               resize: 'none',
             }}
             disabled={disabled}
+            readOnly={disabled}
           />
           
           {/* Cancel button - only show when editing */}
