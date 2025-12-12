@@ -1140,30 +1140,22 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         </div>
       </div>
 
-              {/* Enhanced Composer or Completion Message - Fixed at bottom */}
-              {storyCompleted ? (
-                <div className="border-t border-gray-200/50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm relative z-10 mt-auto">
-                  <StoryCompletionMessage 
-                    storyTitle={completedTitle}
-                    onNewStory={handleNewStory}
+              {/* Enhanced Composer - Always visible, disabled when story is completed */}
+              <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
+                <div className="w-full overflow-hidden">
+                  <Composer 
+                    onSend={handleSendMessage} 
+                    disabled={storyCompleted || isLoading || isProcessingMessage}
+                    disabledMessage={storyCompleted ? "Your story is complete! Please create a new project to start a new story." : undefined}
+                    sessionId={_sessionId || sessionIdRef.current || currentSessionId || undefined} 
+                    projectId={_projectId || projectIdRef.current || currentProjectId || undefined}
+                    editContent={editContent}
+                    isEditing={isEditing}
+                    onEditComplete={handleEditComplete}
+                    editAttachedFiles={editAttachedFiles}
                   />
                 </div>
-              ) : (
-                <div className="border-t border-gray-200/50 bg-white/90 backdrop-blur-sm relative z-10 mt-auto">
-                  <div className="w-full overflow-hidden">
-                    <Composer 
-                      onSend={handleSendMessage} 
-                      disabled={isLoading || isProcessingMessage} 
-                      sessionId={_sessionId || sessionIdRef.current || currentSessionId || undefined} 
-                      projectId={_projectId || projectIdRef.current || currentProjectId || undefined}
-                      editContent={editContent}
-                      isEditing={isEditing}
-                      onEditComplete={handleEditComplete}
-                      editAttachedFiles={editAttachedFiles}
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
 
             {/* Completion Modal */}
             <CompletionModal
