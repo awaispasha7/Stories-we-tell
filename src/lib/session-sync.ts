@@ -214,64 +214,66 @@ class SessionSyncManager {
         return
       }
       
-      // Check each session for messages
-      const emptySessions = []
-      for (const session of sessions) {
-        const sessionData = session as { session_id?: string; created_at?: string }
-        console.log(`🔍 Checking session: ${sessionData.session_id} (current: ${currentSessionId})`)
-        
-        // Skip the currently active session - don't delete it even if it appears empty
-        if (currentSessionId && sessionData.session_id === currentSessionId) {
-          console.log(`🔒 Skipping cleanup for active session: ${sessionData.session_id}`)
-          continue
-        }
-        
-        // Skip sessions that are very recent (less than 5 minutes old) to avoid deleting sessions that might be in use
-        const sessionAge = Date.now() - new Date(sessionData.created_at || '').getTime()
-        const fiveMinutes = 5 * 60 * 1000
-        if (sessionAge < fiveMinutes) {
-          console.log(`⏰ Skipping recent session (${Math.round(sessionAge / 1000)}s old): ${sessionData.session_id}`)
-          continue
+      // Batch check sessions - get all session IDs first
+      const sessionIds = sessions.map(s => (s as { session_id?: string })?.session_id).filter(Boolean) as string[]
+      
+      if (sessionIds.length === 0) {
+        console.log('📝 No session IDs to check')
+        return
+      }
+      
+      // Batch fetch messages for all sessions at once (if API supports it)
+      // Otherwise, check in parallel with Promise.all
+      const emptySessions: string[] = []
+      
+      // Check sessions in parallel (batched) instead of sequentially
+      const checkPromises = sessionIds.map(async (sessionId) => {
+        if (sessionId === currentSessionId) {
+          return null // Skip current session
         }
         
         try {
-          const messagesResponse = await sessionApi.getSessionMessages(sessionData.session_id || '', 1, 0)
-          const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
+          const { sessionApi } = await import('./api')
+          const messagesResponse = await sessionApi.getSessionMessages(sessionId, 1, 0) as { messages?: unknown[] }
+          const hasMessages = messagesResponse?.messages && Array.isArray(messagesResponse.messages) && messagesResponse.messages.length > 0
           
-          if (messages.length === 0 && sessionData.session_id) {
-            emptySessions.push(sessionData.session_id)
+          if (!hasMessages) {
+            return sessionId
           }
+          return null
         } catch (error) {
-          // If getSessionMessages returns 404, it's also an empty/invalid session
-          if (error && typeof error === 'object' && 'response' in error && 
-              error.response && typeof error.response === 'object' && 'status' in error.response &&
-              (error.response.status === 403 || error.response.status === 404)) {
-            if (sessionData.session_id) {
-              emptySessions.push(sessionData.session_id);
-            }
-          } else {
-            console.warn(`Failed to check messages for session ${sessionData.session_id}:`, error)
-          }
+          console.error(`⚠️ Error checking session ${sessionId}:`, error)
+          return null // Don't delete on error
         }
+      })
+      
+      const results = await Promise.all(checkPromises)
+      const emptySessionIds = results.filter(Boolean) as string[]
+      
+      if (emptySessionIds.length === 0) {
+        console.log('📝 No empty sessions to clean up')
+        return
       }
       
-      if (emptySessions.length > 0) {
-        console.log(`🧹 Found ${emptySessions.length} empty sessions to clean up`)
-        
-        // Delete empty sessions
-        for (const sessionId of emptySessions) {
-          try {
-            await sessionApi.deleteSession(sessionId)
-            console.log(`✅ Deleted empty session: ${sessionId}`)
-          } catch (error) {
-            console.warn(`Failed to delete empty session ${sessionId}:`, error)
-          }
+      console.log(`🧹 Found ${emptySessionIds.length} empty sessions to clean up`)
+      
+      // Batch delete empty sessions in parallel
+      const deletePromises = emptySessionIds.map(async (sessionId) => {
+        try {
+          const { sessionApi } = await import('./api')
+          await sessionApi.deleteSession(sessionId)
+          console.log(`✅ Deleted empty session: ${sessionId}`)
+          return true
+        } catch (error) {
+          console.error(`⚠️ Failed to delete session ${sessionId}:`, error)
+          return false
         }
-        
-        console.log(`🧹 Cleaned up ${emptySessions.length} empty sessions`)
-      } else {
-        console.log('✅ No empty sessions found')
-      }
+      })
+      
+      const deleteResults = await Promise.all(deletePromises)
+      const deletedCount = deleteResults.filter(Boolean).length
+      
+      console.log(`🧹 Cleaned up ${deletedCount} empty sessions`)
     } catch (error) {
       console.error('❌ Error during empty session cleanup:', error)
     }

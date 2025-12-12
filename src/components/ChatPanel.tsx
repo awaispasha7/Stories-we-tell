@@ -220,21 +220,47 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   const sessionIdRef = useRef<string | undefined>(_sessionId || undefined)
   const projectIdRef = useRef<string | undefined>(_projectId || undefined)
   
-  // CRITICAL: Immediate completion check on mount and when project changes
+  // Track if we're currently loading to prevent duplicate calls
+  const isLoadingMessagesRef = useRef(false)
+  
+  // CRITICAL: Immediate completion check on mount and when project changes (DEBOUNCED)
   useEffect(() => {
-    const checkCompletionImmediately = async () => {
-      const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
-      const projectIdToCheck = _projectId || projectIdRef.current || currentProjectId
-      
-      if (!sessionIdToCheck) {
-        console.log('⏭️ [CHAT] No session ID for immediate completion check')
-        // Reset state if no session
-        setStoryCompleted(false)
-        storyCompletedRef.current = false
+    // Clear any pending timeout
+    if (completionCheckTimeoutRef.current) {
+      clearTimeout(completionCheckTimeoutRef.current)
+    }
+    
+    const sessionIdToCheck = _sessionId || sessionIdRef.current || currentSessionId
+    const projectIdToCheck = _projectId || projectIdRef.current || currentProjectId
+    
+    // Create a unique key for this check
+    const checkKey = `${sessionIdToCheck || ''}:${projectIdToCheck || ''}`
+    
+    // Skip if we've already checked this exact combination recently
+    if (checkKey === lastCompletionCheckRef.current && checkKey !== '') {
+      console.log('⏭️ [CHAT] Skipping duplicate completion check for:', checkKey)
+      return
+    }
+    
+    if (!sessionIdToCheck) {
+      console.log('⏭️ [CHAT] No session ID for immediate completion check')
+      setStoryCompleted(false)
+      storyCompletedRef.current = false
+      return
+    }
+    
+    // Debounce the check to prevent rapid-fire calls
+    completionCheckTimeoutRef.current = setTimeout(async () => {
+      // Double-check the key hasn't changed during the timeout
+      const currentCheckKey = `${_sessionId || sessionIdRef.current || currentSessionId || ''}:${_projectId || projectIdRef.current || currentProjectId || ''}`
+      if (currentCheckKey !== checkKey) {
+        console.log('⏭️ [CHAT] Session/project changed during debounce, skipping check')
         return
       }
       
-      console.log('🔍 [CHAT] IMMEDIATE completion check on mount/update', {
+      lastCompletionCheckRef.current = checkKey
+      
+      console.log('🔍 [CHAT] DEBOUNCED completion check', {
         sessionId: sessionIdToCheck,
         projectId: projectIdToCheck
       })
@@ -252,37 +278,38 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         }
         
         const isCompleted = Boolean(response.story_completed) === true
-        console.log('🔍 [CHAT] IMMEDIATE check result:', {
+        console.log('🔍 [CHAT] DEBOUNCED check result:', {
           story_completed: response.story_completed,
           isCompleted,
-          project_id: response.project_id,
-          sessionId: sessionIdToCheck
+          project_id: response.project_id
         })
         
         if (isCompleted) {
-          console.log('🔒 [CHAT] IMMEDIATE LOCK - Story is completed, locking composer NOW')
+          console.log('🔒 [CHAT] Story is completed, locking composer')
           setStoryCompleted(true)
           storyCompletedRef.current = true
         } else {
-          console.log('⏭️ [CHAT] IMMEDIATE check - Story is NOT completed, unlocking composer')
+          console.log('⏭️ [CHAT] Story is NOT completed, unlocking composer')
           setStoryCompleted(false)
           storyCompletedRef.current = false
           setShowCompletion(false)
           setCompletedTitle(undefined)
         }
       } catch (error) {
-        console.error('⚠️ [CHAT] Error in immediate completion check:', error)
-        // On error, default to NOT completed (safer)
+        console.error('⚠️ [CHAT] Error in completion check:', error)
         setStoryCompleted(false)
         storyCompletedRef.current = false
       } finally {
         setCheckingCompletion(false)
       }
-    }
+    }, 150) // 150ms debounce
     
-    // Run immediately when component mounts or when session/project changes
-    checkCompletionImmediately()
-  }, [_sessionId, _projectId, currentSessionId, currentProjectId]) // Check on both props AND state changes
+    return () => {
+      if (completionCheckTimeoutRef.current) {
+        clearTimeout(completionCheckTimeoutRef.current)
+      }
+    }
+  }, [_sessionId, _projectId]) // Only depend on props, not state (state changes are handled by props)
   
   // Sync local state with props when they change
   // CRITICAL: Sync props to local state immediately when props change
@@ -642,13 +669,14 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         }
       } finally {
         setCheckingCompletion(false) // Always clear checking state
+        isLoadingMessagesRef.current = false // Clear loading flag
       }
     }
 
     loadSessionMessages()
     // Note: Completion check is already handled in loadSessionMessages and the immediate check useEffect
     // No need for a separate post-switch check to avoid duplicate API calls
-  }, [_sessionId, _projectId, isAuthenticated, user?.user_id, currentSessionId, currentProjectId, user])
+  }, [_sessionId, _projectId, isAuthenticated, user?.user_id]) // Reduced dependencies - only props and auth state
 
   const getDynamicTypingMessage = (userMessage: string) => {
     const message = userMessage.toLowerCase()
