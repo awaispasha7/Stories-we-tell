@@ -247,6 +247,15 @@ body { @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100; }
 }
 
 /* Glitter animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 @keyframes glitter {
   0%, 100% {
     opacity: 0;

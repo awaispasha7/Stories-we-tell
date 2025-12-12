@@ -114,7 +114,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
     }
   }, [projectId, queryClient, refreshDossier])
   
-  const { data, isLoading } = useQuery({ 
+  const { data, isLoading, isFetching } = useQuery({ 
     queryKey: ['dossier', sessionId, projectId, refreshTrigger], // Include session and project IDs
     queryFn: async () => {
       // Don't fetch if we don't have a session or project ID
@@ -280,6 +280,33 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           </button>
         </div>
       )}
+      
+      {/* Loading Indicator - Shows at top when dossier is being updated */}
+      {isFetching && data && (
+        <div className="sticky top-0 z-10 mb-4 -mt-4 -mx-4 sm:-mx-8 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-4 pb-2 bg-gradient-to-b from-white/95 via-white/90 to-transparent dark:from-gray-900/95 dark:via-gray-900/90 backdrop-blur-sm transition-all duration-300">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="relative flex items-center justify-center">
+              <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 h-2 w-2 bg-blue-500 rounded-full animate-ping opacity-75"></div>
+            </div>
+            <span className={`${colors.textSecondary} font-medium text-xs`}>
+              Updating dossier...
+            </span>
+          </div>
+          <div className="h-0.5 bg-gray-200 dark:bg-gray-700 mt-2 rounded-full overflow-hidden">
+            <div 
+              className="h-full rounded-full"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #3b82f6 100%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 2s ease-in-out infinite'
+              }}
+            ></div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className={`text-center pb-4 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
         <h2 className="text-xl font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
