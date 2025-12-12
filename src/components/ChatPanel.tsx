@@ -735,11 +735,11 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       return
     }
     
-    console.log('💬 [CHAT] handleSendMessage called with text:', text.substring(0, 50) + '...')
-    console.log('💬 [CHAT] isAuthenticated:', isAuthenticated)
-    console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
-    console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
-    console.log('💬 [CHAT] sessionIdRef:', sessionIdRef.current, 'projectIdRef:', projectIdRef.current)
+    // console.log('💬 [CHAT] handleSendMessage called with text:', text.substring(0, 50) + '...')
+    // console.log('💬 [CHAT] isAuthenticated:', isAuthenticated)
+    // console.log('💬 [CHAT] _sessionId prop:', _sessionId, '_projectId prop:', _projectId)
+    // console.log('💬 [CHAT] currentSessionId state:', currentSessionId, 'currentProjectId state:', currentProjectId)
+    // console.log('💬 [CHAT] sessionIdRef:', sessionIdRef.current, 'projectIdRef:', projectIdRef.current)
     
     // IMMEDIATE CHECK: Use ref for synchronous check (bypasses React state async updates)
     if (storyCompletedRef.current || storyCompleted) {
@@ -1261,14 +1261,14 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
                 <div className="w-full overflow-visible">
                   {(() => {
                     const composerDisabled = Boolean(storyCompleted) || Boolean(storyCompletedRef.current) || checkingCompletion || isLoading || isProcessingMessage
-                    console.log('🎯 [CHAT] Composer disabled prop:', {
-                      storyCompleted,
-                      storyCompletedRef: storyCompletedRef.current,
-                      checkingCompletion,
-                      isLoading,
-                      isProcessingMessage,
-                      finalDisabled: composerDisabled
-                    })
+                    // console.log('🎯 [CHAT] Composer disabled prop:', {
+                    //   storyCompleted,
+                    //   storyCompletedRef: storyCompletedRef.current,
+                    //   checkingCompletion,
+                    //   isLoading,
+                    //   isProcessingMessage,
+                    //   finalDisabled: composerDisabled
+                    // })
                     return (
                       <Composer 
                         onSend={handleSendMessage} 
