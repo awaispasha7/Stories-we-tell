@@ -278,6 +278,15 @@ export const projectApi = {
     }).json()
   },
 
+  // Update dossier title
+  updateDossierTitle: async (projectId: string, title: string) => {
+    const headers = getUserHeaders()
+    return api.patch(`api/v1/dossiers/${projectId}/title`, {
+      json: { title },
+      headers
+    }).json()
+  },
+
   // Rename a project (updates dossier title)
   renameProject: async (projectId: string, name: string) => {
     const headers = getUserHeaders()

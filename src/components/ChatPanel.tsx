@@ -50,6 +50,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
     setStoryCompleted(false)
     setShowCompletion(false)
     setCompletedTitle(undefined)
+    setExistingTitle(undefined)
+    setExtractedTitle(undefined)
     
     // For authenticated users, create new story
     if (isAuthenticated) {
@@ -163,6 +165,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
   const [showCompletion, setShowCompletion] = useState(false)
   const [storyCompleted, setStoryCompleted] = useState(false)
   const [completedTitle, setCompletedTitle] = useState<string | undefined>(undefined)
+  const [existingTitle, setExistingTitle] = useState<string | undefined>(undefined)
+  const [extractedTitle, setExtractedTitle] = useState<string | undefined>(undefined)
   const [checkingCompletion, setCheckingCompletion] = useState(false) // Track if we're checking completion status
   const storyCompletedRef = useRef(false) // Ref for immediate access to completion status
   const lastCompletionCheckRef = useRef<string>('') // Track last checked session+project combo to avoid duplicate checks
@@ -1040,15 +1044,27 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
         const sessionId = _sessionId || sessionIdRef.current || currentSessionId
         const projectId = _projectId || projectIdRef.current || currentProjectId
         
-        // Fetch title from backend dossier if projectId is available
+        // Fetch title information from backend dossier if projectId is available
         if (projectId) {
           (async () => {
             try {
               const { api } = await import('@/lib/api')
               const dossierResponse = await api.get(`api/v1/dossiers/${projectId}`).json<any>()
               const snapshot = dossierResponse?.snapshot_json || dossierResponse || {}
+              
+              // Get title options if available (from story completion)
+              const titleOptions = snapshot._title_options || {}
+              const existing = titleOptions.existing || snapshot.title
+              const extracted = titleOptions.extracted
+              
               if (snapshot.title) {
                 setCompletedTitle(snapshot.title)
+              }
+              if (existing && existing !== 'Untitled Story' && existing.toLowerCase() !== 'unknown') {
+                setExistingTitle(existing)
+              }
+              if (extracted && extracted !== 'Untitled Story' && extracted.toLowerCase() !== 'unknown') {
+                setExtractedTitle(extracted)
               }
             } catch (err) {
               console.error('Failed to fetch dossier title:', err)
@@ -1291,11 +1307,39 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
             <CompletionModal
               open={showCompletion}
               title={completedTitle}
-              onClose={() => setShowCompletion(false)}
+              existingTitle={existingTitle}
+              extractedTitle={extractedTitle}
+              projectId={_projectId || projectIdRef.current || currentProjectId}
+              onClose={() => {
+                setShowCompletion(false)
+                setExistingTitle(undefined)
+                setExtractedTitle(undefined)
+              }}
               onNewStory={handleNewStory}
               onViewDossier={() => {
                 // Simple hint; actual dossier panel is already visible in UI
                 setShowCompletion(false)
+                setExistingTitle(undefined)
+                setExtractedTitle(undefined)
+              }}
+              onTitleConfirmed={async (selectedTitle: string) => {
+                const projectId = _projectId || projectIdRef.current || currentProjectId
+                if (projectId) {
+                  try {
+                    const { projectApi } = await import('@/lib/api')
+                    await projectApi.updateDossierTitle(projectId, selectedTitle)
+                    setCompletedTitle(selectedTitle)
+                    console.log('✅ Title updated to:', selectedTitle)
+                    
+                    // Trigger dossier refresh
+                    window.dispatchEvent(new CustomEvent('dossierUpdated', {
+                      detail: { project_id: projectId }
+                    }))
+                  } catch (error) {
+                    console.error('Failed to update title:', error)
+                    toast.error('Failed to update title. Please try again.')
+                  }
+                }
               }}
             />
     </div>
