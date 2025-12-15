@@ -843,13 +843,13 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         </div>
       )}
 
-      {/* Enhanced Setting Details */}
-      {(d.season_time_of_year || d.environmental_details) && (
+      {/* Setting & Time (Step 5) - Client intake requirement */}
+      {(d.story_location || d.story_timeframe || d.season_time_of_year || d.environmental_details) && (
         <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-green-500! rounded-full!"></div>
-              Setting Details
+              Setting & Time
             </h3>
           </div>
           <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
@@ -858,6 +858,26 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
           }}>
             <div className="space-y-3!">
+              {d.story_location && (
+                <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
+                  borderColor: resolvedTheme === 'light' 
+                    ? 'rgba(229, 231, 235, 0.6)' 
+                    : 'rgba(75, 85, 99, 0.4)'
+                }}>
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Location</div>
+                  <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.story_location}</div>
+                </div>
+              )}
+              {d.story_timeframe && (
+                <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
+                  borderColor: resolvedTheme === 'light' 
+                    ? 'rgba(229, 231, 235, 0.6)' 
+                    : 'rgba(75, 85, 99, 0.4)'
+                }}>
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Time Period</div>
+                  <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.story_timeframe}</div>
+                </div>
+              )}
               {d.season_time_of_year && (
                 <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
                   borderColor: resolvedTheme === 'light' 

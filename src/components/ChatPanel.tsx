@@ -71,7 +71,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
       setMessages([
         {
           role: 'assistant',
-          content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+          content: "Who is the main character of your story?"
         }
       ])
     } else {
@@ -88,7 +88,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
           setMessages([
             {
               role: 'assistant',
-              content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+              content: "Who is the main character of your story?"
             }
           ])
         },
@@ -621,7 +621,7 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
           setMessages([
             {
               role: 'assistant',
-              content: "Hi! I'm here to help bring your story to life. What story idea has been on your mind?"
+              content: "Who is the main character of your story?"
             }
           ])
         }
