@@ -589,6 +589,9 @@ export function SessionsSidebar({
             <MessageSquare className="h-5 w-5" />
             Previous Chats
           </h2>
+          <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-2 mt-1`} style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
+            Projects:
+          </div>
           <div className="flex items-center gap-2">
             {/* New Project Button - Only for authenticated users */}
             {isAuthenticated && (
@@ -731,6 +734,10 @@ export function SessionsSidebar({
             
             return (
               <div key={project.project_id} style={{ marginBottom: '1rem' }}>
+                {/* Project Label */}
+                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.5rem' }}>
+                  Project:
+                </div>
                 {/* Project Header */}
                 <div
                   className={`group cursor-pointer transition-all duration-200 border-b-2 ${
@@ -925,10 +932,15 @@ export function SessionsSidebar({
                       gap: '0.5rem'
                     }}
                   >
-                    {project.sessions.map((session) => (
-                      <div
-                        key={session.session_id}
-                        className={`group cursor-pointer transition-all duration-200 rounded-lg border-2 ${
+                    {project.sessions.map((session, sessionIndex) => (
+                      <div key={`session-wrapper-${session.session_id}`}>
+                        {/* Session Label */}
+                        <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.25rem' }}>
+                          Chat session {sessionIndex + 1}:
+                        </div>
+                        <div
+                          key={session.session_id}
+                          className={`group cursor-pointer transition-all duration-200 rounded-lg border-2 ${
                           currentSessionId === session.session_id
                             ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-600'
                             : `${colors.sidebarItem} ${colors.border} border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600`
@@ -1007,6 +1019,7 @@ export function SessionsSidebar({
                             </div>
                           </button>
                         </div>
+                      </div>
                       </div>
                     ))}
                   </div>

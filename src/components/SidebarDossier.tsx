@@ -319,7 +319,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
   }
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+    <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-6 sm:gap-8 pt-6 sm:pt-8 pb-8 sm:pb-12 px-6 sm:px-8 lg:px-10 custom-scrollbar">
       {onClose && (
         <div className="sm:hidden mb-2">
           <button
@@ -361,11 +361,11 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       )}
       
       {/* Header */}
-      <div className={`text-center pb-4 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
-        <h2 className="text-xl font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
+      <div className={`text-center pb-6 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
+        <h2 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-2">
           Story Dossier
         </h2>
-        <p className={`text-sm ${colors.textSecondary} mt-1`}>Your story development hub</p>
+        <p className={`text-sm ${colors.textSecondary} font-medium`}>Your story development hub</p>
       </div>
 
       {/* Project Information */}
@@ -387,34 +387,51 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Story Overview Card */}
       <div>
-        <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+        <div className="pb-4 mb-3">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
               Story Overview
             </h3>
         </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`} style={{ padding: '0.75rem' }}>
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl p-6 backdrop-blur-sm`} style={{
+          background: resolvedTheme === 'light' 
+            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+        }}>
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide`}>Title</div>
-              <div className="font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm">
+            {/* Title Section */}
+            <div className="flex items-center justify-between gap-4 pb-4 border-b" style={{
+              borderColor: resolvedTheme === 'light' 
+                ? 'rgba(229, 231, 235, 0.6)' 
+                : 'rgba(75, 85, 99, 0.4)'
+            }}>
+              <div className={`text-xs font-bold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wider shrink-0`}>Title</div>
+              <div className="font-bold bg-linear-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent text-base sm:text-lg text-right">
                 {d.title || 'Untitled Story'}
               </div>
             </div>
-            <div className="flex justify-between items-center">
-              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide`}>Logline</div>
-              <div className={`text-sm leading-relaxed max-w-[70%] ${colors.textSecondary}`}>
+            
+            {/* Logline Section - Inline with heading */}
+            <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              borderColor: resolvedTheme === 'light' 
+                ? 'rgba(229, 231, 235, 0.6)' 
+                : 'rgba(75, 85, 99, 0.4)'
+            }}>
+              <div className={`text-xs font-bold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wider shrink-0 pt-0.5`}>Logline</div>
+              <div className={`text-sm sm:text-base leading-relaxed flex-1 ${colors.text} font-medium text-right`}>
                 {d.logline || 'A compelling story waiting to be told...'}
               </div>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            
+            {/* Genre & Tone Tags */}
+            <div className="flex gap-3 flex-wrap pt-1">
               {d.genre && (
-                <span className="bg-linear-to-r from-red-500 to-red-600 text-white border-0 shadow-sm px-2 py-1 rounded-full text-xs">
+                <span className="bg-linear-to-r from-red-500 to-red-600 text-white border-0 shadow-md shadow-red-500/30 px-3 py-1.5 rounded-full text-xs font-semibold">
                   {d.genre}
                 </span>
               )}
               {d.tone && (
-                <span className={`border ${resolvedTheme === 'light' ? 'border-red-300 text-red-700 bg-red-50/50' : 'border-red-600 text-red-300 bg-red-900/30'} px-2 py-1 rounded-full text-xs`}>
+                <span className={`border-2 ${resolvedTheme === 'light' ? 'border-red-300 text-red-700 bg-red-50/70' : 'border-red-600 text-red-300 bg-red-900/40'} px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm`}>
                   {d.tone}
                 </span>
               )}
@@ -425,73 +442,116 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Key Details Card */}
       <div>
-        <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+        <div className="pb-4 mb-3">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-purple-500 rounded-full shadow-lg shadow-purple-500/50"></div>
               Key Details
             </h3>
         </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
-          <div className="grid grid-cols-1 gap-3">
+        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl p-6 backdrop-blur-sm`} style={{
+          background: resolvedTheme === 'light' 
+            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+            : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+        }}>
+          <div className="space-y-4">
             {d.subject_full_name && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Subject Name</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_full_name}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Subject Name</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right`}>{d.subject_full_name}</div>
               </div>
             )}
             {d.subject_brief_description && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Subject Description</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_brief_description}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Subject Description</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right leading-relaxed`}>{d.subject_brief_description}</div>
               </div>
             )}
             {d.subject_relationship_to_writer && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Relationship to Writer</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.subject_relationship_to_writer}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Relationship to Writer</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right`}>{d.subject_relationship_to_writer}</div>
               </div>
             )}
             {d.writer_connection_place_time && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Writer Connection</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.writer_connection_place_time}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Writer Connection</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right`}>{d.writer_connection_place_time}</div>
               </div>
             )}
             {d.problem_statement && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Problem</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.problem_statement}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Problem</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right leading-relaxed`}>{d.problem_statement}</div>
               </div>
             )}
             {d.outcome && (
-              <div className="flex items-start justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Outcome</div>
-                <div className={`text-sm ${colors.text} max-w-[70%]`}>{d.outcome}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Outcome</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right leading-relaxed`}>{d.outcome}</div>
               </div>
             )}
             {d.runtime && (
-              <div className="flex items-center justify-between gap-3">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Runtime</div>
-                <div className={`text-sm ${colors.textSecondary}`}>{d.runtime}</div>
+              <div className="flex items-center justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Runtime</div>
+                <div className={`text-sm sm:text-base ${colors.text} font-medium`}>{d.runtime}</div>
               </div>
             )}
             {(d.story_location || d.story_timeframe || d.story_world_type) && (
-              <div className={`text-xs ${colors.textSecondary} grid grid-cols-1 gap-1`}>
-                {d.story_location && <div><span className={`font-semibold ${colors.text}`}>Location:</span> {d.story_location}</div>}
-                {d.story_timeframe && <div><span className={`font-semibold ${colors.text}`}>Timeframe:</span> {d.story_timeframe}</div>}
-                {d.story_world_type && <div><span className={`font-semibold ${colors.text}`}>World:</span> {d.story_world_type}</div>}
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Setting</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right space-y-1`}>
+                  {d.story_location && <div>Location: {d.story_location}</div>}
+                  {d.story_timeframe && <div>Timeframe: {d.story_timeframe}</div>}
+                  {d.story_world_type && <div>World: {d.story_world_type}</div>}
+                </div>
               </div>
             )}
             {d.actions_taken && (
-              <div className={`text-xs ${colors.textSecondary}`}>
-                <div className={`font-semibold ${colors.text} mb-1`}>Actions Taken</div>
-                <div className="text-sm whitespace-pre-wrap">{d.actions_taken}</div>
+              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>Actions Taken</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right leading-relaxed whitespace-pre-wrap`}>{d.actions_taken}</div>
               </div>
             )}
             {d.likes_in_story && (
-              <div className={`text-xs ${colors.textSecondary}`}>
-                <div className={`font-semibold ${colors.text} mb-1`}>What We Love</div>
-                <div className="text-sm whitespace-pre-wrap">{d.likes_in_story}</div>
+              <div className="flex items-start justify-between gap-4">
+                <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider shrink-0 pt-0.5`}>What We Love</div>
+                <div className={`text-sm sm:text-base ${colors.text} flex-1 font-medium text-right leading-relaxed whitespace-pre-wrap`}>{d.likes_in_story}</div>
               </div>
             )}
           </div>
@@ -501,39 +561,54 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Scenes Card - show only if scenes are present */}
       {(d.scenes ?? []).length > 0 && (
         <div>
-          <div className="pb-3">
-              <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <div className="pb-4 mb-3">
+              <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+                <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"></div>
                 Scene Structure
               </h3>
             </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
-            <div className="space-y-4 p-4">
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl overflow-hidden backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>  
+            <div className="space-y-4 p-6">
               {(d.scenes ?? []).map((s: SceneData, index: number) => (
-                <div key={s.scene_id || `scene-${index}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                <div 
+                  key={s.scene_id || `scene-${index}`} 
+                  className={`${colors.backgroundTertiary} p-5 rounded-xl border-2 ${colors.border} shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.01]`}
+                  style={{
+                    borderColor: resolvedTheme === 'light' 
+                      ? 'rgba(203, 213, 225, 0.6)' 
+                      : 'rgba(51, 65, 85, 0.6)',
+                    background: resolvedTheme === 'light'
+                      ? 'linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%)'
+                      : 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                  }}
+                >
+                  <div className="flex items-start gap-5">
+                    <div className="w-12 h-12 bg-linear-to-br from-blue-500 via-purple-500 to-green-500 rounded-full flex items-center justify-center text-white text-base font-bold shrink-0 shadow-lg shadow-blue-500/30 ring-2 ring-white/20 dark:ring-gray-800/20">
                       {index + 1}
                     </div>
-                    <div className="flex-1">
-                      <div className={`font-semibold ${colors.text} text-sm mb-1`}>
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-bold ${colors.text} text-base sm:text-lg mb-3 leading-relaxed`}>
                         {s.one_liner || s.description || 'Scene ' + (index + 1)}
                       </div>
-                      <div className={`text-xs ${colors.textSecondary} space-y-1`}>
-                        <div className="flex gap-2">
+                      <div className={`text-xs sm:text-sm ${colors.textSecondary} space-y-2.5`}>
+                        <div className="flex gap-2.5 flex-wrap">
                           {s.time_of_day && (
-                            <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-300'} px-2 py-0.5 rounded-full text-xs`}>
+                            <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-green-900/40 text-green-300 border border-green-700/50'} px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm`}>
                               {s.time_of_day}
                             </span>
                           )}
                           {s.interior_exterior && (
-                            <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/30 text-blue-300'} px-2 py-0.5 rounded-full text-xs`}>
+                            <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-blue-900/40 text-blue-300 border border-blue-700/50'} px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm`}>
                               {s.interior_exterior}
                             </span>
                           )}
                         </div>
                         {s.tone && (
-                          <div className={`${colors.textTertiary} italic`}>Tone: {s.tone}</div>
+                          <div className={`${colors.textTertiary} italic text-sm font-medium mt-2`}>Tone: {s.tone}</div>
                         )}
                       </div>
                     </div>
@@ -548,13 +623,17 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Heroes Card (Primary Characters) */}
       {(d.heroes && d.heroes.length > 0) && (
         <div>
-          <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <div className="pb-4 mb-2">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"></div>
               Hero Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl overflow-hidden backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>
             <div>
               {d.heroes.map((hero: HeroData, idx: number) => (
                 <div 
@@ -575,27 +654,27 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                       <img 
                         src={hero.photo_url} 
                         alt={hero.name || 'Hero'} 
-                        className="w-16 h-16 rounded-lg object-cover border-2 border-blue-300 dark:border-blue-600 shrink-0"
+                        className="w-20 h-20 rounded-xl object-cover border-2 border-blue-300 dark:border-blue-600 shrink-0 shadow-md"
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className={`font-semibold text-base ${colors.text} mb-1.5`}>{hero.name || 'Unnamed Hero'}</div>
-                      <div className="space-y-1">
+                      <div className={`font-bold text-lg ${colors.text} mb-2`}>{hero.name || 'Unnamed Hero'}</div>
+                      <div className="space-y-1.5 mb-3">
                         {hero.age_at_story && (
-                          <div className={`text-xs ${colors.textTertiary}`}>Age: {hero.age_at_story}</div>
+                          <div className={`text-sm ${colors.textTertiary} font-medium`}>Age: {hero.age_at_story}</div>
                         )}
                         {hero.relationship_to_user && (
-                          <div className={`text-xs ${colors.textTertiary}`}>Relationship: {hero.relationship_to_user}</div>
+                          <div className={`text-sm ${colors.textTertiary} font-medium`}>Relationship: {hero.relationship_to_user}</div>
                         )}
                       </div>
                       {hero.physical_descriptors && (
-                        <div className={`text-xs ${colors.textSecondary} mt-2.5`}>
-                          <span className={`font-semibold ${colors.text}`}>Physical:</span> {hero.physical_descriptors}
+                        <div className={`text-sm ${colors.textSecondary} mt-3 leading-relaxed`}>
+                          <span className={`font-bold ${colors.text} text-base`}>Physical:</span> <span className="ml-1">{hero.physical_descriptors}</span>
                         </div>
                       )}
                       {hero.personality_traits && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1.5`}>
-                          <span className={`font-semibold ${colors.text}`}>Personality:</span> {hero.personality_traits}
+                        <div className={`text-sm ${colors.textSecondary} mt-2.5 leading-relaxed`}>
+                          <span className={`font-bold ${colors.text} text-base`}>Personality:</span> <span className="ml-1">{hero.personality_traits}</span>
                         </div>
                       )}
                     </div>
@@ -610,13 +689,17 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Supporting Characters Card */}
       {(d.supporting_characters && d.supporting_characters.length > 0) && (
         <div>
-          <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          <div className="pb-4 mb-2">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-purple-500 rounded-full shadow-lg shadow-purple-500/50"></div>
               Supporting Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl overflow-hidden backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>
             <div>
               {d.supporting_characters.map((char: SupportingCharacterData, idx: number) => (
                 <div 
@@ -637,16 +720,16 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                       <img 
                         src={char.photo_url} 
                         alt={char.name || 'Character'} 
-                        className="w-12 h-12 rounded-lg object-cover border-2 border-purple-300 dark:border-purple-600 shrink-0"
+                        className="w-16 h-16 rounded-xl object-cover border-2 border-purple-300 dark:border-purple-600 shrink-0 shadow-md"
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className={`font-semibold ${colors.text} mb-1`}>{char.name || 'Unnamed Character'}</div>
+                      <div className={`font-bold text-base ${colors.text} mb-1.5`}>{char.name || 'Unnamed Character'}</div>
                       {char.role && (
-                        <div className={`text-xs ${colors.textTertiary} mb-1.5`}>{char.role}</div>
+                        <div className={`text-xs ${colors.textTertiary} mb-2 font-medium`}>{char.role}</div>
                       )}
                       {char.description && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                        <div className={`text-sm ${colors.textSecondary} mt-2 leading-relaxed whitespace-pre-wrap`}>{char.description}</div>
                       )}
                     </div>
                   </div>
@@ -660,32 +743,47 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Characters Card (Legacy - for backward compatibility) */}
       {(!d.heroes || d.heroes.length === 0) && (!d.supporting_characters || d.supporting_characters.length === 0) && (
         <div>
-          <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="pb-4 mb-2">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
               Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg`} style={{ padding: '0.75rem' }}>
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl p-6 backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>
             <div>
               {(d.characters ?? []).length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {d.characters.map((char: CharacterData, idx: number) => (
-                    <div key={char.character_id || `${idx}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                      <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                    <div 
+                      key={char.character_id || `${idx}`} 
+                      className={`${colors.backgroundTertiary} p-4 rounded-xl border-2 ${colors.border} shadow-md hover:shadow-lg transition-all duration-200`}
+                      style={{
+                        borderColor: resolvedTheme === 'light' 
+                          ? 'rgba(203, 213, 225, 0.6)' 
+                          : 'rgba(51, 65, 85, 0.6)',
+                        background: resolvedTheme === 'light'
+                          ? 'linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%)'
+                          : 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                      }}
+                    >
+                      <div className={`font-bold text-base ${colors.text} mb-1`}>{char.name || 'Unnamed Character'}</div>
                       {char.role && (
-                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                        <div className={`text-sm ${colors.textTertiary} mt-1 font-medium`}>{char.role}</div>
                       )}
                       {char.description && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                        <div className={`text-sm ${colors.textSecondary} mt-2 leading-relaxed whitespace-pre-wrap`}>{char.description}</div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                  <div className={`font-semibold ${colors.text}`}>No characters yet</div>
-                  <div className={`text-xs ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
+                <div className={`${colors.backgroundTertiary} p-4 rounded-xl border-2 ${colors.border} shadow-md`}>
+                  <div className={`font-bold text-base ${colors.text} mb-1`}>No characters yet</div>
+                  <div className={`text-sm ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
                 </div>
               )}
             </div>
@@ -696,28 +794,32 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Story Type & Perspective Card */}
       {(d.story_type || d.perspective || d.audience) && (
         <div>
-          <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+          <div className="pb-4 mb-2">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-orange-500 rounded-full shadow-lg shadow-orange-500/50"></div>
               Story Style & Perspective
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
-            <div className="space-y-3">
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl p-6 backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>
+            <div className="space-y-4">
               {d.story_type && (
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Story Type</div>
-                  <div className={`text-sm font-semibold ${colors.text}`}>
-                    <span className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Story Type</div>
+                  <div className={`text-sm sm:text-base font-bold ${colors.text}`}>
+                    <span className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full text-xs sm:text-sm shadow-md shadow-orange-500/30">
                       {d.story_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </div>
                 </div>
               )}
               {d.perspective && (
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Perspective</div>
-                  <div className={`text-sm ${colors.text}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Perspective</div>
+                  <div className={`text-sm sm:text-base ${colors.text} font-medium`}>
                     {d.perspective.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
                 </div>
@@ -725,15 +827,15 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               {d.audience && typeof d.audience === 'object' && (
                 <>
                   {d.audience.who_will_see_first && (
-                    <div className="flex items-start justify-between gap-3">
-                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Audience</div>
-                      <div className={`text-sm ${colors.text} max-w-[70%] text-right`}>{d.audience.who_will_see_first}</div>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 pb-3 border-b border-gray-200/50 dark:border-gray-700/50">
+                      <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Audience</div>
+                      <div className={`text-sm sm:text-base ${colors.text} max-w-[75%] font-medium leading-relaxed`}>{d.audience.who_will_see_first}</div>
                     </div>
                   )}
                   {d.audience.desired_feeling && (
-                    <div className="flex items-start justify-between gap-3">
-                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Desired Feeling</div>
-                      <div className={`text-sm ${colors.text} max-w-[70%] text-right`}>{d.audience.desired_feeling}</div>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Desired Feeling</div>
+                      <div className={`text-sm sm:text-base ${colors.text} max-w-[75%] font-medium leading-relaxed`}>{d.audience.desired_feeling}</div>
                     </div>
                   )}
                 </>
@@ -746,24 +848,28 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Enhanced Setting Details */}
       {(d.season_time_of_year || d.environmental_details) && (
         <div>
-          <div className="pb-3">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+          <div className="pb-4 mb-2">
+            <h3 className={`text-xl sm:text-2xl flex items-center gap-3 font-bold ${colors.text}`}>
+              <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
               Setting Details
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg p-4`}>
-            <div className="space-y-3">
+          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-xl rounded-xl p-6 backdrop-blur-sm`} style={{
+            background: resolvedTheme === 'light' 
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
+          }}>
+            <div className="grid grid-cols-1 gap-4">
               {d.season_time_of_year && (
-                <div className="flex items-center justify-between gap-3">
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Season/Time of Year</div>
-                  <div className={`text-sm ${colors.text}`}>{d.season_time_of_year}</div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Season/Time of Year</div>
+                  <div className={`text-sm sm:text-base ${colors.text} max-w-[75%] font-medium`}>{d.season_time_of_year}</div>
                 </div>
               )}
               {d.environmental_details && (
-                <div className="flex items-start justify-between gap-3">
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Environmental Details</div>
-                  <div className={`text-sm ${colors.text} max-w-[70%] text-right whitespace-pre-wrap`}>{d.environmental_details}</div>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className={`text-xs font-bold ${colors.textTertiary} uppercase tracking-wider`}>Environmental Details</div>
+                  <div className={`text-sm sm:text-base ${colors.text} max-w-[75%] font-medium leading-relaxed whitespace-pre-wrap`}>{d.environmental_details}</div>
                 </div>
               )}
             </div>
