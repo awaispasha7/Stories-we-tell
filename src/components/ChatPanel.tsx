@@ -501,7 +501,8 @@ export function ChatPanel({ _sessionId, _projectId, onSessionUpdate, onShowProje
 
       try {
         const { sessionApi } = await import('@/lib/api')
-        const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 50, 0)
+        // Fetch up to 500 messages to ensure we get all messages for long conversations
+        const messagesResponse = await sessionApi.getSessionMessages(sessionIdToUse, 500, 0)
         console.log('📋 [CHAT] Full messages response:', JSON.stringify(messagesResponse, null, 2))
         
         // Check if story is completed - CRITICAL: Set immediately before processing messages

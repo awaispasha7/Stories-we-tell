@@ -104,6 +104,19 @@ export const sessionApi = {
     }
   },
   
+  getSessionMessageCount: async (sessionId: string) => {
+    try {
+      const headers = getUserHeaders()
+      return await api.get(`api/v1/sessions/${sessionId}/message-count`, { 
+        headers
+      }).json() as { success: boolean; session_id: string; message_count: number }
+    } catch (error: unknown) {
+      console.error('Failed to get session message count:', error)
+      // Return 0 on error so UI doesn't break
+      return { success: false, session_id: sessionId, message_count: 0 }
+    }
+  },
+  
   // Update session title
   updateSessionTitle: (sessionId: string, title: string) => 
     api.put(`api/v1/sessions/${sessionId}/title`, { json: { title } }).json(),

@@ -159,18 +159,23 @@ export function SessionsSidebar({
             try {
               const projectDetail = await projectApi.getProject(project.project_id)
               
-              // Enhance sessions with first message and count
+              // Enhance sessions with first message and exact count
               const sessionsWithDetails = await Promise.all(
                 (projectDetail.sessions || []).map(async (session) => {
                   try {
-                    const messagesResponse = await sessionApi.getSessionMessages(session.session_id, 10, 0)
+                    // Get first message for preview (only need 1 message)
+                    const messagesResponse = await sessionApi.getSessionMessages(session.session_id, 1, 0)
                     const messages = (messagesResponse as { messages?: unknown[] })?.messages || []
                     const firstMessage = messages.length > 0 ? (messages[0] as { content?: string }).content : undefined
+                    
+                    // Get exact message count using dedicated endpoint
+                    const countResponse = await sessionApi.getSessionMessageCount(session.session_id)
+                    const messageCount = countResponse?.message_count || 0
                     
                     return {
                       ...session,
                       first_message: firstMessage,
-                      message_count: messages.length
+                      message_count: messageCount
                     }
                   } catch (error) {
                     console.warn(`Failed to fetch messages for session ${session.session_id}:`, error)
