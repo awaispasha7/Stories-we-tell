@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 interface ResizableSidebarProps {
   children: React.ReactNode
   minWidth?: number
-  maxWidth?: number
+  maxWidth?: number | undefined // undefined means no maximum limit
   defaultWidth?: number
   className?: string
   isCollapsed?: boolean
@@ -17,15 +17,16 @@ interface ResizableSidebarProps {
 
 export function ResizableSidebar({ 
   children, 
-  minWidth = 250, 
-  maxWidth = 500, 
-  defaultWidth = 300,
+  minWidth = 500, 
+  maxWidth = undefined, // No default max - allow unlimited resizing
+  defaultWidth = 500,
   className = '',
   isCollapsed: externalCollapsed,
   onCollapseChange,
   showNotification = false
 }: ResizableSidebarProps) {
-  const [width, setWidth] = useState(defaultWidth)
+  // Initialize width - ensure it's at least minWidth
+  const [width, setWidth] = useState(Math.max(defaultWidth, minWidth))
   const [isResizing, setIsResizing] = useState(false)
   const [internalCollapsed, setInternalCollapsed] = useState(false)
   const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed
@@ -145,7 +146,10 @@ export function ResizableSidebar({
     if (!isResizing || !sidebarRef.current) return
 
     const newWidth = e.clientX
-    const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth)
+    // Only clamp to minWidth, allow unlimited expansion if maxWidth is undefined
+    const clampedWidth = maxWidth !== undefined 
+      ? Math.min(Math.max(newWidth, minWidth), maxWidth)
+      : Math.max(newWidth, minWidth)
     setWidth(clampedWidth)
   }, [isResizing, minWidth, maxWidth])
 
@@ -216,6 +220,8 @@ export function ResizableSidebar({
         } ${isMobile && !isCollapsed ? 'fixed inset-0 z-50 w-full' : ''}`}
         style={{ 
           width: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${width}px`,
+          // On mobile: full screen when open, 0 when collapsed
+          // On desktop: use minWidth (500px) and allow resizing
           minWidth: isMobile && isCollapsed ? '0px' : isMobile && !isCollapsed ? '100vw' : `${minWidth}px`,
           height: isMobile && !isCollapsed ? 'calc(var(--vh, 1vh) * 100)' : '100%'
         }}

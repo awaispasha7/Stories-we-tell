@@ -448,9 +448,9 @@ export default function ChatPage() {
         <div className="flex-1 flex min-h-0">
           {/* Left Sidebar - Always visible with sessions */}
           <ResizableSidebar 
-            minWidth={250} 
-            maxWidth={400} 
-            defaultWidth={300}
+            minWidth={500} 
+            maxWidth={undefined} 
+            defaultWidth={500}
             className={`${colors.sidebarBackground} border-r ${colors.border} flex flex-col`}
             isCollapsed={isSidebarCollapsed}
             onCollapseChange={setIsSidebarCollapsed}
