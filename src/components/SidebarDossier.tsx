@@ -177,9 +177,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           genre: snapshot.genre || '',
           tone: snapshot.tone || '',
           scenes: snapshot.scenes || [],
-          characters: snapshot.characters || [],  // Legacy format
-          heroes: snapshot.heroes || [],  // New: Primary characters
-          supporting_characters: snapshot.supporting_characters || [],  // New: Secondary characters
+          characters: snapshot.characters || [],
           locations: snapshot.locations || [],
           project_id: projectId,
           // Extended fields from snapshot_json
@@ -191,27 +189,24 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           story_location: snapshot.story_location,
           story_timeframe: snapshot.story_timeframe,
           story_world_type: snapshot.story_world_type,
-          season_time_of_year: snapshot.season_time_of_year,
-          environmental_details: snapshot.environmental_details,
           subject_full_name: snapshot.subject_full_name,
           subject_brief_description: snapshot.subject_brief_description,
           subject_exists_real_world: snapshot.subject_exists_real_world,
           writer_connection_place_time: snapshot.writer_connection_place_time,
           subject_relationship_to_writer: snapshot.subject_relationship_to_writer,
-          story_type: snapshot.story_type,  // New
-          audience: snapshot.audience,  // New
-          perspective: snapshot.perspective,  // New
-          synopsis: snapshot.synopsis,  // New
-          full_script: snapshot.full_script,  // New
-          dialogue: snapshot.dialogue,  // New
-          voiceover_script: snapshot.voiceover_script,  // New
-          shot_list: snapshot.shot_list,  // New
-          camera_logic: snapshot.camera_logic,  // New
-          scene_math: snapshot.scene_math,  // New
-          micro_prompts: snapshot.micro_prompts  // New
+          // New fields
+          heroes: snapshot.heroes || [],
+          supporting_characters: snapshot.supporting_characters || [],
+          story_type: snapshot.story_type,
+          audience: snapshot.audience || {},
+          perspective: snapshot.perspective,
+          season_time_of_year: snapshot.season_time_of_year,
+          environmental_details: snapshot.environmental_details,
         }
         console.log('📋 Mapped dossier data:', mapped)
         console.log('📋 Characters count:', mapped.characters?.length || 0)
+        console.log('📋 Heroes count:', mapped.heroes?.length || 0)
+        console.log('📋 Supporting Characters count:', mapped.supporting_characters?.length || 0)
         console.log('📋 Scenes count:', mapped.scenes?.length || 0)
         // Don't cache dossier in localStorage - database is source of truth
         return mapped
@@ -235,30 +230,33 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
     retry: 1, // Only retry once on failure
     retryDelay: 2000 // Wait 2 seconds before retry
   })
-  const d = data ?? { title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [] }
+  const d = data ?? { 
+    title: '', logline: '', genre: '', tone: '', scenes: [], characters: [], locations: [],
+    heroes: [], supporting_characters: [], audience: {}
+  }
 
   // Show loading state ONLY on initial load (when there's no data yet)
   // This prevents flash during background refetches
   if (isLoading && !data) {
     return (
-      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+      <div className="h-full! overflow-y-auto! overflow-x-hidden! flex! flex-col! gap-4! sm:gap-6! pt-16! sm:pt-20! pb-8! sm:pb-12! px-4! sm:px-8! lg:px-12! custom-scrollbar" style={{ padding: '2rem' }}>
         {onClose && (
-          <div className="sm:hidden mb-2">
+          <div className="sm:hidden! mb-2!">
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="inline-flex! items-center! gap-2! px-3! py-2! rounded-lg! bg-gray-100! dark:bg-gray-700! hover:bg-gray-200! dark:hover:bg-gray-600! transition-colors!"
               aria-label="Back"
               title="Back"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5! w-5!" />
               <span>Back</span>
             </button>
           </div>
         )}
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+        <div className="animate-pulse! space-y-4!">
+          <div className="h-4! bg-gray-200! dark:bg-gray-700! rounded! w-3/4!"></div>
+          <div className="h-4! bg-gray-200! dark:bg-gray-700! rounded! w-1/2!"></div>
+          <div className="h-4! bg-gray-200! dark:bg-gray-700! rounded! w-2/3!"></div>
         </div>
       </div>
     )
@@ -267,23 +265,23 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
   // Show empty state if no session/project ID
   if (!sessionId || !projectId) {
     return (
-      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+      <div className="h-full! overflow-y-auto! overflow-x-hidden! flex! flex-col! gap-4! sm:gap-6! pt-16! sm:pt-20! pb-8! sm:pb-12! px-4! sm:px-8! lg:px-12! custom-scrollbar" style={{ padding: '2rem' }}>
         {onClose && (
-          <div className="sm:hidden mb-2">
+          <div className="sm:hidden! mb-2!">
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="inline-flex! items-center! gap-2! px-3! py-2! rounded-lg! bg-gray-100! dark:bg-gray-700! hover:bg-gray-200! dark:hover:bg-gray-600! transition-colors!"
               aria-label="Back"
               title="Back"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5! w-5!" />
               <span>Back</span>
             </button>
           </div>
         )}
-        <div className="text-center py-8">
-          <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Active Session</h3>
-          <p className="text-gray-500 dark:text-gray-500 text-sm">
+        <div className="text-center! py-8!">
+          <h3 className="text-gray-600! dark:text-gray-400! font-medium! mb-2!">No Active Session</h3>
+          <p className="text-gray-500! dark:text-gray-500! text-sm!">
             Start a conversation to see your story dossier
           </p>
         </div>
@@ -294,23 +292,23 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
   // Show empty state if no dossier data
   if (!data) {
     return (
-      <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-16 sm:pt-20 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 custom-scrollbar" style={{ padding: '2rem' }}>
+      <div className="h-full! overflow-y-auto! overflow-x-hidden! flex! flex-col! gap-4! sm:gap-6! pt-16! sm:pt-20! pb-8! sm:pb-12! px-4! sm:px-8! lg:px-12! custom-scrollbar" style={{ padding: '2rem' }}>
         {onClose && (
-          <div className="sm:hidden mb-2">
+          <div className="sm:hidden! mb-2!">
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="inline-flex! items-center! gap-2! px-3! py-2! rounded-lg! bg-gray-100! dark:bg-gray-700! hover:bg-gray-200! dark:hover:bg-gray-600! transition-colors!"
               aria-label="Back"
               title="Back"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5! w-5!" />
               <span>Back</span>
             </button>
           </div>
         )}
-        <div className="text-center py-8">
-          <h3 className="text-gray-600 dark:text-gray-400 font-medium mb-2">No Dossier Yet</h3>
-          <p className="text-gray-500 dark:text-gray-500 text-sm">
+        <div className="text-center! py-8!">
+          <h3 className="text-gray-600! dark:text-gray-400! font-medium! mb-2!">No Dossier Yet</h3>
+          <p className="text-gray-500! dark:text-gray-500! text-sm!">
             Your story dossier will appear here as you develop your story
           </p>
         </div>
@@ -319,17 +317,17 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
   }
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 sm:gap-6 pt-6 sm:pt-8 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 custom-scrollbar">
-      <div className="max-w-4xl mx-auto w-full">
+    <div className="h-full! overflow-y-auto! overflow-x-hidden! flex! flex-col! gap-4! sm:gap-6! pt-6! sm:pt-8! pb-8! sm:pb-12! px-4! sm:px-6! lg:px-8! custom-scrollbar">
+      <div className="max-w-4xl! mx-auto! w-full! px-4! sm:px-6!">
       {onClose && (
-        <div className="sm:hidden mb-2">
+        <div className="sm:hidden! mb-2!">
           <button
             onClick={onClose}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="inline-flex! items-center! gap-2! px-3! py-2! rounded-lg! bg-gray-100! dark:bg-gray-700! hover:bg-gray-200! dark:hover:bg-gray-600! transition-colors!"
             aria-label="Back"
             title="Back"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5! w-5!" />
             <span>Back</span>
           </button>
         </div>
@@ -337,19 +335,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       
       {/* Loading Indicator - Shows at top when dossier is being updated */}
       {isFetching && data && (
-        <div className="sticky top-0 z-10 mb-4 -mt-4 -mx-4 sm:-mx-8 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-4 pb-2 bg-linear-to-b from-white/95 via-white/90 to-transparent dark:from-gray-900/95 dark:via-gray-900/90 backdrop-blur-sm transition-all duration-300">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="relative flex items-center justify-center">
-              <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <div className="absolute inset-0 h-2 w-2 bg-blue-500 rounded-full animate-ping opacity-75"></div>
+        <div className="sticky! top-0! z-10! mb-4! -mt-4! -mx-4! sm:-mx-8! lg:-mx-12! px-4! sm:px-8! lg:px-12! pt-4! pb-2! bg-linear-to-b! from-white/95! via-white/90! to-transparent! dark:from-gray-900/95! dark:via-gray-900/90! backdrop-blur-sm! transition-all! duration-300!">
+          <div className="flex! items-center! gap-2! text-sm!">
+            <div className="relative! flex! items-center! justify-center!">
+              <div className="h-2! w-2! bg-blue-500! rounded-full! animate-pulse!"></div>
+              <div className="absolute! inset-0! h-2! w-2! bg-blue-500! rounded-full! animate-ping! opacity-75!"></div>
             </div>
-            <span className={`${colors.textSecondary} font-medium text-xs`}>
+            <span className={`${colors.textSecondary}! font-medium! text-xs!`}>
               Updating dossier...
             </span>
           </div>
-          <div className="h-0.5 bg-gray-200 dark:bg-gray-700 mt-2 rounded-full overflow-hidden">
+          <div className="h-0.5! bg-gray-200! dark:bg-gray-700! mt-2! rounded-full! overflow-hidden!">
             <div 
-              className="h-full rounded-full"
+              className="h-full! rounded-full!"
               style={{
                 width: '100%',
                 background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #3b82f6 100%)',
@@ -362,21 +360,21 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       )}
       
       {/* Header */}
-      <div className={`text-center pb-6 border-b-2 ${resolvedTheme === 'light' ? 'border-red-300' : 'border-red-600'}`}>
-        <h2 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-2">
+      <div className={`text-center! pb-6! border-b-2! ${resolvedTheme === 'light' ? 'border-red-300!' : 'border-red-600!'}`}>
+        <h2 className="text-2xl! sm:text-3xl! font-bold! bg-linear-to-r! from-red-500! via-purple-500! to-blue-500! bg-clip-text! text-transparent! mb-2!">
           Story Dossier
         </h2>
-        <p className={`text-sm ${colors.textSecondary} font-medium`}>Your story development hub</p>
+        <p className={`text-sm! ${colors.textSecondary}! font-medium!`}>Your story development hub</p>
       </div>
 
       {/* Project Information */}
       {projectId && (
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} rounded-lg p-4 mb-4 shadow-sm`}>
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-linear-to-br from-blue-500 to-purple-500 rounded-full"></div>
-            <div className="flex-1">
-              <div className={`text-xs font-semibold ${colors.textSecondary} uppercase tracking-wide mb-1`}>Project</div>
-              <div className={`text-sm font-mono ${colors.text} break-all`} style={{ 
+        <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! rounded-lg! p-4! mb-4! shadow-sm!`}>
+          <div className="flex! items-center! gap-3!">
+            <div className="w-3! h-3! bg-linear-to-br! from-blue-500! to-purple-500! rounded-full!"></div>
+            <div className="flex-1!">
+              <div className={`text-xs! font-semibold! ${colors.textSecondary}! uppercase! tracking-wide! mb-1!`}>Project</div>
+              <div className={`text-sm! font-mono! ${colors.text}! break-all!`} style={{ 
                 fontFamily: 'monospace'
               }}>
                 {projectId}
@@ -388,51 +386,51 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Story Overview Card */}
       <div>
-        <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+        <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-red-500! rounded-full!"></div>
               Story Overview
             </h3>
         </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg p-4 backdrop-blur-sm`} style={{
+        <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
           background: resolvedTheme === 'light' 
             ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
             : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
         }}>
-          <div className="space-y-4">
+          <div className="space-y-4!">
             {/* Title Section */}
-            <div className="flex items-center justify-between gap-4 pb-4 border-b" style={{
+            <div className="flex! items-center! justify-between! gap-4! pb-4! border-b!" style={{
               borderColor: resolvedTheme === 'light' 
                 ? 'rgba(229, 231, 235, 0.6)' 
                 : 'rgba(75, 85, 99, 0.4)'
             }}>
-              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide shrink-0`}>Title</div>
-              <div className="font-bold bg-linear-to-r from-red-500 to-blue-500 bg-clip-text text-transparent text-sm text-right">
+              <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0!`}>Title</div>
+              <div className="font-bold! bg-linear-to-r! from-red-500! to-blue-500! bg-clip-text! text-transparent! text-sm! text-right!">
                 {d.title || 'Untitled Story'}
               </div>
             </div>
             
             {/* Logline Section - Inline with heading */}
-            <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+            <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
               borderColor: resolvedTheme === 'light' 
                 ? 'rgba(229, 231, 235, 0.6)' 
                 : 'rgba(75, 85, 99, 0.4)'
             }}>
-              <div className={`text-xs font-semibold ${resolvedTheme === 'light' ? 'text-red-600' : 'text-red-400'} uppercase tracking-wide shrink-0 pt-0.5`}>Logline</div>
-              <div className={`text-sm leading-relaxed flex-1 ${colors.textSecondary} text-right`}>
+              <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0! pt-0.5!`}>Logline</div>
+              <div className={`text-sm! leading-relaxed! flex-1! ${colors.textSecondary}! text-right!`}>
                 {d.logline || 'A compelling story waiting to be told...'}
               </div>
             </div>
             
             {/* Genre & Tone Tags */}
-            <div className="flex gap-3 flex-wrap pt-1">
+            <div className="flex! gap-3! flex-wrap! pt-1!">
               {d.genre && (
-                <span className="bg-linear-to-r from-red-500 to-red-600 text-white border-0 shadow-md shadow-red-500/30 px-3 py-1.5 rounded-full text-xs font-semibold">
+                <span className="bg-linear-to-r! from-red-500! to-red-600! text-white! border-0! shadow-md! shadow-red-500/30! px-3! py-1.5! rounded-full! text-xs! font-semibold!">
                   {d.genre}
                 </span>
               )}
               {d.tone && (
-                <span className={`border-2 ${resolvedTheme === 'light' ? 'border-red-300 text-red-700 bg-red-50/70' : 'border-red-600 text-red-300 bg-red-900/40'} px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm`}>
+                <span className={`border-2! ${resolvedTheme === 'light' ? 'border-red-300! text-red-700! bg-red-50/70!' : 'border-red-600! text-red-300! bg-red-900/40!'} px-3! py-1.5! rounded-full! text-xs! font-semibold! shadow-sm!`}>
                   {d.tone}
                 </span>
               )}
@@ -443,96 +441,96 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Key Details Card */}
       <div>
-        <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+        <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-purple-500! rounded-full!"></div>
               Key Details
             </h3>
         </div>
-        <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg p-4 backdrop-blur-sm`} style={{
+        <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
           background: resolvedTheme === 'light' 
             ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
             : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
         }}>
-          <div className="space-y-4">
+          <div className="space-y-4!">
             {d.subject_full_name && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Subject Name</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right`}>{d.subject_full_name}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Subject Name</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.subject_full_name}</div>
               </div>
             )}
             {d.subject_brief_description && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Subject Description</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right leading-relaxed`}>{d.subject_brief_description}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Subject Description</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right! leading-relaxed!`}>{d.subject_brief_description}</div>
               </div>
             )}
             {d.subject_relationship_to_writer && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Relationship to Writer</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right`}>{d.subject_relationship_to_writer}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Relationship to Writer</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.subject_relationship_to_writer}</div>
               </div>
             )}
             {d.writer_connection_place_time && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Writer Connection</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right`}>{d.writer_connection_place_time}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Writer Connection</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.writer_connection_place_time}</div>
               </div>
             )}
             {d.problem_statement && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Problem</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right leading-relaxed`}>{d.problem_statement}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Problem</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right! leading-relaxed!`}>{d.problem_statement}</div>
               </div>
             )}
             {d.outcome && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Outcome</div>
-                <div className={`text-sm ${colors.text} flex-1 text-right leading-relaxed`}>{d.outcome}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Outcome</div>
+                <div className={`text-sm! ${colors.text}! flex-1! text-right! leading-relaxed!`}>{d.outcome}</div>
               </div>
             )}
             {d.runtime && (
-              <div className="flex items-center justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-center! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Runtime</div>
-                <div className={`text-sm ${colors.textSecondary}`}>{d.runtime}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Runtime</div>
+                <div className={`text-sm! ${colors.textSecondary}!`}>{d.runtime}</div>
               </div>
             )}
             {(d.story_location || d.story_timeframe || d.story_world_type) && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Setting</div>
-                <div className={`text-xs ${colors.textSecondary} flex-1 text-right space-y-1`}>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Setting</div>
+                <div className={`text-xs! ${colors.textSecondary}! flex-1! text-right! space-y-1!`}>
                   {d.story_location && <div>Location: {d.story_location}</div>}
                   {d.story_timeframe && <div>Timeframe: {d.story_timeframe}</div>}
                   {d.story_world_type && <div>World: {d.story_world_type}</div>}
@@ -540,19 +538,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               </div>
             )}
             {d.actions_taken && (
-              <div className="flex items-start justify-between gap-4 pb-4 border-b" style={{
+              <div className="flex! items-start! justify-between! gap-4! pb-4! border-b!" style={{
                 borderColor: resolvedTheme === 'light' 
                   ? 'rgba(229, 231, 235, 0.6)' 
                   : 'rgba(75, 85, 99, 0.4)'
               }}>
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Actions Taken</div>
-                <div className={`text-sm ${colors.textSecondary} flex-1 text-right leading-relaxed whitespace-pre-wrap`}>{d.actions_taken}</div>
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Actions Taken</div>
+                <div className={`text-sm! ${colors.textSecondary}! flex-1! text-right! leading-relaxed! whitespace-pre-wrap!`}>{d.actions_taken}</div>
               </div>
             )}
             {d.likes_in_story && (
-              <div className="flex items-start justify-between gap-4">
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>What We Love</div>
-                <div className={`text-sm ${colors.textSecondary} flex-1 text-right leading-relaxed whitespace-pre-wrap`}>{d.likes_in_story}</div>
+              <div className="flex! items-start! justify-between! gap-4!">
+                <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>What We Love</div>
+                <div className={`text-sm! ${colors.textSecondary}! flex-1! text-right! leading-relaxed! whitespace-pre-wrap!`}>{d.likes_in_story}</div>
               </div>
             )}
           </div>
@@ -562,46 +560,46 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Scenes Card - show only if scenes are present */}
       {(d.scenes ?? []).length > 0 && (
         <div>
-          <div className="pb-3 mb-2">
-              <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+              <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+                <div className="w-2! h-2! bg-blue-500! rounded-full!"></div>
                 Scene Structure
               </h3>
             </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg overflow-hidden backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! overflow-hidden! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
           }}>  
-            <div className="space-y-6 p-4">
+            <div className="space-y-6! p-4!">
               {(d.scenes ?? []).map((s: SceneData, index: number) => (
                 <div 
                   key={s.scene_id || `scene-${index}`} 
-                  className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}
+                  className={`${colors.backgroundTertiary}! p-3! rounded-lg! border! ${colors.border}! shadow-sm!`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  <div className="flex! items-start! gap-3!">
+                    <div className="w-6! h-6! bg-linear-to-br! from-blue-500! to-green-500! rounded-full! flex! items-center! justify-center! text-white! text-xs! font-bold! shrink-0!">
                       {index + 1}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-semibold ${colors.text} text-sm mb-1`}>
+                    <div className="flex-1! min-w-0!">
+                      <div className={`font-semibold! ${colors.text}! text-sm! mb-1!`}>
                         {s.one_liner || s.description || 'Scene ' + (index + 1)}
                       </div>
-                      <div className={`text-xs ${colors.textSecondary} space-y-1`}>
-                        <div className="flex gap-2 flex-wrap">
+                      <div className={`text-xs! ${colors.textSecondary}! space-y-1!`}>
+                        <div className="flex! gap-2! flex-wrap!">
                           {s.time_of_day && (
-                            <span className={`${resolvedTheme === 'light' ? 'bg-green-100 text-green-700' : 'bg-green-900/30 text-green-300'} px-2 py-0.5 rounded-full text-xs`}>
+                            <span className={`${resolvedTheme === 'light' ? 'bg-green-100! text-green-700!' : 'bg-green-900/30! text-green-300!'} px-2! py-0.5! rounded-full! text-xs!`}>
                               {s.time_of_day}
                             </span>
                           )}
                           {s.interior_exterior && (
-                            <span className={`${resolvedTheme === 'light' ? 'bg-blue-100 text-blue-700' : 'bg-blue-900/30 text-blue-300'} px-2 py-0.5 rounded-full text-xs`}>
+                            <span className={`${resolvedTheme === 'light' ? 'bg-blue-100! text-blue-700!' : 'bg-blue-900/30! text-blue-300!'} px-2! py-0.5! rounded-full! text-xs!`}>
                               {s.interior_exterior}
                             </span>
                           )}
                         </div>
                         {s.tone && (
-                          <div className={`${colors.textTertiary} italic`}>Tone: {s.tone}</div>
+                          <div className={`${colors.textTertiary}! italic!`}>Tone: {s.tone}</div>
                         )}
                       </div>
                     </div>
@@ -616,13 +614,13 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Heroes Card (Primary Characters) */}
       {(d.heroes && d.heroes.length > 0) && (
         <div>
-          <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-blue-500! rounded-full!"></div>
               Hero Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg overflow-hidden backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! overflow-hidden! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
@@ -631,7 +629,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               {d.heroes.map((hero: HeroData, idx: number) => (
                 <div 
                   key={idx} 
-                  className={`${colors.backgroundTertiary} p-4 ${idx !== (d.heroes?.length || 0) - 1 ? 'pb-5' : ''}`}
+                  className={`${colors.backgroundTertiary}! p-4! ${idx !== (d.heroes?.length || 0) - 1 ? 'pb-5!' : ''}`}
                   style={{
                     borderBottomWidth: idx !== (d.heroes?.length || 0) - 1 ? '1px' : '0px',
                     borderBottomStyle: 'solid',
@@ -640,32 +638,32 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                       : 'rgba(75, 85, 99, 0.6)' // gray-600 with opacity
                   }}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex! items-start! gap-4!">
                     {hero.photo_url && (
                       <img 
                         src={hero.photo_url} 
                         alt={hero.name || 'Hero'} 
-                        className="w-16 h-16 rounded-lg object-cover border-2 border-blue-300 dark:border-blue-600 shrink-0"
+                        className="w-16! h-16! rounded-lg! object-cover! border-2! border-blue-300! dark:border-blue-600! shrink-0!"
                       />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-semibold text-base ${colors.text} mb-1.5`}>{hero.name || 'Unnamed Hero'}</div>
-                      <div className="space-y-1">
+                    <div className="flex-1! min-w-0!">
+                      <div className={`font-semibold! text-base! ${colors.text}! mb-1.5!`}>{hero.name || 'Unnamed Hero'}</div>
+                      <div className="space-y-1!">
                         {hero.age_at_story && (
-                          <div className={`text-xs ${colors.textTertiary}`}>Age: {hero.age_at_story}</div>
+                          <div className={`text-xs! ${colors.textTertiary}!`}>Age: {hero.age_at_story}</div>
                         )}
                         {hero.relationship_to_user && (
-                          <div className={`text-xs ${colors.textTertiary}`}>Relationship: {hero.relationship_to_user}</div>
+                          <div className={`text-xs! ${colors.textTertiary}!`}>Relationship: {hero.relationship_to_user}</div>
                         )}
                       </div>
                       {hero.physical_descriptors && (
-                        <div className={`text-xs ${colors.textSecondary} mt-2.5`}>
-                          <span className={`font-semibold ${colors.text}`}>Physical:</span> {hero.physical_descriptors}
+                        <div className={`text-xs! ${colors.textSecondary}! mt-2.5!`}>
+                          <span className={`font-semibold! ${colors.text}!`}>Physical:</span> {hero.physical_descriptors}
                         </div>
                       )}
                       {hero.personality_traits && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1.5`}>
-                          <span className={`font-semibold ${colors.text}`}>Personality:</span> {hero.personality_traits}
+                        <div className={`text-xs! ${colors.textSecondary}! mt-1.5!`}>
+                          <span className={`font-semibold! ${colors.text}!`}>Personality:</span> {hero.personality_traits}
                         </div>
                       )}
                     </div>
@@ -680,13 +678,13 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Supporting Characters Card */}
       {(d.supporting_characters && d.supporting_characters.length > 0) && (
         <div>
-          <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-purple-500! rounded-full!"></div>
               Supporting Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg overflow-hidden backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! overflow-hidden! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
@@ -695,7 +693,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               {d.supporting_characters.map((char: SupportingCharacterData, idx: number) => (
                 <div 
                   key={idx} 
-                  className={`${colors.backgroundTertiary} p-4 ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'pb-5' : ''}`}
+                  className={`${colors.backgroundTertiary}! p-4! ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'pb-5!' : ''}`}
                   style={{
                     borderBottomWidth: idx !== (d.supporting_characters?.length || 0) - 1 ? '1px' : '0px',
                     borderBottomStyle: 'solid',
@@ -704,21 +702,21 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                       : 'rgba(75, 85, 99, 0.6)' // gray-600 with opacity
                   }}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex! items-start! gap-4!">
                     {char.photo_url && (
                       <img 
                         src={char.photo_url} 
                         alt={char.name || 'Character'} 
-                        className="w-12 h-12 rounded-lg object-cover border-2 border-purple-300 dark:border-purple-600 shrink-0"
+                        className="w-12! h-12! rounded-lg! object-cover! border-2! border-purple-300! dark:border-purple-600! shrink-0!"
                       />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-semibold ${colors.text} mb-1`}>{char.name || 'Unnamed Character'}</div>
+                    <div className="flex-1! min-w-0!">
+                      <div className={`font-semibold! ${colors.text}! mb-1!`}>{char.name || 'Unnamed Character'}</div>
                       {char.role && (
-                        <div className={`text-xs ${colors.textTertiary} mb-1.5`}>{char.role}</div>
+                        <div className={`text-xs! ${colors.textTertiary}! mb-1.5!`}>{char.role}</div>
                       )}
                       {char.description && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                        <div className={`text-xs! ${colors.textSecondary}! mt-1! whitespace-pre-wrap!`}>{char.description}</div>
                       )}
                     </div>
                   </div>
@@ -732,39 +730,39 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Characters Card (Legacy - for backward compatibility) */}
       {(!d.heroes || d.heroes.length === 0) && (!d.supporting_characters || d.supporting_characters.length === 0) && (
         <div>
-          <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-green-500! rounded-full!"></div>
               Characters
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg p-4 backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
           }}>
             <div>
               {(d.characters ?? []).length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-3!">
                   {d.characters.map((char: CharacterData, idx: number) => (
                     <div 
                       key={char.character_id || `${idx}`} 
-                      className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}
+                      className={`${colors.backgroundTertiary}! p-3! rounded-lg! border! ${colors.border}! shadow-sm!`}
                     >
-                      <div className={`font-semibold ${colors.text}`}>{char.name || 'Unnamed Character'}</div>
+                      <div className={`font-semibold! ${colors.text}!`}>{char.name || 'Unnamed Character'}</div>
                       {char.role && (
-                        <div className={`text-xs ${colors.textTertiary} mt-0.5`}>{char.role}</div>
+                        <div className={`text-xs! ${colors.textTertiary}! mt-0.5!`}>{char.role}</div>
                       )}
                       {char.description && (
-                        <div className={`text-xs ${colors.textSecondary} mt-1 whitespace-pre-wrap`}>{char.description}</div>
+                        <div className={`text-xs! ${colors.textSecondary}! mt-1! whitespace-pre-wrap!`}>{char.description}</div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border}`}>
-                  <div className={`font-semibold ${colors.text}`}>No characters yet</div>
-                  <div className={`text-xs ${colors.textSecondary} mt-1`}>Share character details to populate this section</div>
+                <div className={`${colors.backgroundTertiary}! p-3! rounded-lg! border! ${colors.border}!`}>
+                  <div className={`font-semibold! ${colors.text}!`}>No characters yet</div>
+                  <div className={`text-xs! ${colors.textSecondary}! mt-1!`}>Share character details to populate this section</div>
                 </div>
               )}
             </div>
@@ -775,40 +773,40 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Story Type & Perspective Card */}
       {(d.story_type || d.perspective || d.audience) && (
         <div>
-          <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-orange-500! rounded-full!"></div>
               Story Style & Perspective
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg p-4 backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
           }}>
-            <div className="space-y-3">
+            <div className="space-y-3!">
               {d.story_type && (
-                <div className="flex items-center justify-between gap-4 pb-3 border-b" style={{
+                <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
                   borderColor: resolvedTheme === 'light' 
                     ? 'rgba(229, 231, 235, 0.6)' 
                     : 'rgba(75, 85, 99, 0.4)'
                 }}>
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Story Type</div>
-                  <div className={`text-sm font-semibold ${colors.text}`}>
-                    <span className="bg-linear-to-r from-orange-500 to-orange-600 text-white px-2 py-1 rounded-full text-xs shadow-sm">
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Story Type</div>
+                  <div className={`text-sm! font-semibold! ${colors.text}!`}>
+                    <span className="bg-linear-to-r! from-orange-500! to-orange-600! text-white! px-2! py-1! rounded-full! text-xs! shadow-sm!">
                       {d.story_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   </div>
                 </div>
               )}
               {d.perspective && (
-                <div className="flex items-center justify-between gap-4 pb-3 border-b" style={{
+                <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
                   borderColor: resolvedTheme === 'light' 
                     ? 'rgba(229, 231, 235, 0.6)' 
                     : 'rgba(75, 85, 99, 0.4)'
                 }}>
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Perspective</div>
-                  <div className={`text-sm ${colors.text}`}>
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Perspective</div>
+                  <div className={`text-sm! ${colors.text}!`}>
                     {d.perspective.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
                 </div>
@@ -816,19 +814,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               {d.audience && typeof d.audience === 'object' && (
                 <>
                   {d.audience.who_will_see_first && (
-                    <div className="flex items-start justify-between gap-4 pb-3 border-b" style={{
+                    <div className="flex! items-start! justify-between! gap-4! pb-3! border-b!" style={{
                       borderColor: resolvedTheme === 'light' 
                         ? 'rgba(229, 231, 235, 0.6)' 
                         : 'rgba(75, 85, 99, 0.4)'
                     }}>
-                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Audience</div>
-                      <div className={`text-sm ${colors.text} flex-1 text-right leading-relaxed`}>{d.audience.who_will_see_first}</div>
+                      <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Audience</div>
+                      <div className={`text-sm! ${colors.text}! flex-1! text-right! leading-relaxed!`}>{d.audience.who_will_see_first}</div>
                     </div>
                   )}
                   {d.audience.desired_feeling && (
-                    <div className="flex items-start justify-between gap-4">
-                      <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Desired Feeling</div>
-                      <div className={`text-sm ${colors.text} flex-1 text-right leading-relaxed`}>{d.audience.desired_feeling}</div>
+                    <div className="flex! items-start! justify-between! gap-4!">
+                      <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Desired Feeling</div>
+                      <div className={`text-sm! ${colors.text}! flex-1! text-right! leading-relaxed!`}>{d.audience.desired_feeling}</div>
                     </div>
                   )}
                 </>
@@ -841,32 +839,32 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       {/* Enhanced Setting Details */}
       {(d.season_time_of_year || d.environmental_details) && (
         <div>
-          <div className="pb-3 mb-2">
-            <h3 className={`text-lg flex items-center gap-2 font-semibold ${colors.text}`}>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="pb-3! mb-2!">
+            <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
+              <div className="w-2! h-2! bg-green-500! rounded-full!"></div>
               Setting Details
             </h3>
           </div>
-          <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg rounded-lg p-4 backdrop-blur-sm`} style={{
+          <div className={`${colors.cardBackground}! border-2! ${colors.borderSecondary}! shadow-lg! rounded-lg! p-4! backdrop-blur-sm!`} style={{
             background: resolvedTheme === 'light' 
               ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.98) 100%)'
               : 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)'
           }}>
-            <div className="space-y-3">
+            <div className="space-y-3!">
               {d.season_time_of_year && (
-                <div className="flex items-center justify-between gap-4 pb-3 border-b" style={{
+                <div className="flex! items-center! justify-between! gap-4! pb-3! border-b!" style={{
                   borderColor: resolvedTheme === 'light' 
                     ? 'rgba(229, 231, 235, 0.6)' 
                     : 'rgba(75, 85, 99, 0.4)'
                 }}>
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide`}>Season/Time of Year</div>
-                  <div className={`text-sm ${colors.text} flex-1 text-right`}>{d.season_time_of_year}</div>
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide!`}>Season/Time of Year</div>
+                  <div className={`text-sm! ${colors.text}! flex-1! text-right!`}>{d.season_time_of_year}</div>
                 </div>
               )}
               {d.environmental_details && (
-                <div className="flex items-start justify-between gap-4">
-                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wide shrink-0 pt-0.5`}>Environmental Details</div>
-                  <div className={`text-sm ${colors.textSecondary} flex-1 text-right leading-relaxed whitespace-pre-wrap`}>{d.environmental_details}</div>
+                <div className="flex! items-start! justify-between! gap-4!">
+                  <div className={`text-xs! font-semibold! ${colors.textTertiary}! uppercase! tracking-wide! shrink-0! pt-0.5!`}>Environmental Details</div>
+                  <div className={`text-sm! ${colors.textSecondary}! flex-1! text-right! leading-relaxed! whitespace-pre-wrap!`}>{d.environmental_details}</div>
                 </div>
               )}
             </div>
