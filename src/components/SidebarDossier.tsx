@@ -360,7 +360,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       )}
       
       {/* Header */}
-      <div className={`text-center! pb-6! border-b-2! ${resolvedTheme === 'light' ? 'border-red-300!' : 'border-red-600!'}`}>
+      <div className={`text-center! pb-4! mb-4!`}>
         <h2 className="text-2xl! sm:text-3xl! font-bold! bg-linear-to-r! from-red-500! via-purple-500! to-blue-500! bg-clip-text! text-transparent! mb-2!">
           Story Dossier
         </h2>
@@ -440,7 +440,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       </div>
 
       {/* Key Details Card */}
-      <div>
+      <div className="mt-4!">
         <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-purple-500! rounded-full!"></div>
@@ -559,7 +559,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Scenes Card - show only if scenes are present */}
       {(d.scenes ?? []).length > 0 && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
               <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
                 <div className="w-2! h-2! bg-blue-500! rounded-full!"></div>
@@ -575,7 +575,10 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               {(d.scenes ?? []).map((s: SceneData, index: number) => (
                 <div 
                   key={s.scene_id || `scene-${index}`} 
-                  className={`${colors.backgroundTertiary}! p-3! rounded-lg! border! ${colors.border}! shadow-sm!`}
+                  className={`${colors.backgroundTertiary}! p-3! rounded-lg! border! ${colors.border}! ${resolvedTheme === 'light' ? 'shadow-sm!' : 'shadow-md! shadow-blue-500/20!'}`}
+                  style={resolvedTheme === 'dark' ? {
+                    boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1)'
+                  } : undefined}
                 >
                   <div className="flex! items-start! gap-3!">
                     <div className="w-6! h-6! bg-linear-to-br! from-blue-500! to-green-500! rounded-full! flex! items-center! justify-center! text-white! text-xs! font-bold! shrink-0!">
@@ -613,7 +616,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
       
       {/* Heroes Card (Primary Characters) */}
       {(d.heroes && d.heroes.length > 0) && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-blue-500! rounded-full!"></div>
@@ -677,7 +680,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Supporting Characters Card */}
       {(d.supporting_characters && d.supporting_characters.length > 0) && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-purple-500! rounded-full!"></div>
@@ -729,7 +732,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Characters Card (Legacy - for backward compatibility) */}
       {(!d.heroes || d.heroes.length === 0) && (!d.supporting_characters || d.supporting_characters.length === 0) && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-green-500! rounded-full!"></div>
@@ -772,7 +775,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Story Type & Perspective Card */}
       {(d.story_type || d.perspective || d.audience) && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-orange-500! rounded-full!"></div>
@@ -838,7 +841,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
 
       {/* Enhanced Setting Details */}
       {(d.season_time_of_year || d.environmental_details) && (
-        <div>
+        <div className="mt-4!">
           <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
               <div className="w-2! h-2! bg-green-500! rounded-full!"></div>
