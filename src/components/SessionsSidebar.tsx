@@ -584,14 +584,11 @@ export function SessionsSidebar({
     <div className="h-full flex flex-col gap-8" style={{ padding: '0.2rem 0.8rem' }}>
       {/* Header */}
       <div className={`p-6 border-b ${colors.border}`}>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2">
           <h2 className={`text-lg font-semibold ${colors.text} flex items-center gap-2`}>
             <MessageSquare className="h-5 w-5" />
             Previous Chats
           </h2>
-          <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-2 mt-1`} style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
-            Projects:
-          </div>
           <div className="flex items-center gap-2">
             {/* New Project Button - Only for authenticated users */}
             {isAuthenticated && (
@@ -629,8 +626,10 @@ export function SessionsSidebar({
             )}
           </div>
         </div>
-        
-        
+        {/* Projects Label - Below Previous Chats heading */}
+        <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-4`} style={{ fontSize: '11px', letterSpacing: '0.05em' }}>
+          Projects:
+        </div>
       </div>
 
       {/* Projects List - Hierarchical Structure */}
@@ -734,10 +733,12 @@ export function SessionsSidebar({
             
             return (
               <div key={project.project_id} style={{ marginBottom: '1rem' }}>
-                {/* Project Label */}
-                <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.5rem' }}>
-                  Project:
-                </div>
+                {/* Project Label - Only show for selected project */}
+                {currentProjectId === project.project_id && (
+                  <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.5rem' }}>
+                    Project:
+                  </div>
+                )}
                 {/* Project Header */}
                 <div
                   className={`group cursor-pointer transition-all duration-200 border-b-2 ${
@@ -934,10 +935,12 @@ export function SessionsSidebar({
                   >
                     {project.sessions.map((session, sessionIndex) => (
                       <div key={`session-wrapper-${session.session_id}`}>
-                        {/* Session Label */}
-                        <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.25rem' }}>
-                          Chat session {sessionIndex + 1}:
-                        </div>
+                        {/* Session Label - Only show for selected session */}
+                        {currentSessionId === session.session_id && (
+                          <div className={`text-xs font-semibold ${colors.textTertiary} uppercase tracking-wider mb-1.5`} style={{ fontSize: '11px', letterSpacing: '0.05em', paddingLeft: '0.25rem' }}>
+                            Chat session {sessionIndex + 1}:
+                          </div>
+                        )}
                         <div
                           key={session.session_id}
                           className={`group cursor-pointer transition-all duration-200 rounded-lg border-2 ${
