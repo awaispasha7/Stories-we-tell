@@ -555,13 +555,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
             </h3>
           </div>
           <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
-            <div className="divide-y" style={{ 
-              borderColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.5)' : 'rgba(75, 85, 99, 0.5)'
-            }}>
+            <div>
               {d.heroes.map((hero: HeroData, idx: number) => (
-                <div key={idx} className={`${colors.backgroundTertiary} p-5 ${idx !== (d.heroes?.length || 0) - 1 ? 'border-b' : ''}`} style={{
-                  borderBottomColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.8)' : 'rgba(75, 85, 99, 0.8)'
-                }}>
+                <div 
+                  key={idx} 
+                  className={`${colors.backgroundTertiary} p-5 ${idx !== (d.heroes?.length || 0) - 1 ? 'border-b' : ''}`}
+                  style={{
+                    borderBottomWidth: idx !== (d.heroes?.length || 0) - 1 ? '1px' : '0px',
+                    borderBottomStyle: 'solid',
+                    borderBottomColor: resolvedTheme === 'light' 
+                      ? 'rgba(156, 163, 175, 0.4)' // gray-400 with opacity
+                      : 'rgba(75, 85, 99, 0.6)' // gray-600 with opacity
+                  }}
+                >
                   <div className="flex items-start gap-4">
                     {hero.photo_url && (
                       <img 
@@ -609,13 +615,19 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
             </h3>
           </div>
           <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-6 rounded-lg overflow-hidden`}>
-            <div className="divide-y" style={{ 
-              borderColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.5)' : 'rgba(75, 85, 99, 0.5)'
-            }}>
+            <div>
               {d.supporting_characters.map((char: SupportingCharacterData, idx: number) => (
-                <div key={idx} className={`${colors.backgroundTertiary} p-4 ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'border-b' : ''}`} style={{
-                  borderBottomColor: resolvedTheme === 'light' ? 'rgba(229, 231, 235, 0.8)' : 'rgba(75, 85, 99, 0.8)'
-                }}>
+                <div 
+                  key={idx} 
+                  className={`${colors.backgroundTertiary} p-4 ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'border-b' : ''}`}
+                  style={{
+                    borderBottomWidth: idx !== (d.supporting_characters?.length || 0) - 1 ? '1px' : '0px',
+                    borderBottomStyle: 'solid',
+                    borderBottomColor: resolvedTheme === 'light' 
+                      ? 'rgba(156, 163, 175, 0.4)' // gray-400 with opacity
+                      : 'rgba(75, 85, 99, 0.6)' // gray-600 with opacity
+                  }}
+                >
                   <div className="flex items-start gap-4">
                     {char.photo_url && (
                       <img 
