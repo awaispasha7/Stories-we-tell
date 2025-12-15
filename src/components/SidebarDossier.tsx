@@ -509,7 +509,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
             </div>
           <div className={`${colors.cardBackground} border-2 ${colors.borderSecondary} shadow-lg mt-8 sm:mt-12 lg:mt-16 rounded-lg`}>  
             <div className="space-y-4 p-4">
-              {(d.scenes ?? []).slice(0, 8).map((s: SceneData, index: number) => (
+              {(d.scenes ?? []).map((s: SceneData, index: number) => (
                 <div key={s.scene_id || `scene-${index}`} className={`${colors.backgroundTertiary} p-3 rounded-lg border ${colors.border} shadow-sm`}>
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-linear-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
