@@ -561,6 +561,8 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                   key={idx} 
                   className={`${colors.backgroundTertiary} p-5 ${idx !== (d.heroes?.length || 0) - 1 ? 'border-b' : ''}`}
                   style={{
+                    paddingBottom: idx !== (d.heroes?.length || 0) - 1 ? '1.5rem' : '1.25rem', // Extra padding before separator
+                    marginBottom: idx !== (d.heroes?.length || 0) - 1 ? '0.5rem' : '0', // Gap above separator line
                     borderBottomWidth: idx !== (d.heroes?.length || 0) - 1 ? '1px' : '0px',
                     borderBottomStyle: 'solid',
                     borderBottomColor: resolvedTheme === 'light' 
@@ -621,6 +623,8 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
                   key={idx} 
                   className={`${colors.backgroundTertiary} p-4 ${idx !== (d.supporting_characters?.length || 0) - 1 ? 'border-b' : ''}`}
                   style={{
+                    paddingBottom: idx !== (d.supporting_characters?.length || 0) - 1 ? '1.25rem' : '1rem', // Extra padding before separator
+                    marginBottom: idx !== (d.supporting_characters?.length || 0) - 1 ? '0.5rem' : '0', // Gap above separator line
                     borderBottomWidth: idx !== (d.supporting_characters?.length || 0) - 1 ? '1px' : '0px',
                     borderBottomStyle: 'solid',
                     borderBottomColor: resolvedTheme === 'light' 
