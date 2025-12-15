@@ -439,7 +439,8 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
         </div>
       </div>
 
-      {/* Key Details Card */}
+      {/* Key Details Card - COMMENTED OUT: Client finds this overwhelming, only showing Setting which is part of intake requirements */}
+      {/* 
       <div className="mt-4!">
         <div className="pb-3! mb-2!">
             <h3 className={`text-lg! flex! items-center! gap-2! font-semibold! ${colors.text}`}>
@@ -556,8 +557,10 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           </div>
         </div>
       </div>
+      */}
 
-      {/* Scenes Card - show only if scenes are present */}
+      {/* Scenes Card - COMMENTED OUT: Client finds this overwhelming, not part of intake requirements */}
+      {/* 
       {(d.scenes ?? []).length > 0 && (
         <div className="mt-4!">
           <div className="pb-3! mb-2!">
@@ -613,6 +616,7 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
           </div>
         </div>
       )}
+      */}
       
       {/* Heroes Card (Primary Characters) */}
       {(d.heroes && d.heroes.length > 0) && (
