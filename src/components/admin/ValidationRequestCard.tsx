@@ -50,14 +50,105 @@ export default function ValidationRequestCard({ request, onSelect, isSelected }:
     return text.slice(0, maxLength) + '...'
   }
 
+  const parseConversationMessages = (transcript: string): Array<{ role: string; content: string }> => {
+    if (!transcript) return []
+    
+    const messages: Array<{ role: string; content: string }> = []
+    
+    // Format: ## Client\n*timestamp*\n\ncontent\n\n---\n\n## Stories We Tell AI\n...
+    // Split by "---" separator
+    const sections = transcript.split('---').map(s => s.trim()).filter(s => s)
+    
+    for (const section of sections) {
+      const lines = section.split('\n').map(l => l.trim())
+      let currentRole: string | null = null
+      let currentContent: string[] = []
+      let inContent = false
+      
+      for (const line of lines) {
+        // Skip header
+        if (line.includes('Conversation Transcript')) continue
+        
+        // Check for role header (## Client or ## Stories We Tell AI)
+        const roleMatch = line.match(/^##\s+(.+)$/)
+        if (roleMatch) {
+          // Save previous message if exists
+          if (currentRole && currentContent.length > 0) {
+            const content = currentContent.join(' ').trim()
+            if (content) {
+              messages.push({
+                role: currentRole,
+                content: content
+              })
+            }
+          }
+          
+          // Set new role
+          const roleName = roleMatch[1].trim()
+          if (roleName.toLowerCase().includes('client') || roleName.toLowerCase().includes('user')) {
+            currentRole = 'user'
+          } else {
+            currentRole = 'assistant'
+          }
+          currentContent = []
+          inContent = false
+          continue
+        }
+        
+        // Skip timestamp lines (marked with *)
+        if (line.startsWith('*') && line.endsWith('*')) continue
+        
+        // Skip empty lines at start
+        if (!inContent && !line) continue
+        
+        // Collect content
+        if (currentRole && line) {
+          inContent = true
+          currentContent.push(line)
+        }
+      }
+      
+      // Save last message
+      if (currentRole && currentContent.length > 0) {
+        const content = currentContent.join(' ').trim()
+        if (content) {
+          messages.push({
+            role: currentRole,
+            content: content
+          })
+        }
+      }
+    }
+    
+    // Fallback: if parsing failed, show cleaned transcript
+    if (messages.length === 0) {
+      const cleaned = transcript
+        .replace(/#+ Conversation Transcript/gi, '')
+        .replace(/##\s+/g, '')
+        .replace(/\*[^*]+\*/g, '') // Remove timestamps
+        .replace(/---/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+      
+      if (cleaned) {
+        return [{
+          role: 'user',
+          content: truncateText(cleaned, 200)
+        }]
+      }
+    }
+    
+    return messages.slice(0, 3) // Show first 3 messages max
+  }
+
   return (
     <div
       onClick={onSelect}
       className={`
-        p-6! rounded-xl! border-2! cursor-pointer! transition-all! duration-300! shadow-md! hover:shadow-xl!
+        p-6! cursor-pointer! transition-all! duration-300! shadow-md! hover:shadow-xl!
         ${isSelected 
-          ? `border-blue-500! dark:border-blue-400! shadow-xl! ${colors.sidebarBackground} ring-2! ring-blue-500/50!` 
-          : `${colors.border} hover:border-blue-300! dark:hover:border-blue-700! ${colors.background}`
+          ? `shadow-xl! ${colors.sidebarBackground} ring-2! ring-blue-500/50!` 
+          : `${colors.background}`
         }
       `}
     >
@@ -105,17 +196,31 @@ export default function ValidationRequestCard({ request, onSelect, isSelected }:
       {/* Preview Content */}
       <div className="space-y-4!">
         <div className="p-3! rounded-lg! bg-gray-50! dark:bg-gray-900/50!">
-          <h4 className={`text-sm! font-bold! ${colors.text} mb-2!`}>💬 Conversation Preview</h4>
-          <p className={`text-sm! ${colors.textSecondary} leading-relaxed!`}>
-            {truncateText(request.conversation_transcript.replace(/[#*]/g, ''), 150)}
-          </p>
-        </div>
-
-        <div className="p-3! rounded-lg! bg-gray-50! dark:bg-gray-900/50!">
-          <h4 className={`text-sm! font-bold! ${colors.text} mb-2!`}>📝 Script Preview</h4>
-          <p className={`text-sm! ${colors.textSecondary} leading-relaxed!`}>
-            {truncateText(request.generated_script, 120)}
-          </p>
+          <h4 className={`text-sm! font-bold! ${colors.text} mb-3!`}>💬 Conversation</h4>
+          <div className="space-y-2!">
+            {parseConversationMessages(request.conversation_transcript).map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-2! rounded! text-sm! ${
+                  msg.role === 'user'
+                    ? 'bg-blue-50! dark:bg-blue-900/20! text-blue-900! dark:text-blue-200!'
+                    : 'bg-gray-100! dark:bg-gray-800! text-gray-900! dark:text-gray-200!'
+                }`}
+              >
+                <span className="font-semibold! mr-2!">
+                  {msg.role === 'user' ? '👤 User:' : '🤖 AI:'}
+                </span>
+                <span className={colors.textSecondary}>
+                  {truncateText(msg.content, 100)}
+                </span>
+              </div>
+            ))}
+            {parseConversationMessages(request.conversation_transcript).length === 0 && (
+              <p className={`text-sm! ${colors.textSecondary} italic!`}>
+                No conversation messages available
+              </p>
+            )}
+          </div>
         </div>
 
         {request.review_notes && (

@@ -110,7 +110,7 @@ const statusConfig = {
   }
 }
 
-type TabType = 'dossier' | 'synopsis' | 'generation' | 'final_review' | 'delivery'
+type TabType = 'conversation' | 'dossier' | 'synopsis' | 'generation' | 'final_review' | 'delivery'
 
 export default function ValidationDetail({ 
   request, 
@@ -125,7 +125,7 @@ export default function ValidationDetail({
 }: Props) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const [activeTab, setActiveTab] = useState<TabType>('dossier')
+  const [activeTab, setActiveTab] = useState<TabType>('conversation')
   const [editedScript, setEditedScript] = useState(request.generated_script)
   const [reviewNotes, setReviewNotes] = useState('')
   const [isEditing, setIsEditing] = useState(false)
@@ -265,6 +265,7 @@ export default function ValidationDetail({
             {/* Tabs */}
             <div className={`flex! border-b-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! overflow-x-auto!`}>
               {[
+                { key: 'conversation' as TabType, label: 'Conversation' },
                 { key: 'dossier' as TabType, label: 'Dossier Review' },
                 { key: 'synopsis' as TabType, label: 'Synopsis Review' },
                 { key: 'generation' as TabType, label: 'Generation' },
@@ -289,6 +290,25 @@ export default function ValidationDetail({
 
             {/* Tab Content */}
             <div className="p-4! sm:p-6! md:p-8! bg-white! dark:bg-gray-900!">
+              {/* Conversation Tab */}
+              {activeTab === 'conversation' && (
+                <div className="space-y-4! sm:space-y-6!">
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                      Full Conversation Transcript
+                    </h3>
+                    <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
+                      Complete conversation history between the user and the chatbot.
+                    </p>
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! max-h-[70vh]! overflow-y-auto!`}>
+                      <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-mono! leading-relaxed!`}>
+                        {request.conversation_transcript || 'No conversation transcript available.'}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Dossier Review Tab */}
               {activeTab === 'dossier' && (
                 <div className="space-y-4! sm:space-y-6!">
@@ -300,8 +320,93 @@ export default function ValidationDetail({
                       Review the following aspects for data clarity before writing. Check each item when reviewed, and flag any issues.
                     </p>
 
-                    {/* Review Checklist */}
-                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! mb-6!`}>
+                    {/* Side-by-side Layout: Dossier (Left) and Review Checklist (Right) */}
+                    <div className="flex! flex-col! lg:flex-row! gap-4! sm:gap-6!">
+                      {/* Left Side: Dossier Data */}
+                      <div className="flex-1! lg:w-1/2!">
+                        <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! sticky! top-4! max-h-[80vh]! overflow-y-auto!`}>
+                          <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
+                            📋 Story Dossier
+                          </h4>
+                          {request.dossier_data ? (
+                            <div className="space-y-4!">
+                              {/* Heroes */}
+                              {request.dossier_data.heroes && request.dossier_data.heroes.length > 0 && (
+                                <div>
+                                  <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Hero Characters:</h5>
+                                  {request.dossier_data.heroes.map((hero, idx) => (
+                                    <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                      <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                        {hero.name && <div><strong>Name:</strong> {hero.name}</div>}
+                                        {hero.age_at_story && <div><strong>Age:</strong> {hero.age_at_story}</div>}
+                                        {hero.relationship_to_user && <div><strong>Relationship:</strong> {hero.relationship_to_user}</div>}
+                                        {hero.physical_descriptors && <div><strong>Physical:</strong> {hero.physical_descriptors}</div>}
+                                        {hero.personality_traits && <div><strong>Personality:</strong> {hero.personality_traits}</div>}
+                                        {hero.photo_url && <div className="text-green-600! dark:text-green-400!">📷 Photo attached</div>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Supporting Characters */}
+                              {request.dossier_data.supporting_characters && request.dossier_data.supporting_characters.length > 0 && (
+                                <div>
+                                  <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Supporting Characters:</h5>
+                                  {request.dossier_data.supporting_characters.map((char, idx) => (
+                                    <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                      <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                        {char.name && <div><strong>Name:</strong> {char.name}</div>}
+                                        {char.role && <div><strong>Role:</strong> {char.role}</div>}
+                                        {char.description && <div><strong>Description:</strong> {char.description}</div>}
+                                        {char.photo_url && <div className="text-green-600! dark:text-green-400!">📷 Photo attached</div>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Setting & Time */}
+                              {(request.dossier_data.story_location || request.dossier_data.story_timeframe || request.dossier_data.season_time_of_year || request.dossier_data.environmental_details) && (
+                                <div>
+                                  <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Setting & Time:</h5>
+                                  <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                    <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                      {request.dossier_data.story_location && <div><strong>Location:</strong> {request.dossier_data.story_location}</div>}
+                                      {request.dossier_data.story_timeframe && <div><strong>Timeframe:</strong> {request.dossier_data.story_timeframe}</div>}
+                                      {request.dossier_data.season_time_of_year && <div><strong>Season:</strong> {request.dossier_data.season_time_of_year}</div>}
+                                      {request.dossier_data.environmental_details && <div><strong>Environmental:</strong> {request.dossier_data.environmental_details}</div>}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Story Type & Perspective */}
+                              {(request.dossier_data.story_type || request.dossier_data.perspective || request.dossier_data.audience) && (
+                                <div>
+                                  <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Story Type & Perspective:</h5>
+                                  <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                    <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                      {request.dossier_data.story_type && <div><strong>Story Type:</strong> {request.dossier_data.story_type.replace(/_/g, ' ')}</div>}
+                                      {request.dossier_data.audience?.who_will_see_first && <div><strong>Audience:</strong> {request.dossier_data.audience.who_will_see_first}</div>}
+                                      {request.dossier_data.audience?.desired_feeling && <div><strong>Desired Feeling:</strong> {request.dossier_data.audience.desired_feeling}</div>}
+                                      {request.dossier_data.perspective && <div><strong>Perspective:</strong> {request.dossier_data.perspective.replace(/_/g, ' ')}</div>}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className={`text-sm! ${colors.textSecondary}! italic!`}>
+                              No dossier data available
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Side: Review Checklist */}
+                      <div className="flex-1! lg:w-1/2!">
+                        <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
                       <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
                         Review Checklist
                       </h4>
@@ -342,80 +447,9 @@ export default function ValidationDetail({
                           </label>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Dossier Data Display */}
-                    {request.dossier_data && (
-                      <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! mb-6!`}>
-                        <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
-                          Story Dossier Data
-                        </h4>
-                        <div className="space-y-4!">
-                          {/* Heroes */}
-                          {request.dossier_data.heroes && request.dossier_data.heroes.length > 0 && (
-                            <div>
-                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Hero Characters:</h5>
-                              {request.dossier_data.heroes.map((hero, idx) => (
-                                <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
-                                  <div className={`text-sm! ${colors.text}!`}>
-                                    <strong>Name:</strong> {hero.name || 'N/A'} | 
-                                    <strong> Age:</strong> {hero.age_at_story || 'N/A'} | 
-                                    <strong> Relationship:</strong> {hero.relationship_to_user || 'N/A'}
-                                    {hero.photo_url && <span className="text-green-600! dark:text-green-400!"> 📷 Photo</span>}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Supporting Characters */}
-                          {request.dossier_data.supporting_characters && request.dossier_data.supporting_characters.length > 0 && (
-                            <div>
-                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Supporting Characters:</h5>
-                              {request.dossier_data.supporting_characters.map((char, idx) => (
-                                <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
-                                  <div className={`text-sm! ${colors.text}!`}>
-                                    <strong>Name:</strong> {char.name || 'N/A'} | 
-                                    <strong> Role:</strong> {char.role || 'N/A'}
-                                    {char.photo_url && <span className="text-green-600! dark:text-green-400!"> 📷 Photo</span>}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Setting & Time */}
-                          {(request.dossier_data.story_location || request.dossier_data.story_timeframe || request.dossier_data.season_time_of_year) && (
-                            <div>
-                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Setting & Time:</h5>
-                              <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
-                                <div className={`text-sm! ${colors.text}! space-y-1!`}>
-                                  {request.dossier_data.story_location && <div><strong>Location:</strong> {request.dossier_data.story_location}</div>}
-                                  {request.dossier_data.story_timeframe && <div><strong>Timeframe:</strong> {request.dossier_data.story_timeframe}</div>}
-                                  {request.dossier_data.season_time_of_year && <div><strong>Season:</strong> {request.dossier_data.season_time_of_year}</div>}
-                                  {request.dossier_data.environmental_details && <div><strong>Environmental:</strong> {request.dossier_data.environmental_details}</div>}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Story Type & Perspective */}
-                          {(request.dossier_data.story_type || request.dossier_data.perspective || request.dossier_data.audience) && (
-                            <div>
-                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Story Type & Perspective:</h5>
-                              <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
-                                <div className={`text-sm! ${colors.text}! space-y-1!`}>
-                                  {request.dossier_data.story_type && <div><strong>Story Type:</strong> {request.dossier_data.story_type.replace('_', ' ')}</div>}
-                                  {request.dossier_data.audience?.who_will_see_first && <div><strong>Audience:</strong> {request.dossier_data.audience.who_will_see_first}</div>}
-                                  {request.dossier_data.audience?.desired_feeling && <div><strong>Desired Feeling:</strong> {request.dossier_data.audience.desired_feeling}</div>}
-                                  {request.dossier_data.perspective && <div><strong>Perspective:</strong> {request.dossier_data.perspective.replace('_', ' ')}</div>}
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* Issue Flagging */}
                     <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-red-50! dark:bg-red-900/20! mb-6!`}>
