@@ -452,7 +452,7 @@ export default function ValidationDetail({
                     </div>
 
                     {/* Issue Flagging */}
-                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-red-50! dark:bg-red-900/20! mb-6!`}>
+                    <div className={`mt-6! p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-red-50! dark:bg-red-900/20! mb-6!`}>
                       <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
                         Flag Issues
                       </h4>

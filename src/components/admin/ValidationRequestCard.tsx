@@ -145,10 +145,10 @@ export default function ValidationRequestCard({ request, onSelect, isSelected }:
     <div
       onClick={onSelect}
       className={`
-        p-6! cursor-pointer! transition-all! duration-300! shadow-md! hover:shadow-xl!
+        p-6! rounded-xl! border-2! cursor-pointer! transition-all! duration-300! shadow-md! hover:shadow-xl!
         ${isSelected 
-          ? `shadow-xl! ${colors.sidebarBackground} ring-2! ring-blue-500/50!` 
-          : `${colors.background}`
+          ? `border-blue-500! dark:border-blue-400! shadow-xl! ${colors.sidebarBackground} ring-2! ring-blue-500/50!` 
+          : `${colors.border} hover:border-blue-300! dark:hover:border-blue-700! ${colors.background}`
         }
       `}
     >
