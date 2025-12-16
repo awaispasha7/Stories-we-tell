@@ -5,6 +5,50 @@ import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { formatDistanceToNow } from 'date-fns'
 import { X, CheckCircle2, XCircle, Edit, Save, Clock } from 'lucide-react'
 
+interface DossierData {
+  title?: string
+  heroes?: Array<{
+    name?: string
+    age_at_story?: number | string
+    relationship_to_user?: string
+    physical_descriptors?: string
+    personality_traits?: string
+    photo_url?: string
+  }>
+  supporting_characters?: Array<{
+    name?: string
+    role?: string
+    description?: string
+    photo_url?: string
+  }>
+  story_location?: string
+  story_timeframe?: string
+  season_time_of_year?: string
+  environmental_details?: string
+  story_type?: string
+  audience?: {
+    who_will_see_first?: string
+    desired_feeling?: string
+  }
+  perspective?: string
+  [key: string]: any
+}
+
+interface ReviewChecklist {
+  character_logic: boolean
+  photos: boolean
+  timeline: boolean
+  setting: boolean
+  tone: boolean
+  perspective: boolean
+}
+
+interface ReviewIssues {
+  missing_info: string[]
+  conflicts: string[]
+  factual_gaps: string[]
+}
+
 interface ValidationRequest {
   validation_id: string
   project_id: string
@@ -20,6 +64,9 @@ interface ValidationRequest {
   reviewed_by: string | null
   review_notes: string | null
   updated_at: string
+  dossier_data?: DossierData
+  review_checklist?: ReviewChecklist
+  review_issues?: ReviewIssues
 }
 
 interface Props {
@@ -72,13 +119,33 @@ export default function ValidationDetail({
 }: Props) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const [activeTab, setActiveTab] = useState<'status' | 'transcript' | 'script'>('status')
+  const [activeTab, setActiveTab] = useState<'status' | 'dossier' | 'transcript' | 'script'>('status')
   const [editedScript, setEditedScript] = useState(request.generated_script)
   const [reviewNotes, setReviewNotes] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [highlightReviewNotes, setHighlightReviewNotes] = useState(false)
   const [shouldFocusReviewNotes, setShouldFocusReviewNotes] = useState(false)
   const reviewNotesTextareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Step 9: Review Checklist State
+  const [reviewChecklist, setReviewChecklist] = useState<ReviewChecklist>({
+    character_logic: false,
+    photos: false,
+    timeline: false,
+    setting: false,
+    tone: false,
+    perspective: false
+  })
+  
+  // Review Issues State
+  const [reviewIssues, setReviewIssues] = useState<ReviewIssues>({
+    missing_info: [],
+    conflicts: [],
+    factual_gaps: []
+  })
+  
+  const [newIssueText, setNewIssueText] = useState('')
+  const [newIssueType, setNewIssueType] = useState<'missing_info' | 'conflicts' | 'factual_gaps'>('missing_info')
 
   // Effect to handle focusing and highlighting when tab switches to script
   useEffect(() => {
@@ -190,6 +257,18 @@ export default function ValidationDetail({
                 `}
               >
                 Status & Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('dossier')}
+                className={`
+                  px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
+                  ${activeTab === 'dossier'
+                    ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
+                    : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
+                  }
+                `}
+              >
+                📋 Dossier Review (Step 9)
               </button>
               <button
                 onClick={() => setActiveTab('transcript')}
@@ -308,6 +387,282 @@ export default function ValidationDetail({
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeTab === 'dossier' && (
+                <div className="space-y-4! sm:space-y-6!">
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                      Step 9: SWT Representative Review #1
+                    </h3>
+                    <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
+                      Review the following aspects for data clarity before writing. Check each item when reviewed, and flag any issues.
+                    </p>
+
+                    {/* Review Checklist */}
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! mb-6!`}>
+                      <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
+                        Review Checklist
+                      </h4>
+                      <div className="space-y-3!">
+                        {[
+                          { key: 'character_logic' as const, label: 'Character Logic', description: 'Review hero and supporting character details for consistency' },
+                          { key: 'photos' as const, label: 'Photos', description: 'Verify character photos are attached and correct' },
+                          { key: 'timeline' as const, label: 'Timeline', description: 'Check time period and timeframe consistency' },
+                          { key: 'setting' as const, label: 'Setting', description: 'Review location, season, and environmental details' },
+                          { key: 'tone' as const, label: 'Tone', description: 'Verify story type matches the narrative tone' },
+                          { key: 'perspective' as const, label: 'Perspective', description: 'Check audience and perspective alignment' }
+                        ].map((item) => (
+                          <label
+                            key={item.key}
+                            className={`flex! items-start! gap-3! p-3! rounded-lg! border-2! cursor-pointer! transition-all! hover:bg-gray-100! dark:hover:bg-gray-700! ${
+                              reviewChecklist[item.key]
+                                ? 'border-green-500! bg-green-50! dark:bg-green-900/20!'
+                                : colors.border
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={reviewChecklist[item.key]}
+                              onChange={(e) => setReviewChecklist(prev => ({
+                                ...prev,
+                                [item.key]: e.target.checked
+                              }))}
+                              className="mt-1! cursor-pointer! w-5! h-5!"
+                            />
+                            <div className="flex-1!">
+                              <div className={`font-semibold! text-sm! sm:text-base! ${colors.text}!`}>
+                                {item.label}
+                              </div>
+                              <div className={`text-xs! sm:text-sm! ${colors.textSecondary}! mt-0.5!`}>
+                                {item.description}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dossier Data Display */}
+                    {request.dossier_data && (
+                      <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! mb-6!`}>
+                        <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
+                          Story Dossier Data
+                        </h4>
+                        <div className="space-y-4!">
+                          {/* Heroes */}
+                          {request.dossier_data.heroes && request.dossier_data.heroes.length > 0 && (
+                            <div>
+                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Hero Characters:</h5>
+                              {request.dossier_data.heroes.map((hero, idx) => (
+                                <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                  <div className={`text-sm! ${colors.text}!`}>
+                                    <strong>Name:</strong> {hero.name || 'N/A'} | 
+                                    <strong> Age:</strong> {hero.age_at_story || 'N/A'} | 
+                                    <strong> Relationship:</strong> {hero.relationship_to_user || 'N/A'}
+                                    {hero.photo_url && <span className="text-green-600! dark:text-green-400!"> 📷 Photo</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Supporting Characters */}
+                          {request.dossier_data.supporting_characters && request.dossier_data.supporting_characters.length > 0 && (
+                            <div>
+                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Supporting Characters:</h5>
+                              {request.dossier_data.supporting_characters.map((char, idx) => (
+                                <div key={idx} className={`p-3! mb-2! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                  <div className={`text-sm! ${colors.text}!`}>
+                                    <strong>Name:</strong> {char.name || 'N/A'} | 
+                                    <strong> Role:</strong> {char.role || 'N/A'}
+                                    {char.photo_url && <span className="text-green-600! dark:text-green-400!"> 📷 Photo</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Setting & Time */}
+                          {(request.dossier_data.story_location || request.dossier_data.story_timeframe || request.dossier_data.season_time_of_year) && (
+                            <div>
+                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Setting & Time:</h5>
+                              <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                  {request.dossier_data.story_location && <div><strong>Location:</strong> {request.dossier_data.story_location}</div>}
+                                  {request.dossier_data.story_timeframe && <div><strong>Timeframe:</strong> {request.dossier_data.story_timeframe}</div>}
+                                  {request.dossier_data.season_time_of_year && <div><strong>Season:</strong> {request.dossier_data.season_time_of_year}</div>}
+                                  {request.dossier_data.environmental_details && <div><strong>Environmental:</strong> {request.dossier_data.environmental_details}</div>}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Story Type & Perspective */}
+                          {(request.dossier_data.story_type || request.dossier_data.perspective || request.dossier_data.audience) && (
+                            <div>
+                              <h5 className={`text-sm! font-semibold! mb-2! ${colors.text}!`}>Story Type & Perspective:</h5>
+                              <div className={`p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-700!`}>
+                                <div className={`text-sm! ${colors.text}! space-y-1!`}>
+                                  {request.dossier_data.story_type && <div><strong>Story Type:</strong> {request.dossier_data.story_type.replace('_', ' ')}</div>}
+                                  {request.dossier_data.audience?.who_will_see_first && <div><strong>Audience:</strong> {request.dossier_data.audience.who_will_see_first}</div>}
+                                  {request.dossier_data.audience?.desired_feeling && <div><strong>Desired Feeling:</strong> {request.dossier_data.audience.desired_feeling}</div>}
+                                  {request.dossier_data.perspective && <div><strong>Perspective:</strong> {request.dossier_data.perspective.replace('_', ' ')}</div>}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Issue Flagging */}
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-red-50! dark:bg-red-900/20! mb-6!`}>
+                      <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
+                        Flag Issues
+                      </h4>
+                      
+                      {/* Add New Issue */}
+                      <div className={`mb-4! p-3! rounded! border! ${colors.border}! bg-white! dark:bg-gray-800!`}>
+                        <div className="flex! flex-col! sm:flex-row! gap-2! mb-2!">
+                          <select
+                            value={newIssueType}
+                            onChange={(e) => setNewIssueType(e.target.value as 'missing_info' | 'conflicts' | 'factual_gaps')}
+                            className={`px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm!`}
+                          >
+                            <option value="missing_info">Missing Info</option>
+                            <option value="conflicts">Conflicts</option>
+                            <option value="factual_gaps">Factual Gaps</option>
+                          </select>
+                          <input
+                            type="text"
+                            value={newIssueText}
+                            onChange={(e) => setNewIssueText(e.target.value)}
+                            placeholder="Describe the issue..."
+                            className={`flex-1! px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm!`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newIssueText.trim()) {
+                                setReviewIssues(prev => ({
+                                  ...prev,
+                                  [newIssueType]: [...prev[newIssueType], newIssueText.trim()]
+                                }))
+                                setNewIssueText('')
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (newIssueText.trim()) {
+                                setReviewIssues(prev => ({
+                                  ...prev,
+                                  [newIssueType]: [...prev[newIssueType], newIssueText.trim()]
+                                }))
+                                setNewIssueText('')
+                              }
+                            }}
+                            className="px-4! py-2! bg-blue-600! text-white! rounded! hover:bg-blue-700! text-sm! font-medium!"
+                          >
+                            Add Issue
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Display Issues */}
+                      <div className="space-y-3!">
+                        {reviewIssues.missing_info.length > 0 && (
+                          <div>
+                            <h5 className={`text-sm! font-semibold! mb-2! text-red-700! dark:text-red-400!`}>Missing Info:</h5>
+                            <ul className="list-disc! list-inside! space-y-1!">
+                              {reviewIssues.missing_info.map((issue, idx) => (
+                                <li key={idx} className={`text-sm! ${colors.text}! flex! items-center! justify-between!`}>
+                                  <span>{issue}</span>
+                                  <button
+                                    onClick={() => setReviewIssues(prev => ({
+                                      ...prev,
+                                      missing_info: prev.missing_info.filter((_, i) => i !== idx)
+                                    }))}
+                                    className="text-red-600! hover:text-red-800! ml-2!"
+                                  >
+                                    ×
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {reviewIssues.conflicts.length > 0 && (
+                          <div>
+                            <h5 className={`text-sm! font-semibold! mb-2! text-orange-700! dark:text-orange-400!`}>Conflicts:</h5>
+                            <ul className="list-disc! list-inside! space-y-1!">
+                              {reviewIssues.conflicts.map((issue, idx) => (
+                                <li key={idx} className={`text-sm! ${colors.text}! flex! items-center! justify-between!`}>
+                                  <span>{issue}</span>
+                                  <button
+                                    onClick={() => setReviewIssues(prev => ({
+                                      ...prev,
+                                      conflicts: prev.conflicts.filter((_, i) => i !== idx)
+                                    }))}
+                                    className="text-red-600! hover:text-red-800! ml-2!"
+                                  >
+                                    ×
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {reviewIssues.factual_gaps.length > 0 && (
+                          <div>
+                            <h5 className={`text-sm! font-semibold! mb-2! text-yellow-700! dark:text-yellow-400!`}>Factual Gaps:</h5>
+                            <ul className="list-disc! list-inside! space-y-1!">
+                              {reviewIssues.factual_gaps.map((issue, idx) => (
+                                <li key={idx} className={`text-sm! ${colors.text}! flex! items-center! justify-between!`}>
+                                  <span>{issue}</span>
+                                  <button
+                                    onClick={() => setReviewIssues(prev => ({
+                                      ...prev,
+                                      factual_gaps: prev.factual_gaps.filter((_, i) => i !== idx)
+                                    }))}
+                                    className="text-red-600! hover:text-red-800! ml-2!"
+                                  >
+                                    ×
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Review Summary */}
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-blue-50! dark:bg-blue-900/20!`}>
+                      <h4 className={`text-base! sm:text-lg! font-semibold! mb-3! ${colors.text}!`}>
+                        Review Summary
+                      </h4>
+                      <div className={`text-sm! ${colors.text}! space-y-2!`}>
+                        <div>
+                          <strong>Items Reviewed:</strong> {
+                            Object.values(reviewChecklist).filter(Boolean).length
+                          } / {Object.keys(reviewChecklist).length}
+                        </div>
+                        <div>
+                          <strong>Total Issues Flagged:</strong> {
+                            reviewIssues.missing_info.length + reviewIssues.conflicts.length + reviewIssues.factual_gaps.length
+                          }
+                        </div>
+                        {(reviewIssues.missing_info.length > 0 || reviewIssues.conflicts.length > 0 || reviewIssues.factual_gaps.length > 0) && (
+                          <div className={`mt-3! p-3! rounded! bg-yellow-100! dark:bg-yellow-900/30! border! border-yellow-400!`}>
+                            <strong className="text-yellow-800! dark:text-yellow-200!">⚠️ Issues Found:</strong>
+                            <p className={`text-sm! mt-1! text-yellow-700! dark:text-yellow-300!`}>
+                              Please address all flagged issues before approving. Consider requesting fixes from the user.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
