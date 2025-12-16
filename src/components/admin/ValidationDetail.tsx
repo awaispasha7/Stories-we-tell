@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { formatDistanceToNow } from 'date-fns'
-import { X, CheckCircle2, XCircle, Edit, Save, Clock } from 'lucide-react'
+import { X, CheckCircle2, XCircle, Edit, Save, Clock, Send } from 'lucide-react'
+import { adminApi } from '@/lib/admin-api'
 
 interface DossierData {
   title?: string
@@ -41,6 +42,7 @@ interface ReviewChecklist {
   setting: boolean
   tone: boolean
   perspective: boolean
+  [key: string]: boolean  // Index signature for Record<string, boolean> compatibility
 }
 
 interface ReviewIssues {
@@ -78,6 +80,7 @@ interface Props {
   isApproving: boolean
   isRejecting: boolean
   isUpdatingScript: boolean
+  onReviewSent?: () => void  // Optional callback when review is sent
 }
 
 const statusConfig = {
@@ -107,6 +110,8 @@ const statusConfig = {
   }
 }
 
+type TabType = 'dossier' | 'synopsis' | 'generation' | 'final_review' | 'delivery'
+
 export default function ValidationDetail({ 
   request, 
   onClose, 
@@ -115,16 +120,16 @@ export default function ValidationDetail({
   onUpdateScript,
   isApproving,
   isRejecting,
-  isUpdatingScript
+  isUpdatingScript,
+  onReviewSent
 }: Props) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const [activeTab, setActiveTab] = useState<'status' | 'dossier' | 'transcript' | 'script'>('status')
+  const [activeTab, setActiveTab] = useState<TabType>('dossier')
   const [editedScript, setEditedScript] = useState(request.generated_script)
   const [reviewNotes, setReviewNotes] = useState('')
   const [isEditing, setIsEditing] = useState(false)
-  const [highlightReviewNotes, setHighlightReviewNotes] = useState(false)
-  const [shouldFocusReviewNotes, setShouldFocusReviewNotes] = useState(false)
+  const [isSendingReview, setIsSendingReview] = useState(false)
   const reviewNotesTextareaRef = useRef<HTMLTextAreaElement>(null)
   
   // Step 9: Review Checklist State
@@ -147,25 +152,6 @@ export default function ValidationDetail({
   const [newIssueText, setNewIssueText] = useState('')
   const [newIssueType, setNewIssueType] = useState<'missing_info' | 'conflicts' | 'factual_gaps'>('missing_info')
 
-  // Effect to handle focusing and highlighting when tab switches to script
-  useEffect(() => {
-    if (shouldFocusReviewNotes && activeTab === 'script') {
-      // Wait a bit for DOM to update
-      setTimeout(() => {
-        reviewNotesTextareaRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        })
-        reviewNotesTextareaRef.current?.focus()
-        setHighlightReviewNotes(true)
-        setTimeout(() => {
-          setHighlightReviewNotes(false)
-          setShouldFocusReviewNotes(false)
-        }, 2000)
-      }, 200)
-    }
-  }, [activeTab, shouldFocusReviewNotes])
-
   const handleSaveScript = () => {
     if (editedScript !== request.generated_script) {
       onUpdateScript(request.validation_id, editedScript)
@@ -178,25 +164,45 @@ export default function ValidationDetail({
   }
 
   const handleReject = () => {
-    // If review notes are empty, switch to script tab and highlight the textarea
     if (!reviewNotes.trim()) {
-      // Switch to script tab if not already there
-      if (activeTab !== 'script') {
-        setActiveTab('script')
-        setShouldFocusReviewNotes(true)
-      } else {
-        // Already on script tab, scroll, focus and highlight immediately
-        reviewNotesTextareaRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        })
-        reviewNotesTextareaRef.current?.focus()
-        setHighlightReviewNotes(true)
-        setTimeout(() => setHighlightReviewNotes(false), 2000)
-      }
+      reviewNotesTextareaRef.current?.focus()
       return
     }
     onReject(request.validation_id, reviewNotes)
+  }
+
+  const handleSendReview = async () => {
+    setIsSendingReview(true)
+    try {
+      // Send review with checklist and issues
+      const result = await adminApi.sendReview(
+        request.validation_id,
+        reviewChecklist,
+        reviewIssues,
+        reviewNotes
+      )
+      
+      if (result.success) {
+        if (result.needs_revision) {
+          alert(`Review sent successfully! The chat has been reopened for the user to provide missing information.\n\nUnchecked items: ${result.unchecked_items.join(', ')}`)
+        } else {
+          alert('Review sent successfully! All checklist items are complete.')
+        }
+        // Trigger callback if provided (to refresh validation list)
+        if (onReviewSent) {
+          onReviewSent()
+        }
+        // Close the modal after successful review
+        onClose()
+      } else {
+        alert('Failed to send review. Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to send review:', error)
+      alert('Failed to send review. Please try again.')
+    } finally {
+      setIsSendingReview(false)
+    }
   }
 
   const canTakeAction = request.status === 'pending'
@@ -213,9 +219,21 @@ export default function ValidationDetail({
         <div className={`sticky! top-0! z-10! px-4! sm:px-6! md:px-8! py-4! sm:py-5! md:py-6! border-b-2! ${colors.border}! ${colors.sidebarBackground}! bg-gradient-to-r! from-gray-50! to-gray-100! dark:from-gray-800! dark:to-gray-900! rounded-t-xl! sm:rounded-t-xl! md:rounded-t-2xl!`}>
           <div className="flex! justify-between! items-start! sm:items-center! gap-3!">
             <div className="flex-1! min-w-0!">
-              <h2 className={`text-xl! sm:text-2xl! md:text-3xl! font-bold! mb-2! ${colors.text}! truncate!`}>
-                Validation Request
-              </h2>
+              <div className="flex! items-center! gap-3! mb-2!">
+                <h2 className={`text-xl! sm:text-2xl! md:text-3xl! font-bold! ${colors.text}! truncate!`}>
+                  Validation Request
+                </h2>
+                {/* Status Icon in Header */}
+                <span className={`
+                  text-lg! sm:text-xl! md:text-2xl! px-3! sm:px-4! py-1! sm:py-1.5! rounded-full! border-2!
+                  ${statusStyle.bg}! ${statusStyle.text}! ${statusStyle.border}!
+                  whitespace-nowrap! shrink-0!
+                `}>
+                  {statusStyle.icon} {request.status.split('_').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ')}
+                </span>
+              </div>
               <div className="flex! flex-wrap! items-center! gap-2! sm:gap-4! text-sm! sm:text-base!">
                 <span className={`font-semibold! ${colors.text}! truncate!`}>
                   {request.client_name || 'Anonymous'}
@@ -246,155 +264,37 @@ export default function ValidationDetail({
           <div className={`flex-1! flex! flex-col! ${colors.background}! min-w-0!`}>
             {/* Tabs */}
             <div className={`flex! border-b-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! overflow-x-auto!`}>
-              <button
-                onClick={() => setActiveTab('status')}
-                className={`
-                  px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
-                  ${activeTab === 'status'
-                    ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                    : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                  }
-                `}
-              >
-                Status & Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('dossier')}
-                className={`
-                  px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
-                  ${activeTab === 'dossier'
-                    ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                    : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                  }
-                `}
-              >
-                📋 Dossier Review (Step 9)
-              </button>
-              <button
-                onClick={() => setActiveTab('transcript')}
-                className={`
-                  px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
-                  ${activeTab === 'transcript'
-                    ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                    : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                  }
-                `}
-              >
-                Conversation Transcript
-              </button>
-              <button
-                onClick={() => setActiveTab('script')}
-                className={`
-                  px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
-                  ${activeTab === 'script'
-                    ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                    : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                  }
-                `}
-              >
-                Generated Script
-              </button>
+              {[
+                { key: 'dossier' as TabType, label: 'Dossier Review' },
+                { key: 'synopsis' as TabType, label: 'Synopsis Review' },
+                { key: 'generation' as TabType, label: 'Generation' },
+                { key: 'final_review' as TabType, label: 'SWT Final Review' },
+                { key: 'delivery' as TabType, label: 'Delivery' }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`
+                    px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
+                    ${activeTab === tab.key
+                      ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
+                      : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
+                    }
+                  `}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            {/* Tab Content - No Individual Scroll */}
+            {/* Tab Content */}
             <div className="p-4! sm:p-6! md:p-8! bg-white! dark:bg-gray-900!">
-              {activeTab === 'status' && (
-                <div className="space-y-4! sm:space-y-6!">
-                  {/* Status Info */}
-                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
-                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
-                      Status Information
-                    </h3>
-                    <div className="space-y-3!">
-                      <div className="flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0!">
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Status:</span>
-                        <span className={`
-                          text-sm! sm:text-base! md:text-lg! font-bold! px-3! sm:px-4! py-1.5! sm:py-2! rounded-full! border-2!
-                          ${statusStyle.bg}! ${statusStyle.text}! ${statusStyle.border}!
-                          whitespace-nowrap!
-                        `}>
-                          {statusStyle.icon} {request.status.split('_').map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1)
-                          ).join(' ')}
-                        </span>
-                      </div>
-                      {request.reviewed_by && (
-                        <div className="flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! pt-2! border-t! ${colors.border}!">
-                          <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Reviewed by:</span>
-                          <span className={`text-sm! sm:text-base! font-medium! ${colors.text}! break-words! sm:text-right!`}>{request.reviewed_by}</span>
-                        </div>
-                      )}
-                      {request.reviewed_at && (
-                        <div className="flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! pt-2! border-t! ${colors.border}!">
-                          <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Reviewed:</span>
-                          <span className={`text-sm! sm:text-base! font-medium! ${colors.text}! flex! items-center! gap-1!`}>
-                            <Clock className="h-3! w-3! sm:h-4! sm:w-4!" />
-                            {formatDistanceToNow(new Date(request.reviewed_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Request Details */}
-                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
-                    <h4 className={`text-lg! sm:text-xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
-                      Request Details
-                    </h4>
-                    <div className="space-y-2! sm:space-y-3!">
-                      <div className={`flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! p-2! sm:p-3! rounded-lg! bg-gray-100! dark:bg-gray-700!`}>
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Validation ID:</span>
-                        <span className={`font-mono! text-xs! sm:text-sm! font-medium! ${colors.text}! break-all! sm:break-normal! sm:text-right!`}>
-                          {request.validation_id}
-                        </span>
-                      </div>
-                      <div className={`flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! p-2! sm:p-3! rounded-lg! bg-gray-100! dark:bg-gray-700!`}>
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Project ID:</span>
-                        <span className={`font-mono! text-xs! sm:text-sm! font-medium! ${colors.text}! break-all! sm:break-normal! sm:text-right!`}>
-                          {request.project_id}
-                        </span>
-                      </div>
-                      <div className={`flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! p-2! sm:p-3! rounded-lg! bg-gray-100! dark:bg-gray-700!`}>
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Session ID:</span>
-                        <span className={`font-mono! text-xs! sm:text-sm! font-medium! ${colors.text}! break-all! sm:break-normal! sm:text-right!`}>
-                          {request.session_id}
-                        </span>
-                      </div>
-                      <div className={`flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! p-2! sm:p-3! rounded-lg! bg-gray-100! dark:bg-gray-700!`}>
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Client:</span>
-                        <span className={`text-sm! sm:text-base! font-medium! ${colors.text}! break-all! sm:break-normal! sm:text-right!`}>
-                          {request.client_name || request.client_email || 'N/A'}
-                        </span>
-                      </div>
-                      <div className={`flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-2! sm:gap-0! p-2! sm:p-3! rounded-lg! bg-gray-100! dark:bg-gray-700!`}>
-                        <span className={`text-sm! sm:text-base! font-semibold! ${colors.textSecondary}!`}>Created:</span>
-                        <span className={`text-sm! sm:text-base! font-medium! ${colors.text}! flex! items-center! gap-1! sm:justify-end!`}>
-                          <Clock className="h-3! w-3! sm:h-4! sm:w-4!" />
-                          {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Previous Review Notes */}
-                  {request.review_notes && (
-                    <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
-                      <h4 className={`text-lg! sm:text-xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
-                        Previous Notes
-                      </h4>
-                      <div className={`p-3! sm:p-4! rounded-lg! text-sm! sm:text-base! border-2! ${colors.border}! bg-gray-100! dark:bg-gray-700! ${colors.text}! leading-relaxed!`}>
-                        {request.review_notes}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
+              {/* Dossier Review Tab */}
               {activeTab === 'dossier' && (
                 <div className="space-y-4! sm:space-y-6!">
                   <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
                     <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
-                      Step 9: SWT Representative Review #1
+                      Step 9: SWT Representative (Review #1)
                     </h3>
                     <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
                       Review the following aspects for data clarity before writing. Check each item when reviewed, and flag any issues.
@@ -637,7 +537,7 @@ export default function ValidationDetail({
                     </div>
 
                     {/* Review Summary */}
-                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-blue-50! dark:bg-blue-900/20!`}>
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-blue-50! dark:bg-blue-900/20! mb-6!`}>
                       <h4 className={`text-base! sm:text-lg! font-semibold! mb-3! ${colors.text}!`}>
                         Review Summary
                       </h4>
@@ -656,164 +556,183 @@ export default function ValidationDetail({
                           <div className={`mt-3! p-3! rounded! bg-yellow-100! dark:bg-yellow-900/30! border! border-yellow-400!`}>
                             <strong className="text-yellow-800! dark:text-yellow-200!">⚠️ Issues Found:</strong>
                             <p className={`text-sm! mt-1! text-yellow-700! dark:text-yellow-300!`}>
-                              Please address all flagged issues before approving. Consider requesting fixes from the user.
+                              Please address all flagged issues before sending review.
                             </p>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {activeTab === 'transcript' && (
-                <div className={`bg-gray-50! dark:bg-gray-800! p-4! sm:p-6! rounded-xl! border-2! ${colors.border}! shadow-inner!`}>
-                  <h3 className={`text-lg! sm:text-xl! md:text-2xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
-                    Conversation History
-                  </h3>
-                  <div className={`w-full! overflow-visible!`}>
-                    <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-sans! leading-relaxed! overflow-x-auto! wrap-break-word! block! w-full!`}>
-                      {request.conversation_transcript}
-                    </pre>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'script' && (
-                <div className="space-y-4! sm:space-y-6!">
-                  <div className="flex! flex-col! sm:flex-row! justify-between! items-start! sm:items-center! gap-3! sm:gap-0! pb-4! border-b-2! ${colors.border}!">
-                    <h3 className={`text-lg! sm:text-xl! md:text-2xl! font-bold! ${colors.text}!`}>Video Script</h3>
+                    {/* Send Review Button */}
                     {canTakeAction && (
-                      <button
-                        onClick={() => setIsEditing(!isEditing)}
-                        className={`
-                          flex! items-center! gap-2! px-4! sm:px-5! py-2! sm:py-2.5! text-sm! sm:text-base! font-medium! rounded-lg! border-2! transition-all! duration-200! w-full! sm:w-auto!
-                          ${colors.border}! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700! shadow-md! hover:shadow-lg!
-                        `}
-                      >
-                        <Edit className="h-4! w-4! sm:h-5! sm:w-5!" />
-                        {isEditing ? 'Cancel Edit' : 'Edit Script'}
-                      </button>
-                    )}
-                  </div>
-
-                  {isEditing ? (
-                    <div className="space-y-4!">
-                      <textarea
-                        value={editedScript}
-                        onChange={(e) => setEditedScript(e.target.value)}
-                        className={`
-                          w-full! h-[300px]! sm:h-[400px]! md:h-[500px]! p-4! sm:p-6! border-2! rounded-xl! resize-none! font-mono! text-sm! sm:text-base! leading-relaxed!
-                          ${colors.border}! ${colors.background}! ${colors.text}!
-                          focus:ring-4! focus:ring-blue-500/50! focus:border-blue-500! transition-all! duration-200!
-                        `}
-                        placeholder="Edit the generated script..."
-                      />
-                      <div className={`flex! flex-col! sm:flex-row! justify-end! gap-3! pt-4! border-t-2! ${colors.border}!`}>
+                      <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
                         <button
-                          onClick={() => {
-                            setEditedScript(request.generated_script)
-                            setIsEditing(false)
-                          }}
-                          className={`px-4! sm:px-6! py-2.5! sm:py-3! border-2! rounded-lg! text-sm! sm:text-base! font-medium! transition-all! duration-200! shadow-md! hover:shadow-lg! w-full! sm:w-auto! ${colors.border}! ${colors.textSecondary}! hover:${colors.text}!`}
+                          onClick={handleSendReview}
+                          disabled={isSendingReview}
+                          className="w-full! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-blue-600! to-blue-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-blue-700! hover:to-blue-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
                         >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleSaveScript}
-                          disabled={isUpdatingScript}
-                          className="flex! items-center! justify-center! gap-2! px-4! sm:px-6! py-2.5! sm:py-3! bg-blue-600! text-white! rounded-lg! hover:bg-blue-700! disabled:opacity-50! disabled:cursor-not-allowed! text-sm! sm:text-base! font-semibold! transition-all! duration-200! shadow-lg! hover:shadow-xl! transform! hover:scale-105! w-full! sm:w-auto!"
-                        >
-                          {isUpdatingScript ? (
+                          {isSendingReview ? (
                             <>
-                              <div className="animate-spin! rounded-full! h-4! w-4! sm:h-5! sm:w-5! border-b-2! border-white!"></div>
-                              Saving...
+                              <div className="animate-spin! rounded-full! h-5! w-5! sm:h-6! sm:w-6! border-b-2! border-white!"></div>
+                              Sending Review...
                             </>
                           ) : (
                             <>
-                              <Save className="h-4! w-4! sm:h-5! sm:w-5!" />
-                              Save Changes
+                              <Send className="h-5! w-5! sm:h-6! sm:w-6!" />
+                              Send Review
                             </>
                           )}
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className={`bg-gray-50! dark:bg-gray-800! p-4! sm:p-6! rounded-xl! border-2! ${colors.border}! shadow-inner!`}>
-                      <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-sans! leading-relaxed! overflow-x-auto!`}>
-                        {editedScript}
-                      </pre>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                </div>
+              )}
 
-                  {/* Review Notes - Only in Script Tab, Below Script Content */}
-                  {canTakeAction && (
-                    <div className={`p-4! sm:p-5! rounded-xl! border-2! ${highlightReviewNotes ? 'border-red-500! ring-4! ring-red-500/50!' : colors.border}! ${colors.cardBackground}! shadow-lg! transition-all! duration-300!`}>
-                      <label className={`block! text-lg! sm:text-xl! font-bold! mb-3! sm:mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2! sm:pb-3!`}>
-                        Review Notes
-                      </label>
-                      <textarea
-                        ref={reviewNotesTextareaRef}
-                        value={reviewNotes}
-                        onChange={(e) => setReviewNotes(e.target.value)}
-                        className={`
-                          w-full! h-32! sm:h-40! p-3! sm:p-4! border-2! rounded-lg! resize-none! text-sm! sm:text-base! leading-relaxed!
-                          ${highlightReviewNotes ? 'border-red-500! ring-4! ring-red-500/50! bg-red-50! dark:bg-red-900/20!' : `${colors.border}! ${colors.background}!`} ${colors.text}!
-                          focus:ring-4! focus:ring-blue-500/50! focus:border-blue-500! transition-all! duration-300!
-                        `}
-                        placeholder="Add review comments..."
-                      />
-                      <p className={`text-xs! sm:text-sm! mt-2! ${colors.textSecondary}!`}>
-                        Required for rejection
-                      </p>
+              {/* Synopsis Review Tab */}
+              {activeTab === 'synopsis' && (
+                <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                  <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                    Step 10-11: Synopsis Review
+                  </h3>
+                  <p className={`text-sm! sm:text-base! ${colors.textSecondary}!`}>
+                    Synopsis review will be available after Step 9 is completed and synopsis is generated.
+                  </p>
+                </div>
+              )}
+
+              {/* Generation Tab */}
+              {activeTab === 'generation' && (
+                <div className="space-y-4! sm:space-y-6!">
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                      Script Generation & Production
+                    </h3>
+                    <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
+                      This section contains all LLM-generated content for the video production pipeline.
+                    </p>
+
+                    {/* Generation Steps */}
+                    <div className="space-y-4!">
+                      {[
+                        { step: 12, title: 'Full Script Draft', description: '500-800 word script with narrative, dialogue, voice-over, scene structure, emotional beats' },
+                        { step: 13, title: 'Shot List Creation', description: 'Scene breakdown, shot sequences, character presence, transitions, atmosphere' },
+                        { step: 14, title: 'Dialogue Export', description: 'Dialogue lines, timing per line, emotional indicators' },
+                        { step: 15, title: 'Voice-Over Script', description: 'Narrator text, duration logic, VO placement, tone markings' },
+                        { step: 16, title: 'Camera Logic', description: 'Camera angles, movement, lens style, framing, proximity, rhythm of cut' },
+                        { step: 17, title: 'Scene Math', description: 'Shot duration, beat frequency, transition time, dialogue timing, visual rhythm' },
+                        { step: 18, title: 'Prompt Micro-Details', description: 'Micro-prompt instructions for each shot: framing, tone, lighting, texture, motion' },
+                        { step: 20, title: 'LLM → VLM', description: 'Visual generation preparation and execution' }
+                      ].map((item) => (
+                        <div key={item.step} className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                          <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                            Step {item.step}: LLM — {item.title}
+                          </h4>
+                          <p className={`text-sm! ${colors.textSecondary}!`}>
+                            {item.description}
+                          </p>
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after synopsis approval.
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                </div>
+              )}
+
+              {/* SWT Final Review Tab */}
+              {activeTab === 'final_review' && (
+                <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                  <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                    Step 19: Human Review #3
+                  </h3>
+                  <p className={`text-sm! sm:text-base! ${colors.textSecondary}!`}>
+                    Final review of all text exports (script, dialogue, VO, shot list, camera logic, micro-details) will be available after generation is complete.
+                  </p>
+                </div>
+              )}
+
+              {/* Delivery Tab */}
+              {activeTab === 'delivery' && (
+                <div className="space-y-4! sm:space-y-6!">
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                      Step 22-23: Final Assembly & Delivery
+                    </h3>
+                    <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
+                      Final video assembly and delivery to client.
+                    </p>
+
+                    {/* Review Notes for Approval/Rejection */}
+                    {canTakeAction && (
+                      <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! mb-6!`}>
+                        <label className={`block! text-base! sm:text-lg! font-semibold! mb-3! ${colors.text}!`}>
+                          Review Notes
+                        </label>
+                        <textarea
+                          ref={reviewNotesTextareaRef}
+                          value={reviewNotes}
+                          onChange={(e) => setReviewNotes(e.target.value)}
+                          className={`
+                            w-full! h-32! sm:h-40! p-3! sm:p-4! border-2! rounded-lg! resize-none! text-sm! sm:text-base! leading-relaxed!
+                            ${colors.border}! ${colors.background}! ${colors.text}!
+                            focus:ring-4! focus:ring-blue-500/50! focus:border-blue-500! transition-all! duration-300!
+                          `}
+                          placeholder="Add review comments (required for rejection)..."
+                        />
+                        <p className={`text-xs! sm:text-sm! mt-2! ${colors.textSecondary}!`}>
+                          Required for rejection
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons - Only in Delivery Tab */}
+                    {canTakeAction && (
+                      <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className={`flex! flex-col! sm:flex-row! gap-3! sm:gap-4!`}>
+                          <button
+                            onClick={handleApprove}
+                            disabled={isApproving || isRejecting}
+                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-green-600! to-green-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-green-700! hover:to-green-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
+                          >
+                            {isApproving ? (
+                              <>
+                                <div className="animate-spin! rounded-full! h-5! w-5! sm:h-6! sm:w-6! border-b-2! border-white!"></div>
+                                Approving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-5! w-5! sm:h-6! sm:w-6!" />
+                                <span className="whitespace-nowrap!">Approve & Send to Client</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={handleReject}
+                            disabled={isApproving || isRejecting}
+                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-red-600! to-red-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-red-700! hover:to-red-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
+                          >
+                            {isRejecting ? (
+                              <>
+                                <div className="animate-spin! rounded-full! h-5! w-5! sm:h-6! sm:w-6! border-b-2! border-white!"></div>
+                                Rejecting...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-5! w-5! sm:h-6! sm:w-6!" />
+                                Reject
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Action Buttons - Below Content (Stacked on Mobile, Inline on Tablet/Laptop) */}
-          {canTakeAction && (
-            <div className={`w-full! border-t-2! ${colors.border}! ${colors.sidebarBackground}! bg-gray-50! dark:bg-gray-800! rounded-b-xl! sm:rounded-b-xl! md:rounded-b-2xl!`}>
-              <div className={`p-4! sm:p-5! md:p-6! flex! flex-col! sm:flex-row! gap-3! sm:gap-4!`}>
-                <button
-                  onClick={handleApprove}
-                  disabled={isApproving || isRejecting}
-                  className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-green-600! to-green-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-green-700! hover:to-green-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
-                >
-                  {isApproving ? (
-                    <>
-                      <div className="animate-spin! rounded-full! h-5! w-5! sm:h-6! sm:w-6! border-b-2! border-white!"></div>
-                      Approving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-5! w-5! sm:h-6! sm:w-6!" />
-                      <span className="whitespace-nowrap!">Approve & Send to Client</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleReject}
-                  disabled={isApproving || isRejecting}
-                  className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-red-600! to-red-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-red-700! hover:to-red-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
-                >
-                  {isRejecting ? (
-                    <>
-                      <div className="animate-spin! rounded-full! h-5! w-5! sm:h-6! sm:w-6! border-b-2! border-white!"></div>
-                      Rejecting...
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-5! w-5! sm:h-6! sm:w-6!" />
-                      Reject
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

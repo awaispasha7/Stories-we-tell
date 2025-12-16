@@ -151,6 +151,11 @@ export default function ValidationQueue() {
           isApproving={approveMutation.isPending}
           isRejecting={rejectMutation.isPending}
           isUpdatingScript={updateScriptMutation.isPending}
+          onReviewSent={() => {
+            // Refresh validation list when review is sent
+            queryClient.invalidateQueries({ queryKey: ['validation-requests'] })
+            queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+          }}
         />
       )}
     </div>
