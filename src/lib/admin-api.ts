@@ -158,7 +158,7 @@ class AdminApi {
     checklist: Record<string, boolean>, 
     issues: { missing_info: string[], conflicts: string[], factual_gaps: string[] },
     notes?: string
-  ): Promise<{ success: boolean; needs_revision: boolean; unchecked_items: string[] }> {
+  ): Promise<{ success: boolean; needs_revision: boolean; unchecked_items: string[]; email_sent?: boolean; email_error?: string }> {
     try {
       const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/send-review`, {
         headers: {
@@ -171,7 +171,7 @@ class AdminApi {
           notes: notes || ''
         },
         timeout: 30000
-      }).json<{ success: boolean; needs_revision: boolean; unchecked_items: string[] }>()
+      }).json<{ success: boolean; needs_revision: boolean; unchecked_items: string[]; email_sent?: boolean; email_error?: string }>()
 
       return response
     } catch (error) {

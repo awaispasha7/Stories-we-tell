@@ -5,7 +5,7 @@ import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { formatDistanceToNow } from 'date-fns'
 import { X, CheckCircle2, XCircle, Edit, Save, Clock, Send } from 'lucide-react'
 import { adminApi } from '@/lib/admin-api'
-import { useToast } from '@/components/Toast'
+import { useToastContext } from '@/components/ToastProvider'
 
 interface DossierData {
   title?: string
@@ -126,7 +126,7 @@ export default function ValidationDetail({
 }: Props) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
-  const toast = useToast()
+  const toast = useToastContext()
   const [activeTab, setActiveTab] = useState<TabType>('conversation')
   const [editedScript, setEditedScript] = useState(request.generated_script)
   const [reviewNotes, setReviewNotes] = useState('')
@@ -175,6 +175,7 @@ export default function ValidationDetail({
 
   const handleSendReview = async () => {
     setIsSendingReview(true)
+    console.log('📧 [FRONTEND] Sending review...')
     try {
       // Send review with checklist and issues
       const result = await adminApi.sendReview(
@@ -184,18 +185,33 @@ export default function ValidationDetail({
         reviewNotes
       )
       
+      console.log('📧 [FRONTEND] Review response:', result)
+      console.log('📧 [FRONTEND] Email sent:', result.email_sent)
+      console.log('📧 [FRONTEND] Email error:', result.email_error)
+      
       if (result.success) {
+        // Build success message with email status
+        let successMessage = ''
         if (result.needs_revision) {
-          toast.success(
-            'Review sent successfully!',
-            `The chat has been reopened for the user to provide missing information.\n\nUnchecked items: ${result.unchecked_items.join(', ')}`
-          )
+          successMessage = `The chat has been reopened for the user to provide missing information.\n\nUnchecked items: ${result.unchecked_items.join(', ')}`
         } else {
-          toast.success(
-            'Review sent successfully!',
-            'All checklist items are complete.'
-          )
+          successMessage = 'All checklist items are complete.'
         }
+        
+        // Add email status to message
+        if (result.email_sent !== undefined) {
+          if (result.email_sent) {
+            successMessage += '\n\n✅ Email notification sent successfully to admins.'
+          } else {
+            successMessage += `\n\n⚠️ Email notification failed: ${result.email_error || 'Unknown error'}`
+          }
+        }
+        
+        toast.success(
+          'Review sent successfully!',
+          successMessage
+        )
+        
         // Trigger callback if provided (to refresh validation list)
         if (onReviewSent) {
           onReviewSent()
@@ -206,7 +222,7 @@ export default function ValidationDetail({
         toast.error('Failed to send review', 'Please try again.')
       }
     } catch (error) {
-      console.error('Failed to send review:', error)
+      console.error('❌ [FRONTEND] Failed to send review:', error)
       toast.error('Failed to send review', 'Please try again.')
     } finally {
       setIsSendingReview(false)
