@@ -5,6 +5,7 @@ import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { formatDistanceToNow } from 'date-fns'
 import { X, CheckCircle2, XCircle, Edit, Save, Clock, Send } from 'lucide-react'
 import { adminApi } from '@/lib/admin-api'
+import { useToast } from '@/components/Toast'
 
 interface DossierData {
   title?: string
@@ -125,6 +126,7 @@ export default function ValidationDetail({
 }: Props) {
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<TabType>('conversation')
   const [editedScript, setEditedScript] = useState(request.generated_script)
   const [reviewNotes, setReviewNotes] = useState('')
@@ -184,9 +186,15 @@ export default function ValidationDetail({
       
       if (result.success) {
         if (result.needs_revision) {
-          alert(`Review sent successfully! The chat has been reopened for the user to provide missing information.\n\nUnchecked items: ${result.unchecked_items.join(', ')}`)
+          toast.success(
+            'Review sent successfully!',
+            `The chat has been reopened for the user to provide missing information.\n\nUnchecked items: ${result.unchecked_items.join(', ')}`
+          )
         } else {
-          alert('Review sent successfully! All checklist items are complete.')
+          toast.success(
+            'Review sent successfully!',
+            'All checklist items are complete.'
+          )
         }
         // Trigger callback if provided (to refresh validation list)
         if (onReviewSent) {
@@ -195,11 +203,11 @@ export default function ValidationDetail({
         // Close the modal after successful review
         onClose()
       } else {
-        alert('Failed to send review. Please try again.')
+        toast.error('Failed to send review', 'Please try again.')
       }
     } catch (error) {
       console.error('Failed to send review:', error)
-      alert('Failed to send review. Please try again.')
+      toast.error('Failed to send review', 'Please try again.')
     } finally {
       setIsSendingReview(false)
     }
