@@ -216,7 +216,7 @@ export default function ValidationDetail({
         my-0! sm:my-4!
       `}>
         {/* Header - Fixed */}
-        <div className={`sticky! top-0! z-10! px-4! sm:px-6! md:px-8! py-4! sm:py-5! md:py-6! border-b-2! ${colors.border}! ${colors.sidebarBackground}! bg-gradient-to-r! from-gray-50! to-gray-100! dark:from-gray-800! dark:to-gray-900! rounded-t-xl! sm:rounded-t-xl! md:rounded-t-2xl!`}>
+        <div className={`sticky! top-0! z-10! px-4! sm:px-6! md:px-8! py-4! sm:py-5! md:py-6! border-b-2! ${colors.border}! ${colors.sidebarBackground}! bg-linear-to-r! from-gray-50! to-gray-100! dark:from-gray-800! dark:to-gray-900! rounded-t-xl! sm:rounded-t-xl! md:rounded-t-2xl!`}>
           <div className="flex! justify-between! items-start! sm:items-center! gap-3!">
             <div className="flex-1! min-w-0!">
               <div className="flex! items-center! gap-3! mb-2!">
@@ -569,7 +569,7 @@ export default function ValidationDetail({
                         <button
                           onClick={handleSendReview}
                           disabled={isSendingReview}
-                          className="w-full! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-blue-600! to-blue-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-blue-700! hover:to-blue-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
+                          className="w-full! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-linear-to-r! from-blue-600! to-blue-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-blue-700! hover:to-blue-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
                         >
                           {isSendingReview ? (
                             <>
@@ -694,7 +694,7 @@ export default function ValidationDetail({
                           <button
                             onClick={handleApprove}
                             disabled={isApproving || isRejecting}
-                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-green-600! to-green-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-green-700! hover:to-green-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
+                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-linear-to-r! from-green-600! to-green-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-green-700! hover:to-green-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
                           >
                             {isApproving ? (
                               <>
@@ -711,7 +711,7 @@ export default function ValidationDetail({
                           <button
                             onClick={handleReject}
                             disabled={isApproving || isRejecting}
-                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-gradient-to-r! from-red-600! to-red-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-red-700! hover:to-red-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
+                            className="flex-1! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-linear-to-r! from-red-600! to-red-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-red-700! hover:to-red-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
                           >
                             {isRejecting ? (
                               <>
