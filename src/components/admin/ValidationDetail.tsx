@@ -428,28 +428,90 @@ export default function ValidationDetail({
           <div className={`flex-1! flex! flex-col! ${colors.background}! min-w-0!`}>
             {/* Tabs */}
             <div className={`flex! border-b-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! overflow-x-auto!`}>
-              {[
-                { key: 'conversation' as TabType, label: 'Conversation' },
-                { key: 'dossier' as TabType, label: 'Dossier Review' },
-                { key: 'synopsis' as TabType, label: 'Synopsis Review' },
-                { key: 'generation' as TabType, label: 'Generation' },
-                { key: 'final_review' as TabType, label: 'SWT Final Review' },
-                { key: 'delivery' as TabType, label: 'Delivery' }
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`
-                    px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap!
-                    ${activeTab === tab.key
-                      ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                      : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                    }
-                  `}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              {(() => {
+                // Determine tab states based on workflow_step
+                const workflowStep = request.workflow_step || 'dossier_review'
+                const getTabState = (tabKey: TabType): 'pending' | 'active' | 'done' => {
+                  // Map workflow steps to their corresponding tabs
+                  const stepToTab: Record<string, TabType> = {
+                    'dossier_review': 'dossier',
+                    'synopsis_generation': 'synopsis',
+                    'synopsis_review': 'synopsis',
+                    'script_generation': 'generation',
+                    'final_review': 'final_review',
+                    'completed': 'delivery'
+                  }
+                  
+                  // Determine which tab this workflow step belongs to
+                  let currentTab = stepToTab[workflowStep] || 'dossier'
+                  
+                  // Special handling: if synopsis is approved, synopsis tab is done
+                  if (request.synopsis_approved && workflowStep === 'script_generation') {
+                    // Synopsis is done, generation is active
+                  }
+                  
+                  // Conversation is always done (it's the first step)
+                  if (tabKey === 'conversation') return 'done'
+                  
+                  // Determine order of tabs
+                  const tabOrder: TabType[] = ['conversation', 'dossier', 'synopsis', 'generation', 'final_review', 'delivery']
+                  const currentTabIndex = tabOrder.indexOf(currentTab)
+                  const thisTabIndex = tabOrder.indexOf(tabKey)
+                  
+                  // If this tab is before the current workflow tab, it's done
+                  if (thisTabIndex < currentTabIndex) return 'done'
+                  
+                  // Special case: if synopsis is approved and we're in generation, synopsis is done
+                  if (tabKey === 'synopsis' && request.synopsis_approved && currentTab === 'generation') {
+                    return 'done'
+                  }
+                  
+                  // If this tab matches the current workflow tab, it's active
+                  if (tabKey === currentTab) return 'active'
+                  
+                  // Otherwise, it's pending
+                  return 'pending'
+                }
+                
+                return [
+                  { key: 'conversation' as TabType, label: 'Conversation' },
+                  { key: 'dossier' as TabType, label: 'Dossier Review' },
+                  { key: 'synopsis' as TabType, label: 'Synopsis Review' },
+                  { key: 'generation' as TabType, label: 'Generation' },
+                  { key: 'final_review' as TabType, label: 'SWT Final Review' },
+                  { key: 'delivery' as TabType, label: 'Delivery' }
+                ].map((tab) => {
+                  const state = getTabState(tab.key)
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`
+                        relative! px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap! flex! items-center! gap-2!
+                        ${activeTab === tab.key
+                          ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
+                          : state === 'done'
+                          ? `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
+                          : state === 'active'
+                          ? `border-yellow-500! ${colors.text}! bg-yellow-50! dark:bg-yellow-900/20!`
+                          : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
+                        }
+                      `}
+                    >
+                      {state === 'done' && (
+                        <span className="text-green-600! dark:text-green-400! text-base!">✓</span>
+                      )}
+                      {state === 'active' && (
+                        <span className="text-yellow-600! dark:text-yellow-400! text-xs! animate-pulse!">⏳</span>
+                      )}
+                      {state === 'pending' && (
+                        <span className="text-gray-400! dark:text-gray-500! text-xs!">○</span>
+                      )}
+                      {tab.label}
+                    </button>
+                  )
+                })
+              })()}
             </div>
 
             {/* Tab Content */}

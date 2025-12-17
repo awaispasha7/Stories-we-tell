@@ -18,6 +18,12 @@ interface ValidationRequest {
   reviewed_by: string | null
   review_notes: string | null
   updated_at: string
+  workflow_step?: string
+  synopsis_approved?: boolean
+  synopsis_reviewed_at?: string
+  synopsis_reviewed_by?: string
+  final_reviewed_at?: string
+  final_reviewed_by?: string
 }
 
 interface Props {
@@ -43,6 +49,67 @@ export default function ValidationRequestCard({ request, onSelect, isSelected }:
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
+  }
+
+  const getLatestStatusChange = () => {
+    // Determine the most recent status change based on timestamps
+    const statusChanges: Array<{ label: string; timestamp: string; by?: string }> = []
+    
+    if (request.final_reviewed_at) {
+      statusChanges.push({
+        label: 'Final Review',
+        timestamp: request.final_reviewed_at,
+        by: request.final_reviewed_by || undefined
+      })
+    }
+    
+    if (request.synopsis_reviewed_at) {
+      statusChanges.push({
+        label: request.synopsis_approved ? 'Synopsis Approved' : 'Synopsis Rejected',
+        timestamp: request.synopsis_reviewed_at,
+        by: request.synopsis_reviewed_by || undefined
+      })
+    }
+    
+    if (request.reviewed_at) {
+      statusChanges.push({
+        label: 'Dossier Reviewed',
+        timestamp: request.reviewed_at,
+        by: request.reviewed_by || undefined
+      })
+    }
+    
+    // Sort by timestamp (most recent first)
+    statusChanges.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    
+    if (statusChanges.length > 0) {
+      const latest = statusChanges[0]
+      const byText = latest.by ? ` by ${latest.by}` : ''
+      return {
+        label: latest.label,
+        time: formatDistanceToNow(new Date(latest.timestamp), { addSuffix: true }),
+        by: byText
+      }
+    }
+    
+    // Fallback to workflow step if no timestamps
+    if (request.workflow_step) {
+      const stepLabels: Record<string, string> = {
+        'dossier_review': 'Dossier Review',
+        'synopsis_generation': 'Synopsis Generation',
+        'synopsis_review': 'Synopsis Review',
+        'script_generation': 'Script Generation',
+        'final_review': 'Final Review',
+        'completed': 'Completed'
+      }
+      return {
+        label: stepLabels[request.workflow_step] || request.workflow_step,
+        time: formatDistanceToNow(new Date(request.updated_at), { addSuffix: true }),
+        by: ''
+      }
+    }
+    
+    return null
   }
 
   const truncateText = (text: string, maxLength: number) => {
@@ -174,6 +241,17 @@ export default function ValidationRequestCard({ request, onSelect, isSelected }:
             {request.reviewed_at && (
               <p>✅ Reviewed: {formatDistanceToNow(new Date(request.reviewed_at), { addSuffix: true })}</p>
             )}
+            {(() => {
+              const latestStatus = getLatestStatusChange()
+              if (latestStatus) {
+                return (
+                  <p className="text-blue-600! dark:text-blue-400! font-semibold!">
+                    📍 Latest: {latestStatus.label} {latestStatus.time}{latestStatus.by}
+                  </p>
+                )
+              }
+              return null
+            })()}
           </div>
         </div>
 
