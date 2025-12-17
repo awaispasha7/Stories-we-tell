@@ -192,21 +192,33 @@ export default function ValidationDetail({
   // Track which tabs are unlocked by admin (override locks)
   const [unlockedTabs, setUnlockedTabs] = useState<Set<TabType>>(new Set())
   
-  // Determine if a tab should show as "locked" (visual indicator only, doesn't prevent editing)
-  // Lock is only a visual indicator - admins can always edit if they need to
+  // Determine if a tab should be locked based on workflow progress
   const isTabLocked = (tabKey: TabType): boolean => {
-    // If admin manually toggled it off, don't show lock
+    // If admin manually unlocked it, allow editing
     if (unlockedTabs.has(tabKey)) return false
     
     const workflowStep = request.workflow_step || 'dossier_review'
     const tabOrder: TabType[] = ['conversation', 'dossier', 'synopsis', 'generation', 'final_review', 'delivery']
     
-    // Dossier tab shows lock icon when review was sent (visual indicator only)
+    // Dossier tab is locked when review was sent OR workflow moved past it
     if (tabKey === 'dossier') {
-      return !!request.reviewed_at
+      if (request.reviewed_at) return true
+      const dossierIndex = tabOrder.indexOf('dossier')
+      const currentIndex = tabOrder.findIndex(t => {
+        const stepToTab: Record<string, TabType> = {
+          'dossier_review': 'dossier',
+          'synopsis_generation': 'synopsis',
+          'synopsis_review': 'synopsis',
+          'script_generation': 'generation',
+          'final_review': 'final_review',
+          'completed': 'delivery'
+        }
+        return stepToTab[workflowStep] === t
+      })
+      return currentIndex > dossierIndex
     }
     
-    // Synopsis tab shows lock icon when synopsis is approved (visual indicator only)
+    // Synopsis tab is locked when synopsis is approved
     if (tabKey === 'synopsis') {
       return request.synopsis_approved === true
     }
@@ -219,8 +231,10 @@ export default function ValidationDetail({
     setUnlockedTabs(prev => {
       const newSet = new Set(prev)
       if (newSet.has(tabKey)) {
+        // Re-locking: remove from unlocked set, which will make isTabLocked check database status
         newSet.delete(tabKey)
       } else {
+        // Unlocking: add to unlocked set to allow editing
         newSet.add(tabKey)
       }
       return newSet
@@ -604,8 +618,19 @@ export default function ValidationDetail({
               {activeTab === 'dossier' && (() => {
                 const dossierLocked = isTabLocked('dossier')
                 return (
-                  <div className="space-y-4! sm:space-y-6!">
-                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                  <div className="space-y-4! sm:space-y-6! relative!">
+                  {dossierLocked && (
+                    <div className={`absolute! inset-0! bg-black/20! dark:bg-black/40! z-10! rounded-xl! flex! items-center! justify-center!`}>
+                      <div className={`px-6! py-4! rounded-lg! ${colors.cardBackground}! border-2! ${colors.border}! shadow-xl! flex! items-center! gap-3!`}>
+                        <Lock className="h-6! w-6! text-gray-500! dark:text-gray-400!" />
+                        <div>
+                          <p className={`font-semibold! ${colors.text}!`}>Dossier Review is Locked</p>
+                          <p className={`text-sm! ${colors.textSecondary}!`}>Click the lock icon in the tab to unlock and edit</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg! ${dossierLocked ? 'pointer-events-none! opacity-60!' : ''}`}>
                     <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
                       Step 9: SWT Representative (Review #1)
                     </h3>
@@ -727,7 +752,8 @@ export default function ValidationDetail({
                                 ...prev,
                                 [item.key]: e.target.checked
                               }))}
-                              className="mt-1! cursor-pointer! w-5! h-5!"
+                              disabled={dossierLocked}
+                              className="mt-1! cursor-pointer! w-5! h-5! disabled:cursor-not-allowed! disabled:opacity-50!"
                             />
                             <div className="flex-1!">
                               <div className={`font-semibold! text-sm! sm:text-base! ${colors.text}!`}>
@@ -756,7 +782,8 @@ export default function ValidationDetail({
                           <select
                             value={newIssueType}
                             onChange={(e) => setNewIssueType(e.target.value as 'missing_info' | 'conflicts' | 'factual_gaps')}
-                            className={`px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm!`}
+                            disabled={dossierLocked}
+                            className={`px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm! disabled:opacity-50! disabled:cursor-not-allowed!`}
                           >
                             <option value="missing_info">Missing Info</option>
                             <option value="conflicts">Conflicts</option>
@@ -767,7 +794,8 @@ export default function ValidationDetail({
                             value={newIssueText}
                             onChange={(e) => setNewIssueText(e.target.value)}
                             placeholder="Describe the issue..."
-                            className={`flex-1! px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm!`}
+                            disabled={dossierLocked}
+                            className={`flex-1! px-3! py-2! rounded! border! ${colors.border}! ${colors.background}! ${colors.text}! text-sm! disabled:opacity-50! disabled:cursor-not-allowed!`}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && newIssueText.trim()) {
                                 setReviewIssues(prev => ({
@@ -788,7 +816,8 @@ export default function ValidationDetail({
                                 setNewIssueText('')
                               }
                             }}
-                            className="px-4! py-2! bg-blue-600! text-white! rounded! hover:bg-blue-700! text-sm! font-medium!"
+                            disabled={dossierLocked}
+                            className="px-4! py-2! bg-blue-600! text-white! rounded! hover:bg-blue-700! text-sm! font-medium! disabled:opacity-50! disabled:cursor-not-allowed!"
                           >
                             Add Issue
                           </button>
@@ -895,7 +924,7 @@ export default function ValidationDetail({
                       <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
                         <button
                           onClick={handleSendReview}
-                          disabled={isSendingReview}
+                          disabled={isSendingReview || dossierLocked}
                           className="w-full! flex! items-center! justify-center! gap-2! sm:gap-3! px-4! sm:px-6! py-3! sm:py-4! bg-linear-to-r! from-blue-600! to-blue-700! text-white! font-bold! text-base! sm:text-lg! rounded-xl! shadow-xl! hover:from-blue-700! hover:to-blue-800! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! duration-200! transform! hover:scale-105! hover:shadow-2xl!"
                         >
                           {isSendingReview ? (
@@ -921,8 +950,19 @@ export default function ValidationDetail({
               {activeTab === 'synopsis' && (() => {
                 const synopsisLocked = isTabLocked('synopsis')
                 return (
-                <div className="space-y-4! sm:space-y-6!">
-                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                <div className="space-y-4! sm:space-y-6! relative!">
+                  {synopsisLocked && (
+                    <div className={`absolute! inset-0! bg-black/20! dark:bg-black/40! z-10! rounded-xl! flex! items-center! justify-center!`}>
+                      <div className={`px-6! py-4! rounded-lg! ${colors.cardBackground}! border-2! ${colors.border}! shadow-xl! flex! items-center! gap-3!`}>
+                        <Lock className="h-6! w-6! text-gray-500! dark:text-gray-400!" />
+                        <div>
+                          <p className={`font-semibold! ${colors.text}!`}>Synopsis Review is Locked</p>
+                          <p className={`text-sm! ${colors.textSecondary}!`}>Click the lock icon in the tab to unlock and edit</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg! ${synopsisLocked ? 'pointer-events-none! opacity-60!' : ''}`}>
                     <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
                       Step 10-11: Synopsis Review
                     </h3>
@@ -938,7 +978,7 @@ export default function ValidationDetail({
                         </p>
                         <button
                           onClick={handleGenerateSynopsis}
-                          disabled={isGeneratingSynopsis}
+                          disabled={isGeneratingSynopsis || synopsisLocked}
                           className={`px-6! py-3! bg-blue-600! text-white! font-bold! rounded-lg! hover:bg-blue-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! flex! items-center! justify-center! gap-2!`}
                         >
                           {isGeneratingSynopsis ? (
@@ -1007,7 +1047,8 @@ export default function ValidationDetail({
                                       ...prev,
                                       [item.key]: e.target.checked
                                     }))}
-                                    className="mt-1! w-5! h-5! rounded! border-2! border-gray-300! dark:border-gray-600! text-green-600! focus:ring-2! focus:ring-green-500! cursor-pointer!"
+                                    disabled={synopsisLocked}
+                                    className="mt-1! w-5! h-5! rounded! border-2! border-gray-300! dark:border-gray-600! text-green-600! focus:ring-2! focus:ring-green-500! cursor-pointer! disabled:cursor-not-allowed! disabled:opacity-50!"
                                   />
                                   <div className="flex-1!">
                                     <div className={`font-semibold! text-sm! ${colors.text}! mb-1!`}>
@@ -1030,7 +1071,8 @@ export default function ValidationDetail({
                                 value={synopsisReviewNotes}
                                 onChange={(e) => setSynopsisReviewNotes(e.target.value)}
                                 placeholder="Add your review notes here (required for rejection)..."
-                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-blue-500!`}
+                                disabled={synopsisLocked}
+                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-blue-500! disabled:opacity-50! disabled:cursor-not-allowed!`}
                                 rows={4}
                               />
                             </div>
@@ -1047,7 +1089,8 @@ export default function ValidationDetail({
                                 value={synopsisLLMInstructions}
                                 onChange={(e) => setSynopsisLLMInstructions(e.target.value)}
                                 placeholder="Add any special instructions or guidelines you want the LLM to follow when regenerating the synopsis (e.g., 'Focus more on the emotional journey', 'Emphasize the setting details', etc.)..."
-                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-purple-500!`}
+                                disabled={synopsisLocked}
+                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-purple-500! disabled:opacity-50! disabled:cursor-not-allowed!`}
                                 rows={3}
                               />
                             </div>
@@ -1056,7 +1099,7 @@ export default function ValidationDetail({
                             <div className="flex! flex-col! sm:flex-row! gap-4!">
                               <button
                                 onClick={handleApproveSynopsis}
-                                disabled={isApprovingSynopsis || isRejectingSynopsis}
+                                disabled={isApprovingSynopsis || isRejectingSynopsis || synopsisLocked}
                                 className="flex-1! flex! items-center! justify-center! gap-2! px-6! py-3! bg-green-600! text-white! font-bold! rounded-lg! hover:bg-green-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!"
                               >
                                 {isApprovingSynopsis ? (
@@ -1072,7 +1115,7 @@ export default function ValidationDetail({
                               </button>
                               <button
                                 onClick={handleRejectSynopsis}
-                                disabled={isApprovingSynopsis || isRejectingSynopsis}
+                                disabled={isApprovingSynopsis || isRejectingSynopsis || synopsisLocked}
                                 className="flex-1! flex! items-center! justify-center! gap-2! px-6! py-3! bg-red-600! text-white! font-bold! rounded-lg! hover:bg-red-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!"
                               >
                                 {isRejectingSynopsis ? (
