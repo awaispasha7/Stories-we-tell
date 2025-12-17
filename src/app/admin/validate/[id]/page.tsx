@@ -59,14 +59,15 @@ export default function ValidatePage() {
     }
   }, [user, isLoading, router, validationId])
 
-  // Fetch validation request
+  // Fetch validation request - refetch periodically to sync with database changes
   const { data: request, isLoading: isLoadingRequest, error } = useQuery<ValidationRequest>({
     queryKey: ['validation-request', validationId],
     queryFn: async () => {
       return await adminApi.getValidationRequest(validationId)
     },
     enabled: !!validationId && isAuthorized === true,
-    retry: 1
+    retry: 1,
+    refetchInterval: 10000 // Refetch every 10 seconds to sync with database changes
   })
 
   // Approve mutation

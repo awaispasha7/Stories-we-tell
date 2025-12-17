@@ -36,7 +36,7 @@ export default function ValidationQueue() {
   const { data: requests, isLoading, error } = useQuery({
     queryKey: ['validation-requests', statusFilter],
     queryFn: async () => await adminApi.getValidationRequests(statusFilter === 'all' ? undefined : statusFilter),
-    refetchInterval: 30000 // Refetch every 30 seconds
+    refetchInterval: 10000 // Refetch every 10 seconds to sync with database changes
   })
 
   const approveMutation = useMutation({
@@ -141,23 +141,29 @@ export default function ValidationQueue() {
       )}
 
       {/* Detail Modal */}
-      {selectedRequest && (
-        <ValidationDetail
-          request={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          onUpdateScript={handleUpdateScript}
-          isApproving={approveMutation.isPending}
-          isRejecting={rejectMutation.isPending}
-          isUpdatingScript={updateScriptMutation.isPending}
-          onReviewSent={() => {
-            // Refresh validation list when review is sent
-            queryClient.invalidateQueries({ queryKey: ['validation-requests'] })
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
-          }}
-        />
-      )}
+      {selectedRequest && (() => {
+        // Find the latest version of this request from the refetched data
+        // This ensures we always use the most up-to-date data from Supabase
+        const latestRequest = requests?.find(r => r.validation_id === selectedRequest.validation_id) || selectedRequest
+        
+        return (
+          <ValidationDetail
+            request={latestRequest}
+            onClose={() => setSelectedRequest(null)}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onUpdateScript={handleUpdateScript}
+            isApproving={approveMutation.isPending}
+            isRejecting={rejectMutation.isPending}
+            isUpdatingScript={updateScriptMutation.isPending}
+            onReviewSent={() => {
+              // Refresh validation list when review is sent
+              queryClient.invalidateQueries({ queryKey: ['validation-requests'] })
+              queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }

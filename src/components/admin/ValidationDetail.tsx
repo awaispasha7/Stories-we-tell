@@ -367,7 +367,9 @@ export default function ValidationDetail({
         sensitivity: false
       })
     }
-  }, [request.synopsis, request.synopsis_review_notes, request.synopsis_checklist])
+    // Note: synopsis_approved is read directly from request.synopsis_approved
+    // No local state needed - always use request.synopsis_approved for conditional rendering
+  }, [request.synopsis, request.synopsis_review_notes, request.synopsis_checklist, request.synopsis_approved, request.workflow_step])
 
   const canTakeAction = request.status === 'pending'
   const statusStyle = statusConfig[request.status] || statusConfig.pending
@@ -487,14 +489,10 @@ export default function ValidationDetail({
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key)}
                       className={`
-                        relative! px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! border-b-4! transition-all! duration-200! whitespace-nowrap! flex! items-center! gap-2!
+                        relative! px-4! sm:px-6! md:px-8! py-3! sm:py-4! text-sm! sm:text-base! font-semibold! transition-all! duration-200! whitespace-nowrap! flex! items-center! gap-2!
                         ${activeTab === tab.key
-                          ? `border-blue-600! ${colors.text}! bg-white! dark:bg-gray-900!`
-                          : state === 'done'
-                          ? `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
-                          : state === 'active'
-                          ? `border-yellow-500! ${colors.text}! bg-yellow-50! dark:bg-yellow-900/20!`
-                          : `border-transparent! ${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
+                          ? `${colors.textSecondary}! bg-white! dark:bg-gray-900!`
+                          : `${colors.textSecondary}! hover:${colors.text}! hover:bg-gray-100! dark:hover:bg-gray-700!`
                         }
                       `}
                     >
