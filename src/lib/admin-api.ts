@@ -179,6 +179,59 @@ class AdminApi {
       throw new Error('Failed to send review')
     }
   }
+
+  async generateSynopsis(id: string): Promise<{ success: boolean; synopsis: string; word_count: number }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/generate-synopsis`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000 // 60 seconds for LLM generation
+      }).json<{ success: boolean; synopsis: string; word_count: number }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to generate synopsis:', error)
+      throw new Error('Failed to generate synopsis')
+    }
+  }
+
+  async approveSynopsis(id: string, notes?: string): Promise<{ success: boolean }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/approve-synopsis`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        json: { notes: notes || '' },
+        timeout: 30000
+      }).json<{ success: boolean }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to approve synopsis:', error)
+      throw new Error('Failed to approve synopsis')
+    }
+  }
+
+  async rejectSynopsis(id: string, notes: string): Promise<{ success: boolean; synopsis?: string }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/reject-synopsis`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        json: { notes },
+        timeout: 30000
+      }).json<{ success: boolean; synopsis?: string }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to reject synopsis:', error)
+      throw new Error('Failed to reject synopsis')
+    }
+  }
 }
 
 export const adminApi = new AdminApi()

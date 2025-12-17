@@ -70,6 +70,12 @@ interface ValidationRequest {
   dossier_data?: DossierData
   review_checklist?: ReviewChecklist
   review_issues?: ReviewIssues
+  workflow_step?: string
+  synopsis?: string
+  synopsis_approved?: boolean
+  synopsis_review_notes?: string
+  synopsis_reviewed_at?: string
+  synopsis_reviewed_by?: string
 }
 
 interface Props {
@@ -153,6 +159,13 @@ export default function ValidationDetail({
   
   const [newIssueText, setNewIssueText] = useState('')
   const [newIssueType, setNewIssueType] = useState<'missing_info' | 'conflicts' | 'factual_gaps'>('missing_info')
+  
+  // Synopsis Review State
+  const [synopsis, setSynopsis] = useState<string | undefined>(request.synopsis)
+  const [isGeneratingSynopsis, setIsGeneratingSynopsis] = useState(false)
+  const [isApprovingSynopsis, setIsApprovingSynopsis] = useState(false)
+  const [isRejectingSynopsis, setIsRejectingSynopsis] = useState(false)
+  const [synopsisReviewNotes, setSynopsisReviewNotes] = useState(request.synopsis_review_notes || '')
 
   const handleSaveScript = () => {
     if (editedScript !== request.generated_script) {
@@ -171,6 +184,75 @@ export default function ValidationDetail({
       return
     }
     onReject(request.validation_id, reviewNotes)
+  }
+
+  const handleGenerateSynopsis = async () => {
+    setIsGeneratingSynopsis(true)
+    try {
+      const result = await adminApi.generateSynopsis(request.validation_id)
+      if (result.success) {
+        setSynopsis(result.synopsis)
+        toast.success('Synopsis generated', `Generated ${result.word_count} words`)
+        // Refresh the request data
+        if (onReviewSent) {
+          onReviewSent()
+        }
+      } else {
+        toast.error('Failed to generate synopsis', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to generate synopsis:', error)
+      toast.error('Failed to generate synopsis', 'Please try again.')
+    } finally {
+      setIsGeneratingSynopsis(false)
+    }
+  }
+
+  const handleApproveSynopsis = async () => {
+    setIsApprovingSynopsis(true)
+    try {
+      const result = await adminApi.approveSynopsis(request.validation_id, synopsisReviewNotes)
+      if (result.success) {
+        toast.success('Synopsis approved', 'Moving to script generation phase.')
+        if (onReviewSent) {
+          onReviewSent()
+        }
+        // Optionally close or navigate
+      } else {
+        toast.error('Failed to approve synopsis', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to approve synopsis:', error)
+      toast.error('Failed to approve synopsis', 'Please try again.')
+    } finally {
+      setIsApprovingSynopsis(false)
+    }
+  }
+
+  const handleRejectSynopsis = async () => {
+    if (!synopsisReviewNotes.trim()) {
+      toast.error('Review notes required', 'Please provide notes explaining why the synopsis is rejected.')
+      return
+    }
+    setIsRejectingSynopsis(true)
+    try {
+      const result = await adminApi.rejectSynopsis(request.validation_id, synopsisReviewNotes)
+      if (result.success) {
+        setSynopsis(result.synopsis) // Update with new synopsis
+        setSynopsisReviewNotes('') // Clear notes
+        toast.success('Synopsis rejected', 'New synopsis has been generated for review.')
+        if (onReviewSent) {
+          onReviewSent()
+        }
+      } else {
+        toast.error('Failed to reject synopsis', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to reject synopsis:', error)
+      toast.error('Failed to reject synopsis', 'Please try again.')
+    } finally {
+      setIsRejectingSynopsis(false)
+    }
   }
 
   const handleSendReview = async () => {
@@ -228,6 +310,16 @@ export default function ValidationDetail({
       setIsSendingReview(false)
     }
   }
+
+  // Sync synopsis state when request changes
+  useEffect(() => {
+    if (request.synopsis !== undefined) {
+      setSynopsis(request.synopsis)
+    }
+    if (request.synopsis_review_notes !== undefined) {
+      setSynopsisReviewNotes(request.synopsis_review_notes || '')
+    }
+  }, [request.synopsis, request.synopsis_review_notes])
 
   const canTakeAction = request.status === 'pending'
   const statusStyle = statusConfig[request.status] || statusConfig.pending
@@ -649,13 +741,164 @@ export default function ValidationDetail({
 
               {/* Synopsis Review Tab */}
               {activeTab === 'synopsis' && (
-                <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
-                  <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
-                    Step 10-11: Synopsis Review
-                  </h3>
-                  <p className={`text-sm! sm:text-base! ${colors.textSecondary}!`}>
-                    Synopsis review will be available after Step 9 is completed and synopsis is generated.
-                  </p>
+                <div className="space-y-4! sm:space-y-6!">
+                  <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
+                    <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
+                      Step 10-11: Synopsis Review
+                    </h3>
+                    <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
+                      Review the generated synopsis for emotional tone, accuracy, clarity, perspective, pacing, and sensitivity.
+                    </p>
+
+                    {/* Generate Synopsis Button (if not generated) */}
+                    {!synopsis && (
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-yellow-50! dark:bg-yellow-900/20! mb-6!`}>
+                        <p className={`text-sm! ${colors.text}! mb-4!`}>
+                          Synopsis has not been generated yet. Click the button below to generate it.
+                        </p>
+                        <button
+                          onClick={handleGenerateSynopsis}
+                          disabled={isGeneratingSynopsis}
+                          className={`px-6! py-3! bg-blue-600! text-white! font-bold! rounded-lg! hover:bg-blue-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!`}
+                        >
+                          {isGeneratingSynopsis ? (
+                            <>
+                              <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white! inline-block! mr-2!"></div>
+                              Generating Synopsis...
+                            </>
+                          ) : (
+                            'Generate Synopsis (Step 10)'
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Synopsis Display */}
+                    {synopsis && (
+                      <div className="space-y-6!">
+                        <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                          <div className="flex! justify-between! items-center! mb-4!">
+                            <h4 className={`text-base! sm:text-lg! font-semibold! ${colors.text}!`}>
+                              Generated Synopsis
+                            </h4>
+                            {request.synopsis_approved && (
+                              <span className={`px-3! py-1! rounded-full! text-sm! font-semibold! bg-green-100! dark:bg-green-900/30! text-green-800! dark:text-green-300!`}>
+                                ✅ Approved
+                              </span>
+                            )}
+                          </div>
+                          <div className={`p-4! rounded! bg-white! dark:bg-gray-900! border! ${colors.border}! max-h-96! overflow-y-auto!`}>
+                            <p className={`text-sm! sm:text-base! ${colors.text}! whitespace-pre-wrap! leading-relaxed!`}>
+                              {synopsis}
+                            </p>
+                          </div>
+                          <div className={`mt-3! text-xs! ${colors.textSecondary}!`}>
+                            Word count: {synopsis ? synopsis.split(/\s+/).filter(Boolean).length : 0} words
+                          </div>
+                        </div>
+
+                        {/* Review Checklist */}
+                        {!request.synopsis_approved && (
+                          <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-blue-50! dark:bg-blue-900/20!`}>
+                            <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
+                              Review Checklist
+                            </h4>
+                            <div className="space-y-3! mb-6!">
+                              {[
+                                { key: 'emotional_tone', label: 'Emotional Tone', description: 'Does the synopsis capture the intended emotional arc?' },
+                                { key: 'accuracy', label: 'Accuracy vs Intake', description: 'Does it accurately reflect the story intake data?' },
+                                { key: 'clarity', label: 'Clarity', description: 'Is the story clear and easy to understand?' },
+                                { key: 'perspective', label: 'Perspective', description: 'Does it match the chosen perspective?' },
+                                { key: 'pacing', label: 'Pacing', description: 'Is the pacing appropriate for the story?' },
+                                { key: 'sensitivity', label: 'Sensitivity', description: 'Is it culturally sensitive and appropriate?' }
+                              ].map((item) => (
+                                <div key={item.key} className={`p-3! rounded-lg! border! ${colors.border}! bg-white! dark:bg-gray-800!`}>
+                                  <div className={`font-semibold! text-sm! ${colors.text}! mb-1!`}>
+                                    {item.label}
+                                  </div>
+                                  <div className={`text-xs! ${colors.textSecondary}!`}>
+                                    {item.description}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Review Notes */}
+                            <div className="mb-6!">
+                              <label className={`block! text-sm! font-semibold! mb-2! ${colors.text}!`}>
+                                Review Notes
+                              </label>
+                              <textarea
+                                value={synopsisReviewNotes}
+                                onChange={(e) => setSynopsisReviewNotes(e.target.value)}
+                                placeholder="Add your review notes here..."
+                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-blue-500!`}
+                                rows={4}
+                              />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex! flex-col! sm:flex-row! gap-4!">
+                              <button
+                                onClick={handleApproveSynopsis}
+                                disabled={isApprovingSynopsis || isRejectingSynopsis}
+                                className="flex-1! flex! items-center! justify-center! gap-2! px-6! py-3! bg-green-600! text-white! font-bold! rounded-lg! hover:bg-green-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!"
+                              >
+                                {isApprovingSynopsis ? (
+                                  <>
+                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
+                                    Approving...
+                                  </>
+                                ) : (
+                                  <>
+                                    ✅ Approve Synopsis
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={handleRejectSynopsis}
+                                disabled={isApprovingSynopsis || isRejectingSynopsis}
+                                className="flex-1! flex! items-center! justify-center! gap-2! px-6! py-3! bg-red-600! text-white! font-bold! rounded-lg! hover:bg-red-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!"
+                              >
+                                {isRejectingSynopsis ? (
+                                  <>
+                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
+                                    Regenerating...
+                                  </>
+                                ) : (
+                                  <>
+                                    ❌ Reject & Regenerate
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Approved Status */}
+                        {request.synopsis_approved && (
+                          <div className={`p-4! rounded-lg! border-2! border-green-500! bg-green-50! dark:bg-green-900/20!`}>
+                            <p className={`text-sm! font-semibold! text-green-800! dark:text-green-300! mb-2!`}>
+                              ✅ Synopsis Approved
+                            </p>
+                            {request.synopsis_review_notes && (
+                              <p className={`text-sm! text-green-700! dark:text-green-400!`}>
+                                Notes: {request.synopsis_review_notes}
+                              </p>
+                            )}
+                            {request.synopsis_reviewed_at && (
+                              <p className={`text-xs! text-green-600! dark:text-green-500! mt-2!`}>
+                                Reviewed: {new Date(request.synopsis_reviewed_at).toLocaleString()}
+                              </p>
+                            )}
+                            <p className={`text-sm! mt-4! ${colors.text}!`}>
+                              Ready to proceed to script generation (Steps 12-18).
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
