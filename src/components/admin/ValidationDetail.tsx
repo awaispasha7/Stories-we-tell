@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
 import { formatDistanceToNow } from 'date-fns'
-import { X, CheckCircle2, XCircle, Edit, Save, Clock, Send } from 'lucide-react'
+import { X, CheckCircle2, XCircle, Edit, Save, Clock, Send, Lock, Unlock } from 'lucide-react'
 import { adminApi } from '@/lib/admin-api'
 import { useToastContext } from '@/components/ToastProvider'
 
@@ -188,6 +188,44 @@ export default function ValidationDetail({
       sensitivity: false
     }
   )
+  
+  // Track which tabs are unlocked by admin (override locks)
+  const [unlockedTabs, setUnlockedTabs] = useState<Set<TabType>>(new Set())
+  
+  // Determine if a tab should show as "locked" (visual indicator only, doesn't prevent editing)
+  // Lock is only a visual indicator - admins can always edit if they need to
+  const isTabLocked = (tabKey: TabType): boolean => {
+    // If admin manually toggled it off, don't show lock
+    if (unlockedTabs.has(tabKey)) return false
+    
+    const workflowStep = request.workflow_step || 'dossier_review'
+    const tabOrder: TabType[] = ['conversation', 'dossier', 'synopsis', 'generation', 'final_review', 'delivery']
+    
+    // Dossier tab shows lock icon when review was sent (visual indicator only)
+    if (tabKey === 'dossier') {
+      return !!request.reviewed_at
+    }
+    
+    // Synopsis tab shows lock icon when synopsis is approved (visual indicator only)
+    if (tabKey === 'synopsis') {
+      return request.synopsis_approved === true
+    }
+    
+    return false
+  }
+  
+  const toggleTabLock = (tabKey: TabType, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent tab switch when clicking lock icon
+    setUnlockedTabs(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(tabKey)) {
+        newSet.delete(tabKey)
+      } else {
+        newSet.add(tabKey)
+      }
+      return newSet
+    })
+  }
 
   const handleSaveScript = () => {
     if (editedScript !== request.generated_script) {
@@ -455,6 +493,11 @@ export default function ValidationDetail({
                   // Conversation is always done (it's the first step)
                   if (tabKey === 'conversation') return 'done'
                   
+                  // Special case: Dossier tab is done when review was sent (reviewed_at exists)
+                  if (tabKey === 'dossier' && request.reviewed_at) {
+                    return 'done'
+                  }
+                  
                   // Determine order of tabs
                   const tabOrder: TabType[] = ['conversation', 'dossier', 'synopsis', 'generation', 'final_review', 'delivery']
                   const currentTabIndex = tabOrder.indexOf(currentTab)
@@ -506,6 +549,30 @@ export default function ValidationDetail({
                         <span className="text-gray-400! dark:text-gray-500! text-xs!">○</span>
                       )}
                       {tab.label}
+                      {/* Lock icon for locked tabs */}
+                      {isTabLocked(tab.key) && (
+                        <div 
+                          className="ml-auto! cursor-pointer!"
+                          onClick={(e) => toggleTabLock(tab.key, e)}
+                          title="Tab is locked. Click to unlock."
+                        >
+                          <Lock 
+                            className="h-4! w-4! text-gray-400! dark:text-gray-500! hover:text-gray-600! dark:hover:text-gray-300!" 
+                          />
+                        </div>
+                      )}
+                      {/* Unlock icon for manually unlocked tabs */}
+                      {!isTabLocked(tab.key) && unlockedTabs.has(tab.key) && (
+                        <div 
+                          className="ml-auto! cursor-pointer!"
+                          onClick={(e) => toggleTabLock(tab.key, e)}
+                          title="Tab is unlocked. Click to lock again."
+                        >
+                          <Unlock 
+                            className="h-4! w-4! text-blue-500! dark:text-blue-400! hover:text-blue-600! dark:hover:text-blue-300!" 
+                          />
+                        </div>
+                      )}
                     </button>
                   )
                 })
@@ -534,8 +601,10 @@ export default function ValidationDetail({
               )}
 
               {/* Dossier Review Tab */}
-              {activeTab === 'dossier' && (
-                <div className="space-y-4! sm:space-y-6!">
+              {activeTab === 'dossier' && (() => {
+                const dossierLocked = isTabLocked('dossier')
+                return (
+                  <div className="space-y-4! sm:space-y-6!">
                   <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
                     <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
                       Step 9: SWT Representative (Review #1)
@@ -844,11 +913,14 @@ export default function ValidationDetail({
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                  </div>
+                )
+              })()}
 
               {/* Synopsis Review Tab */}
-              {activeTab === 'synopsis' && (
+              {activeTab === 'synopsis' && (() => {
+                const synopsisLocked = isTabLocked('synopsis')
+                return (
                 <div className="space-y-4! sm:space-y-6!">
                   <div className={`p-4! sm:p-5! rounded-xl! border-2! ${colors.border}! ${colors.cardBackground}! shadow-lg!`}>
                     <h3 className={`text-lg! sm:text-xl! font-bold! mb-4! ${colors.text}! border-b-2! ${colors.border}! pb-2!`}>
@@ -1042,8 +1114,9 @@ export default function ValidationDetail({
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                  </div>
+                )
+              })()}
 
               {/* Generation Tab */}
               {activeTab === 'generation' && (
