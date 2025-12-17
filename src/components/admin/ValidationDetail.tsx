@@ -906,8 +906,8 @@ export default function ValidationDetail({
                               >
                                 {isApprovingSynopsis ? (
                                   <>
-                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
-                                    Approving...
+                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white! shrink-0!"></div>
+                                    <span>Approving...</span>
                                   </>
                                 ) : (
                                   <>
@@ -922,8 +922,8 @@ export default function ValidationDetail({
                               >
                                 {isRejectingSynopsis ? (
                                   <>
-                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
-                                    Regenerating...
+                                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white! shrink-0!"></div>
+                                    <span>Regenerating...</span>
                                   </>
                                 ) : (
                                   <>
