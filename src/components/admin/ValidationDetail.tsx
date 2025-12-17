@@ -1017,8 +1017,8 @@ export default function ValidationDetail({
                           </div>
                         </div>
 
-                        {/* Review Checklist */}
-                        {!request.synopsis_approved && (
+                        {/* Review Checklist - Show if not approved OR if unlocked for editing */}
+                        {(!request.synopsis_approved || unlockedTabs.has('synopsis')) && (
                           <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-blue-50! dark:bg-blue-900/20!`}>
                             <h4 className={`text-base! sm:text-lg! font-semibold! mb-4! ${colors.text}!`}>
                               Review Checklist
@@ -1133,8 +1133,8 @@ export default function ValidationDetail({
                           </div>
                         )}
 
-                        {/* Approved Status */}
-                        {request.synopsis_approved && (
+                        {/* Approved Status - Only show if approved AND locked (not unlocked for editing) */}
+                        {request.synopsis_approved && !unlockedTabs.has('synopsis') && (
                           <div className={`p-4! rounded-lg! border-2! border-green-500! bg-green-50! dark:bg-green-900/20!`}>
                             <p className={`text-sm! font-semibold! text-green-800! dark:text-green-300! mb-2!`}>
                               ✅ Synopsis Approved
