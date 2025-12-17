@@ -46,6 +46,16 @@ interface ReviewChecklist {
   [key: string]: boolean  // Index signature for Record<string, boolean> compatibility
 }
 
+interface SynopsisChecklist {
+  emotional_tone: boolean
+  accuracy: boolean
+  clarity: boolean
+  perspective: boolean
+  pacing: boolean
+  sensitivity: boolean
+  [key: string]: boolean
+}
+
 interface ReviewIssues {
   missing_info: string[]
   conflicts: string[]
@@ -76,6 +86,7 @@ interface ValidationRequest {
   synopsis_review_notes?: string
   synopsis_reviewed_at?: string
   synopsis_reviewed_by?: string
+  synopsis_checklist?: SynopsisChecklist
 }
 
 interface Props {
@@ -166,6 +177,16 @@ export default function ValidationDetail({
   const [isApprovingSynopsis, setIsApprovingSynopsis] = useState(false)
   const [isRejectingSynopsis, setIsRejectingSynopsis] = useState(false)
   const [synopsisReviewNotes, setSynopsisReviewNotes] = useState(request.synopsis_review_notes || '')
+  const [synopsisChecklist, setSynopsisChecklist] = useState<SynopsisChecklist>(
+    request.synopsis_checklist || {
+      emotional_tone: false,
+      accuracy: false,
+      clarity: false,
+      perspective: false,
+      pacing: false,
+      sensitivity: false
+    }
+  )
 
   const handleSaveScript = () => {
     if (editedScript !== request.generated_script) {
@@ -211,13 +232,24 @@ export default function ValidationDetail({
   const handleApproveSynopsis = async () => {
     setIsApprovingSynopsis(true)
     try {
-      const result = await adminApi.approveSynopsis(request.validation_id, synopsisReviewNotes)
+      const result = await adminApi.approveSynopsis(
+        request.validation_id, 
+        synopsisReviewNotes,
+        synopsisChecklist
+      )
       if (result.success) {
-        toast.success('Synopsis approved', 'Moving to script generation phase.')
+        let message = 'Moving to script generation phase.'
+        if (result.email_sent !== undefined) {
+          if (result.email_sent) {
+            message += '\n\n✅ Email notification sent successfully to client.'
+          } else {
+            message += `\n\n⚠️ Email notification failed: ${result.email_error || 'Unknown error'}`
+          }
+        }
+        toast.success('Synopsis approved', message)
         if (onReviewSent) {
           onReviewSent()
         }
-        // Optionally close or navigate
       } else {
         toast.error('Failed to approve synopsis', 'Please try again.')
       }
@@ -319,7 +351,17 @@ export default function ValidationDetail({
     if (request.synopsis_review_notes !== undefined) {
       setSynopsisReviewNotes(request.synopsis_review_notes || '')
     }
-  }, [request.synopsis, request.synopsis_review_notes])
+    if (request.synopsis_checklist !== undefined) {
+      setSynopsisChecklist(request.synopsis_checklist || {
+        emotional_tone: false,
+        accuracy: false,
+        clarity: false,
+        perspective: false,
+        pacing: false,
+        sensitivity: false
+      })
+    }
+  }, [request.synopsis, request.synopsis_review_notes, request.synopsis_checklist])
 
   const canTakeAction = request.status === 'pending'
   const statusStyle = statusConfig[request.status] || statusConfig.pending
@@ -759,12 +801,12 @@ export default function ValidationDetail({
                         <button
                           onClick={handleGenerateSynopsis}
                           disabled={isGeneratingSynopsis}
-                          className={`px-6! py-3! bg-blue-600! text-white! font-bold! rounded-lg! hover:bg-blue-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!`}
+                          className={`px-6! py-3! bg-blue-600! text-white! font-bold! rounded-lg! hover:bg-blue-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all! flex! items-center! justify-center! gap-2!`}
                         >
                           {isGeneratingSynopsis ? (
                             <>
-                              <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white! inline-block! mr-2!"></div>
-                              Generating Synopsis...
+                              <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
+                              <span>Generating Synopsis...</span>
                             </>
                           ) : (
                             'Generate Synopsis (Step 10)'
@@ -787,7 +829,7 @@ export default function ValidationDetail({
                               </span>
                             )}
                           </div>
-                          <div className={`p-4! rounded! bg-white! dark:bg-gray-900! border! ${colors.border}! max-h-96! overflow-y-auto!`}>
+                          <div className={`p-4! rounded! bg-white! dark:bg-gray-900! border! ${colors.border}! max-h-[600px]! overflow-y-auto!`}>
                             <p className={`text-sm! sm:text-base! ${colors.text}! whitespace-pre-wrap! leading-relaxed!`}>
                               {synopsis}
                             </p>
@@ -805,21 +847,39 @@ export default function ValidationDetail({
                             </h4>
                             <div className="space-y-3! mb-6!">
                               {[
-                                { key: 'emotional_tone', label: 'Emotional Tone', description: 'Does the synopsis capture the intended emotional arc?' },
-                                { key: 'accuracy', label: 'Accuracy vs Intake', description: 'Does it accurately reflect the story intake data?' },
-                                { key: 'clarity', label: 'Clarity', description: 'Is the story clear and easy to understand?' },
-                                { key: 'perspective', label: 'Perspective', description: 'Does it match the chosen perspective?' },
-                                { key: 'pacing', label: 'Pacing', description: 'Is the pacing appropriate for the story?' },
-                                { key: 'sensitivity', label: 'Sensitivity', description: 'Is it culturally sensitive and appropriate?' }
+                                { key: 'emotional_tone' as const, label: 'Emotional Tone', description: 'Does the synopsis capture the intended emotional arc?' },
+                                { key: 'accuracy' as const, label: 'Accuracy vs Intake', description: 'Does it accurately reflect the story intake data?' },
+                                { key: 'clarity' as const, label: 'Clarity', description: 'Is the story clear and easy to understand?' },
+                                { key: 'perspective' as const, label: 'Perspective', description: 'Does it match the chosen perspective?' },
+                                { key: 'pacing' as const, label: 'Pacing', description: 'Is the pacing appropriate for the story?' },
+                                { key: 'sensitivity' as const, label: 'Sensitivity', description: 'Is it culturally sensitive and appropriate?' }
                               ].map((item) => (
-                                <div key={item.key} className={`p-3! rounded-lg! border! ${colors.border}! bg-white! dark:bg-gray-800!`}>
-                                  <div className={`font-semibold! text-sm! ${colors.text}! mb-1!`}>
-                                    {item.label}
+                                <label
+                                  key={item.key}
+                                  className={`flex! items-start! gap-3! p-3! rounded-lg! border-2! cursor-pointer! transition-all! hover:bg-gray-100! dark:hover:bg-gray-700! ${
+                                    synopsisChecklist[item.key]
+                                      ? 'border-green-500! bg-green-50! dark:bg-green-900/20!'
+                                      : colors.border
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={synopsisChecklist[item.key]}
+                                    onChange={(e) => setSynopsisChecklist(prev => ({
+                                      ...prev,
+                                      [item.key]: e.target.checked
+                                    }))}
+                                    className="mt-1! w-5! h-5! rounded! border-2! border-gray-300! dark:border-gray-600! text-green-600! focus:ring-2! focus:ring-green-500! cursor-pointer!"
+                                  />
+                                  <div className="flex-1!">
+                                    <div className={`font-semibold! text-sm! ${colors.text}! mb-1!`}>
+                                      {item.label}
+                                    </div>
+                                    <div className={`text-xs! ${colors.textSecondary}!`}>
+                                      {item.description}
+                                    </div>
                                   </div>
-                                  <div className={`text-xs! ${colors.textSecondary}!`}>
-                                    {item.description}
-                                  </div>
-                                </div>
+                                </label>
                               ))}
                             </div>
 

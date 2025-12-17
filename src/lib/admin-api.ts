@@ -197,16 +197,16 @@ class AdminApi {
     }
   }
 
-  async approveSynopsis(id: string, notes?: string): Promise<{ success: boolean }> {
+  async approveSynopsis(id: string, notes?: string, checklist?: Record<string, boolean>): Promise<{ success: boolean; email_sent?: boolean; email_error?: string }> {
     try {
       const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/approve-synopsis`, {
         headers: {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        json: { notes: notes || '' },
+        json: { notes: notes || '', checklist: checklist || {} },
         timeout: 30000
-      }).json<{ success: boolean }>()
+      }).json<{ success: boolean; email_sent?: boolean; email_error?: string }>()
 
       return response
     } catch (error) {
