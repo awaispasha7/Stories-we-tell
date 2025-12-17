@@ -215,15 +215,15 @@ class AdminApi {
     }
   }
 
-  async rejectSynopsis(id: string, notes: string): Promise<{ success: boolean; synopsis?: string }> {
+  async rejectSynopsis(id: string, notes: string, specialInstructions?: string): Promise<{ success: boolean; synopsis?: string }> {
     try {
       const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/reject-synopsis`, {
         headers: {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        json: { notes },
-        timeout: 30000
+        json: { notes, special_instructions: specialInstructions },
+        timeout: 60000 // Increased timeout for LLM regeneration
       }).json<{ success: boolean; synopsis?: string }>()
 
       return response

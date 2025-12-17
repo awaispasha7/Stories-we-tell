@@ -177,6 +177,7 @@ export default function ValidationDetail({
   const [isApprovingSynopsis, setIsApprovingSynopsis] = useState(false)
   const [isRejectingSynopsis, setIsRejectingSynopsis] = useState(false)
   const [synopsisReviewNotes, setSynopsisReviewNotes] = useState(request.synopsis_review_notes || '')
+  const [synopsisLLMInstructions, setSynopsisLLMInstructions] = useState('')
   const [synopsisChecklist, setSynopsisChecklist] = useState<SynopsisChecklist>(
     request.synopsis_checklist || {
       emotional_tone: false,
@@ -268,10 +269,15 @@ export default function ValidationDetail({
     }
     setIsRejectingSynopsis(true)
     try {
-      const result = await adminApi.rejectSynopsis(request.validation_id, synopsisReviewNotes)
+      const result = await adminApi.rejectSynopsis(
+        request.validation_id, 
+        synopsisReviewNotes,
+        synopsisLLMInstructions.trim() || undefined
+      )
       if (result.success) {
         setSynopsis(result.synopsis) // Update with new synopsis
         setSynopsisReviewNotes('') // Clear notes
+        setSynopsisLLMInstructions('') // Clear special instructions
         toast.success('Synopsis rejected', 'New synopsis has been generated for review.')
         if (onReviewSent) {
           onReviewSent()
@@ -886,14 +892,31 @@ export default function ValidationDetail({
                             {/* Review Notes */}
                             <div className="mb-6!">
                               <label className={`block! text-sm! font-semibold! mb-2! ${colors.text}!`}>
-                                Review Notes
+                                Review Notes <span className="text-red-500!">*</span>
                               </label>
                               <textarea
                                 value={synopsisReviewNotes}
                                 onChange={(e) => setSynopsisReviewNotes(e.target.value)}
-                                placeholder="Add your review notes here..."
+                                placeholder="Add your review notes here (required for rejection)..."
                                 className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-blue-500!`}
                                 rows={4}
+                              />
+                            </div>
+
+                            {/* Special Instructions for LLM (only when rejecting) */}
+                            <div className="mb-6!">
+                              <label className={`block! text-sm! font-semibold! mb-2! ${colors.text}!`}>
+                                Special Instructions or Guidelines for LLM
+                                <span className={`text-xs! font-normal! ml-2! ${colors.textSecondary}!`}>
+                                  (Optional - only used when regenerating)
+                                </span>
+                              </label>
+                              <textarea
+                                value={synopsisLLMInstructions}
+                                onChange={(e) => setSynopsisLLMInstructions(e.target.value)}
+                                placeholder="Add any special instructions or guidelines you want the LLM to follow when regenerating the synopsis (e.g., 'Focus more on the emotional journey', 'Emphasize the setting details', etc.)..."
+                                className={`w-full! px-4! py-3! rounded-lg! border-2! ${colors.border}! ${colors.background}! ${colors.text}! resize-none! focus:outline-none! focus:ring-2! focus:ring-purple-500!`}
+                                rows={3}
                               />
                             </div>
 
