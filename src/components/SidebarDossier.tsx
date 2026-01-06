@@ -422,26 +422,33 @@ export function SidebarDossier({ sessionId, projectId, onClose }: SidebarDossier
               </div>
             </div>
             
-            {/* Genre & Tone Tags */}
-            <div className="flex! items-center! gap-3! flex-wrap! pt-1!">
-              {d.genre && (
-                <>
-                  <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0!`}>Genre</div>
-                  <span className="bg-linear-to-r! from-red-500! to-red-600! text-white! border-0! shadow-md! shadow-red-500/30! px-3! py-1.5! rounded-full! text-xs! font-semibold!">
-                    {d.genre}
-                  </span>
-                </>
-              )}
-              {d.tone && (
-                <>
-                  {d.genre && <div className="w-px! h-4! bg-gray-300! dark:bg-gray-600!"></div>}
-                  <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0!`}>Tone</div>
-                  <span className={`border-2! ${resolvedTheme === 'light' ? 'border-red-300! text-red-700! bg-red-50/70!' : 'border-red-600! text-red-300! bg-red-900/40!'} px-3! py-1.5! rounded-full! text-xs! font-semibold! shadow-sm!`}>
-                    {d.tone}
-                  </span>
-                </>
-              )}
-            </div>
+            {/* Genre Section - Inline with heading */}
+            {d.genre && (
+              <div className="flex! items-center! justify-between! gap-4! pb-4! border-b!" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0! pt-0.5!`}>Genre</div>
+                <span className="bg-linear-to-r! from-red-500! to-red-600! text-white! border-0! shadow-md! shadow-red-500/30! px-3! py-1.5! rounded-full! text-xs! font-semibold!">
+                  {d.genre}
+                </span>
+              </div>
+            )}
+            
+            {/* Tone Section - Inline with heading */}
+            {d.tone && (
+              <div className="flex! items-center! justify-between! gap-4! pb-4! border-b!" style={{
+                borderColor: resolvedTheme === 'light' 
+                  ? 'rgba(229, 231, 235, 0.6)' 
+                  : 'rgba(75, 85, 99, 0.4)'
+              }}>
+                <div className={`text-xs! font-semibold! ${resolvedTheme === 'light' ? 'text-red-600!' : 'text-red-400!'} uppercase! tracking-wide! shrink-0! pt-0.5!`}>Tone</div>
+                <span className={`border-2! ${resolvedTheme === 'light' ? 'border-red-300! text-red-700! bg-red-50/70!' : 'border-red-600! text-red-300! bg-red-900/40!'} px-3! py-1.5! rounded-full! text-xs! font-semibold! shadow-sm!`}>
+                  {d.tone}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
