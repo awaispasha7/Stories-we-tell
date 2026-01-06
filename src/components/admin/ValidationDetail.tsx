@@ -1115,7 +1115,7 @@ export default function ValidationDetail({
                               </button>
                               <button
                                 onClick={handleRejectSynopsis}
-                                disabled={isApprovingSynopsis || isRejectingSynopsis || synopsisLocked}
+                                disabled={isApprovingSynopsis || isRejectingSynopsis}
                                 className="flex-1! flex! items-center! justify-center! gap-2! px-6! py-3! bg-red-600! text-white! font-bold! rounded-lg! hover:bg-red-700! disabled:opacity-50! disabled:cursor-not-allowed! transition-all!"
                               >
                                 {isRejectingSynopsis ? (
