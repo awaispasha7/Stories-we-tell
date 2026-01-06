@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { Topbar } from '@/components/Topbar'
 import { ChatPanel } from '@/components/ChatPanel'
 import { SidebarDossier } from '@/components/SidebarDossier'
@@ -20,6 +20,34 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { projectApi, sessionApi } from '@/lib/api'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
+// Component to handle search params (must be wrapped in Suspense)
+function GenreModalHandler({
+  onShowGenreModal,
+  onSetProjectId
+}: {
+  onShowGenreModal: (projectId: string) => void
+  onSetProjectId: (projectId: string) => void
+}) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  useEffect(() => {
+    const setGenre = searchParams.get('setGenre')
+    const projectId = searchParams.get('projectId')
+    
+    if (setGenre === 'true' && projectId) {
+      console.log('🎭 [PAGE] Genre modal requested for project:', projectId)
+      onShowGenreModal(projectId)
+      onSetProjectId(projectId)
+      
+      // Clean up URL by removing query parameters
+      router.replace('/chat', { scroll: false })
+    }
+  }, [searchParams, router, onShowGenreModal, onSetProjectId])
+
+  return null
+}
+
 export default function ChatPage() {
   const init = useChatStore(s => s.init)
   const [activeTab, setActiveTab] = useState<'sessions' | 'dossier'>('sessions')
@@ -38,7 +66,6 @@ export default function ChatPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const searchParams = useSearchParams()
 
   // Fetch user projects to check availability
   const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
@@ -254,25 +281,16 @@ export default function ChatPage() {
     }
   }, [currentSessionId])
 
-  // Check for setGenre query parameter from email link
-  useEffect(() => {
-    const setGenre = searchParams.get('setGenre')
-    const projectId = searchParams.get('projectId')
+  // Handler for genre modal from search params
+  const handleShowGenreModal = (projectId: string) => {
+    setGenreModalProjectId(projectId)
+    setShowGenreModal(true)
     
-    if (setGenre === 'true' && projectId) {
-      console.log('🎭 [PAGE] Genre modal requested for project:', projectId)
-      setGenreModalProjectId(projectId)
-      setShowGenreModal(true)
-      
-      // Also set the current project if not already set
-      if (projectId !== currentProjectId) {
-        setCurrentProjectId(projectId)
-      }
-      
-      // Clean up URL by removing query parameters
-      router.replace('/chat', { scroll: false })
+    // Also set the current project if not already set
+    if (projectId !== currentProjectId) {
+      setCurrentProjectId(projectId)
     }
-  }, [searchParams, router, currentProjectId])
+  }
 
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
@@ -453,6 +471,14 @@ export default function ChatPage() {
   
   return (
     <DossierProvider>
+      {/* Handle search params for genre modal - wrapped in Suspense */}
+      <Suspense fallback={null}>
+        <GenreModalHandler
+          onShowGenreModal={handleShowGenreModal}
+          onSetProjectId={setCurrentProjectId}
+        />
+      </Suspense>
+
       {/* Global loader overlay - only on initial load */}
       {(authLoading || (isAuthenticated && isProjectsLoading && !projectsData)) && (
         <div className="fixed inset-0 z-1000 flex items-center justify-center bg-white/70 dark:bg-black/60 backdrop-blur-sm">
