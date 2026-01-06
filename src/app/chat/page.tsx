@@ -8,6 +8,7 @@ import { SessionsSidebar } from '@/components/SessionsSidebar'
 import { ResizableSidebar } from '@/components/ResizableSidebar'
 import { LoginPromptModal } from '@/components/LoginPromptModal'
 import { ProjectCreationModal } from '@/components/ProjectCreationModal'
+import { GenreSelectionModal } from '@/components/GenreSelectionModal'
 import { useChatStore } from '@/lib/store'
 import { DossierProvider } from '@/lib/dossier-context'
 import { useTheme, getThemeColors } from '@/lib/theme-context'
@@ -15,7 +16,7 @@ import { sessionSyncManager } from '@/lib/session-sync'
 import { MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { projectApi, sessionApi } from '@/lib/api'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -30,11 +31,14 @@ export default function ChatPage() {
   const [showSidebarHint, setShowSidebarHint] = useState(false)
   const [showProjectModal, setShowProjectModal] = useState(false)
   const [projectModalRequired, setProjectModalRequired] = useState(false)
+  const [showGenreModal, setShowGenreModal] = useState(false)
+  const [genreModalProjectId, setGenreModalProjectId] = useState<string>('')
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
 
   // Fetch user projects to check availability
   const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
@@ -249,6 +253,26 @@ export default function ChatPage() {
       window.removeEventListener('sessionUpdated', handleSessionUpdated as EventListener)
     }
   }, [currentSessionId])
+
+  // Check for setGenre query parameter from email link
+  useEffect(() => {
+    const setGenre = searchParams.get('setGenre')
+    const projectId = searchParams.get('projectId')
+    
+    if (setGenre === 'true' && projectId) {
+      console.log('🎭 [PAGE] Genre modal requested for project:', projectId)
+      setGenreModalProjectId(projectId)
+      setShowGenreModal(true)
+      
+      // Also set the current project if not already set
+      if (projectId !== currentProjectId) {
+        setCurrentProjectId(projectId)
+      }
+      
+      // Clean up URL by removing query parameters
+      router.replace('/chat', { scroll: false })
+    }
+  }, [searchParams, router, currentProjectId])
 
 
   const handleSessionSelect = (sessionId: string, projectId?: string) => {
@@ -550,6 +574,22 @@ export default function ChatPage() {
         onProjectCreated={handleProjectCreated}
         isRequired={false} // Never block - user should always be able to navigate
       />
+
+      {/* Genre Selection Modal - Shown when user clicks "Set Genre" link from email */}
+      {genreModalProjectId && (
+        <GenreSelectionModal
+          isOpen={showGenreModal}
+          onClose={() => {
+            setShowGenreModal(false)
+            setGenreModalProjectId('')
+          }}
+          projectId={genreModalProjectId}
+          onGenreUpdated={() => {
+            // Refresh dossier data if needed
+            queryClient.invalidateQueries({ queryKey: ['dossier', genreModalProjectId] })
+          }}
+        />
+      )}
 
       {/* Sidebar Hint for Mobile Users */}
       {showSidebarHint && (

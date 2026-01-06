@@ -295,6 +295,20 @@ export const projectApi = {
       headers
     }).json<{ success: boolean; project_id: string; name: string }>()
   },
+
+  // Get dossier
+  getDossier: async (projectId: string) => {
+    const headers = getUserHeaders()
+    return await api.get(`api/v1/dossiers/${projectId}`, {
+      headers
+    }).json<{
+      project_id: string
+      user_id: string
+      snapshot_json: Record<string, any>
+      created_at: string
+      updated_at: string
+    }>()
+  },
 }
 
 // Authentication API
