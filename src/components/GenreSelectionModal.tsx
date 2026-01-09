@@ -13,8 +13,17 @@ interface GenreSelectionModalProps {
   onGenreUpdated?: () => void
 }
 
-// Genre suggestions based on common story types
-const GENRE_SUGGESTIONS = [
+// Primary client-specified genres (featured prominently)
+const PRIMARY_GENRES = [
+  'Historic Romance',
+  'Family Saga',
+  'Childhood Adventure',
+  'Documentary',
+  'Historical Epic'
+]
+
+// Secondary genre suggestions (additional options)
+const SECONDARY_GENRES = [
   'Romantic',
   'Drama',
   'Comedy',
@@ -25,7 +34,6 @@ const GENRE_SUGGESTIONS = [
   'Sci-Fi',
   'Horror',
   'Mystery',
-  'Documentary',
   'Biographical',
   'Historical',
   'Coming of Age',
@@ -262,7 +270,7 @@ export function GenreSelectionModal({
               padding: '0'
             }}
           >
-            Help us categorize your story by selecting or entering a genre
+            Select from our featured genres or choose another option below
           </p>
         </div>
 
@@ -285,72 +293,143 @@ export function GenreSelectionModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Genre Suggestions */}
             {!isCustomMode && (
-            <div>
-              <label 
-                className="block text-sm font-medium mb-3"
-                style={{
-                  color: resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
-                  marginBottom: '0.75rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500'
-                }}
-              >
-                Select a Genre
-              </label>
-              <div 
-                className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-                  gap: '0.5rem',
-                  maxHeight: '16rem',
-                  overflowY: 'auto',
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  backgroundColor: resolvedTheme === 'dark' ? 'rgb(15, 23, 42)' : 'rgb(249, 250, 251)'
-                }}
-              >
-                {GENRE_SUGGESTIONS.map((genre) => (
-                  <button
-                    key={genre}
-                    type="button"
-                    onClick={() => handleGenreSelect(genre)}
-                    className="px-3 py-2 text-sm rounded-lg border transition-all"
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      fontSize: '0.875rem',
-                      borderRadius: '0.5rem',
-                      borderWidth: '1px',
-                      borderColor: selectedGenre === genre
-                        ? 'rgb(139, 92, 246)'
-                        : resolvedTheme === 'dark' ? 'rgb(51, 65, 85)' : 'rgb(209, 213, 219)',
-                      backgroundColor: selectedGenre === genre
-                        ? resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)'
-                        : 'transparent',
-                      color: selectedGenre === genre
-                        ? 'rgb(139, 92, 246)'
-                        : resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
-                      fontWeight: selectedGenre === genre ? '600' : '400',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      textAlign: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedGenre !== genre) {
-                        e.currentTarget.style.borderColor = 'rgb(139, 92, 246)'
-                        e.currentTarget.style.backgroundColor = resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedGenre !== genre) {
-                        e.currentTarget.style.borderColor = resolvedTheme === 'dark' ? 'rgb(51, 65, 85)' : 'rgb(209, 213, 219)'
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }
-                    }}
-                  >
-                    {genre}
-                  </button>
-                ))}
+            <div className="space-y-4">
+              {/* Primary Genres - Featured */}
+              <div>
+                <label 
+                  className="block text-sm font-semibold mb-3"
+                  style={{
+                    color: resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  Featured Genres
+                </label>
+                <div 
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '0.5rem',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    backgroundColor: resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)'
+                  }}
+                >
+                  {PRIMARY_GENRES.map((genre) => (
+                    <button
+                      key={genre}
+                      type="button"
+                      onClick={() => handleGenreSelect(genre)}
+                      className="px-4 py-3 text-sm rounded-lg border-2 transition-all font-medium"
+                      style={{
+                        padding: '0.75rem 1rem',
+                        fontSize: '0.875rem',
+                        borderRadius: '0.5rem',
+                        borderWidth: '2px',
+                        borderColor: selectedGenre === genre
+                          ? 'rgb(139, 92, 246)'
+                          : resolvedTheme === 'dark' ? 'rgb(71, 85, 105)' : 'rgb(196, 181, 253)',
+                        backgroundColor: selectedGenre === genre
+                          ? resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.15)'
+                          : resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(139, 92, 246, 0.03)',
+                        color: selectedGenre === genre
+                          ? 'rgb(139, 92, 246)'
+                          : resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
+                        fontWeight: selectedGenre === genre ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedGenre !== genre) {
+                          e.currentTarget.style.borderColor = 'rgb(139, 92, 246)'
+                          e.currentTarget.style.backgroundColor = resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedGenre !== genre) {
+                          e.currentTarget.style.borderColor = resolvedTheme === 'dark' ? 'rgb(71, 85, 105)' : 'rgb(196, 181, 253)'
+                          e.currentTarget.style.backgroundColor = resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(139, 92, 246, 0.03)'
+                        }
+                      }}
+                    >
+                      {genre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Secondary Genres - Additional Options */}
+              <div>
+                <label 
+                  className="block text-sm font-medium mb-3"
+                  style={{
+                    color: resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Other Genres
+                </label>
+                <div 
+                  className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                    gap: '0.5rem',
+                    maxHeight: '12rem',
+                    overflowY: 'auto',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    backgroundColor: resolvedTheme === 'dark' ? 'rgb(15, 23, 42)' : 'rgb(249, 250, 251)'
+                  }}
+                >
+                  {SECONDARY_GENRES.map((genre) => (
+                    <button
+                      key={genre}
+                      type="button"
+                      onClick={() => handleGenreSelect(genre)}
+                      className="px-3 py-2 text-sm rounded-lg border transition-all"
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        fontSize: '0.875rem',
+                        borderRadius: '0.5rem',
+                        borderWidth: '1px',
+                        borderColor: selectedGenre === genre
+                          ? 'rgb(139, 92, 246)'
+                          : resolvedTheme === 'dark' ? 'rgb(51, 65, 85)' : 'rgb(209, 213, 219)',
+                        backgroundColor: selectedGenre === genre
+                          ? resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)'
+                          : 'transparent',
+                        color: selectedGenre === genre
+                          ? 'rgb(139, 92, 246)'
+                          : resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
+                        fontWeight: selectedGenre === genre ? '600' : '400',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedGenre !== genre) {
+                          e.currentTarget.style.borderColor = 'rgb(139, 92, 246)'
+                          e.currentTarget.style.backgroundColor = resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedGenre !== genre) {
+                          e.currentTarget.style.borderColor = resolvedTheme === 'dark' ? 'rgb(51, 65, 85)' : 'rgb(209, 213, 219)'
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }
+                      }}
+                    >
+                      {genre}
+                    </button>
+                  ))}
+                </div>
               </div>
               
               {/* Custom Genre Button */}
