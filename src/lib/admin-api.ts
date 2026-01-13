@@ -232,6 +232,40 @@ class AdminApi {
       throw new Error('Failed to reject synopsis')
     }
   }
+
+  async generateScript(id: string): Promise<{ success: boolean; script: string; word_count: number }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/generate-script`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        timeout: 90000 // 90 seconds for script generation
+      }).json<{ success: boolean; script: string; word_count: number }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to generate script:', error)
+      throw new Error('Failed to generate script')
+    }
+  }
+
+  async generateShotList(id: string): Promise<{ success: boolean; shot_list: any; scene_count: number; total_shots: number }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/generate-shot-list`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        timeout: 90000 // 90 seconds for shot list generation
+      }).json<{ success: boolean; shot_list: any; scene_count: number; total_shots: number }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to generate shot list:', error)
+      throw new Error('Failed to generate shot list')
+    }
+  }
 }
 
 export const adminApi = new AdminApi()

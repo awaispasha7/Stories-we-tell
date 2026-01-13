@@ -87,6 +87,8 @@ interface ValidationRequest {
   synopsis_reviewed_at?: string
   synopsis_reviewed_by?: string
   synopsis_checklist?: SynopsisChecklist
+  full_script?: string
+  shot_list?: any
 }
 
 interface Props {
@@ -188,6 +190,12 @@ export default function ValidationDetail({
       sensitivity: false
     }
   )
+  
+  // Script & Shot List State
+  const [fullScript, setFullScript] = useState<string | undefined>(request.full_script)
+  const [shotList, setShotList] = useState<any | undefined>(request.shot_list)
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false)
+  const [isGeneratingShotList, setIsGeneratingShotList] = useState(false)
   
   // Track which tabs are unlocked by admin (override locks)
   const [unlockedTabs, setUnlockedTabs] = useState<Set<TabType>>(new Set())
@@ -419,9 +427,15 @@ export default function ValidationDetail({
         sensitivity: false
       })
     }
+    if (request.full_script !== undefined) {
+      setFullScript(request.full_script)
+    }
+    if (request.shot_list !== undefined) {
+      setShotList(request.shot_list)
+    }
     // Note: synopsis_approved is read directly from request.synopsis_approved
     // No local state needed - always use request.synopsis_approved for conditional rendering
-  }, [request.synopsis, request.synopsis_review_notes, request.synopsis_checklist, request.synopsis_approved, request.workflow_step])
+  }, [request.synopsis, request.synopsis_review_notes, request.synopsis_checklist, request.synopsis_approved, request.workflow_step, request.full_script, request.shot_list])
 
   const canTakeAction = request.status === 'pending'
   const statusStyle = statusConfig[request.status] || statusConfig.pending
@@ -1174,9 +1188,92 @@ export default function ValidationDetail({
 
                     {/* Generation Steps */}
                     <div className="space-y-4!">
+                      {/* Step 12: Full Script Draft */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 12: LLM — Full Script Draft
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              500-800 word script with narrative, dialogue, voice-over, scene structure, emotional beats
+                            </p>
+                          </div>
+                          {request.synopsis_approved && (
+                            <button
+                              onClick={handleGenerateScript}
+                              disabled={isGeneratingScript || !!fullScript}
+                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                isGeneratingScript || fullScript
+                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                            >
+                              {isGeneratingScript ? 'Generating...' : fullScript ? 'Generated' : 'Generate Script'}
+                            </button>
+                          )}
+                        </div>
+                        {fullScript ? (
+                          <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
+                            <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
+                              {fullScript}
+                            </div>
+                          </div>
+                        ) : request.synopsis_approved ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate Script" to create the full script from the approved synopsis.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after synopsis approval.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 13: Shot List Creation */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 13: LLM — Shot List Creation
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              Scene breakdown, shot sequences, character presence, transitions, atmosphere
+                            </p>
+                          </div>
+                          {fullScript && (
+                            <button
+                              onClick={handleGenerateShotList}
+                              disabled={isGeneratingShotList || !!shotList}
+                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                isGeneratingShotList || shotList
+                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                            >
+                              {isGeneratingShotList ? 'Generating...' : shotList ? 'Generated' : 'Generate Shot List'}
+                            </button>
+                          )}
+                        </div>
+                        {shotList ? (
+                          <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
+                            <pre className={`${colors.text}! text-sm! whitespace-pre-wrap! overflow-x-auto!`}>
+                              {JSON.stringify(shotList, null, 2)}
+                            </pre>
+                          </div>
+                        ) : fullScript ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate Shot List" to create the shot list from the generated script.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after script generation (Step 12).
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Other steps (14-20) */}
                       {[
-                        { step: 12, title: 'Full Script Draft', description: '500-800 word script with narrative, dialogue, voice-over, scene structure, emotional beats' },
-                        { step: 13, title: 'Shot List Creation', description: 'Scene breakdown, shot sequences, character presence, transitions, atmosphere' },
                         { step: 14, title: 'Dialogue Export', description: 'Dialogue lines, timing per line, emotional indicators' },
                         { step: 15, title: 'Voice-Over Script', description: 'Narrator text, duration logic, VO placement, tone markings' },
                         { step: 16, title: 'Camera Logic', description: 'Camera angles, movement, lens style, framing, proximity, rhythm of cut' },
