@@ -1245,10 +1245,10 @@ export default function ValidationDetail({
                             <button
                               onClick={handleGenerateScript}
                               disabled={isGeneratingScript || !!fullScript}
-                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
                                 isGeneratingScript || fullScript
-                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
                               }`}
                             >
                               {isGeneratingScript ? 'Generating...' : fullScript ? 'Generated' : 'Generate Script'}
@@ -1287,10 +1287,10 @@ export default function ValidationDetail({
                             <button
                               onClick={handleGenerateShotList}
                               disabled={isGeneratingShotList || !!shotList}
-                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
                                 isGeneratingShotList || shotList
-                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
                               }`}
                             >
                               {isGeneratingShotList ? 'Generating...' : shotList ? 'Generated' : 'Generate Shot List'}
