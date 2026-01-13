@@ -353,6 +353,48 @@ export default function ValidationDetail({
     }
   }
 
+  const handleGenerateScript = async () => {
+    setIsGeneratingScript(true)
+    try {
+      const result = await adminApi.generateScript(request.validation_id)
+      if (result.success) {
+        setFullScript(result.script)
+        toast.success('Script generated', `Generated ${result.word_count} words`)
+        if (onReviewSent) {
+          onReviewSent()
+        }
+      } else {
+        toast.error('Failed to generate script', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to generate script:', error)
+      toast.error('Failed to generate script', 'Please try again.')
+    } finally {
+      setIsGeneratingScript(false)
+    }
+  }
+
+  const handleGenerateShotList = async () => {
+    setIsGeneratingShotList(true)
+    try {
+      const result = await adminApi.generateShotList(request.validation_id)
+      if (result.success) {
+        setShotList(result.shot_list)
+        toast.success('Shot list generated', `Generated ${result.scene_count} scenes, ${result.total_shots} shots`)
+        if (onReviewSent) {
+          onReviewSent()
+        }
+      } else {
+        toast.error('Failed to generate shot list', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to generate shot list:', error)
+      toast.error('Failed to generate shot list', 'Please try again.')
+    } finally {
+      setIsGeneratingShotList(false)
+    }
+  }
+
   const handleSendReview = async () => {
     setIsSendingReview(true)
     console.log('📧 [FRONTEND] Sending review...')
