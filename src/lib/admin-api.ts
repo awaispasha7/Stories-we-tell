@@ -17,6 +17,17 @@ interface ValidationRequest {
   reviewed_by: string | null
   review_notes: string | null
   updated_at: string
+  workflow_step?: string
+  synopsis?: string
+  synopsis_approved?: boolean
+  synopsis_review_notes?: string
+  synopsis_reviewed_at?: string
+  synopsis_reviewed_by?: string
+  synopsis_checklist?: Record<string, boolean>
+  full_script?: string
+  shot_list?: any
+  genre_scripts?: Array<{genre: string; script: string; confidence: number; word_count: number}>
+  selected_genre_script?: string
 }
 
 interface AdminStats {
@@ -187,12 +198,30 @@ class AdminApi {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        timeout: 60000 // 60 seconds for LLM generation
+        timeout: 300000 // 5 minutes (300 seconds) for synopsis generation
       }).json<{ success: boolean; synopsis: string; word_count: number }>()
 
       return response
     } catch (error) {
       console.error('Failed to generate synopsis:', error)
+      // Check if it's a timeout - if so, poll to see if backend completed
+      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('aborted'))) {
+        console.log('⏱️ Request timed out, checking if backend completed...')
+        // Poll the validation request to see if synopsis was generated
+        try {
+          const validation = await this.getValidationRequest(id)
+          if (validation.synopsis) {
+            // Backend completed successfully despite timeout
+            return {
+              success: true,
+              synopsis: validation.synopsis,
+              word_count: validation.synopsis.split(/\s+/).length
+            }
+          }
+        } catch (pollError) {
+          console.error('Failed to poll for completion:', pollError)
+        }
+      }
       throw new Error('Failed to generate synopsis')
     }
   }
@@ -246,7 +275,7 @@ class AdminApi {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        timeout: 180000 // 180 seconds for multiple script generation
+        timeout: 900000 // 15 minutes (900 seconds) for multiple genre script generation
       }).json<{ 
         success: boolean; 
         script: string; 
@@ -258,19 +287,40 @@ class AdminApi {
       return response
     } catch (error) {
       console.error('Failed to generate script:', error)
+      // Check if it's a timeout - if so, poll to see if backend completed
+      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('aborted'))) {
+        console.log('⏱️ Request timed out, checking if backend completed...')
+        // Poll the validation request to see if scripts were generated
+        try {
+          const validation = await this.getValidationRequest(id)
+          if (validation.genre_scripts && validation.genre_scripts.length > 0) {
+            // Backend completed successfully despite timeout
+            return {
+              success: true,
+              script: validation.full_script || validation.genre_scripts[0]?.script || '',
+              word_count: validation.genre_scripts[0]?.word_count || 0,
+              genre_scripts: validation.genre_scripts,
+              message: 'Scripts generated successfully (completed after timeout)'
+            }
+          }
+        } catch (pollError) {
+          console.error('Failed to poll for completion:', pollError)
+        }
+      }
       throw new Error('Failed to generate script')
     }
   }
 
-  async selectGenreScript(id: string, genre: string): Promise<{ success: boolean }> {
+  async selectGenreScript(id: string, genre: string): Promise<{ success: boolean; message?: string; selected_script?: string }> {
     try {
       const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/select-genre-script`, {
         headers: {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        json: { selected_genre_script: genre }
-      }).json<{ success: boolean }>()
+        json: { genre },
+        timeout: 30000 // 30 seconds for selection
+      }).json<{ success: boolean; message?: string; selected_script?: string }>()
 
       return response
     } catch (error) {
@@ -286,12 +336,31 @@ class AdminApi {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        timeout: 90000 // 90 seconds for shot list generation
+        timeout: 1200000 // 20 minutes (1200 seconds) for shot list generation - takes longer than script generation
       }).json<{ success: boolean; shot_list: any; scene_count: number; total_shots: number }>()
 
       return response
     } catch (error) {
       console.error('Failed to generate shot list:', error)
+      // Check if it's a timeout - if so, poll to see if backend completed
+      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('aborted'))) {
+        console.log('⏱️ Shot list generation timed out, checking if backend completed...')
+        // Poll the validation request to see if shot list was generated
+        try {
+          const validation = await this.getValidationRequest(id)
+          if (validation.shot_list) {
+            // Backend completed successfully despite timeout
+            return {
+              success: true,
+              shot_list: validation.shot_list,
+              scene_count: validation.shot_list?.scenes?.length || 0,
+              total_shots: validation.shot_list?.total_shots || Object.keys(validation.shot_list || {}).length
+            }
+          }
+        } catch (pollError) {
+          console.error('Failed to poll for shot list completion:', pollError)
+        }
+      }
       throw new Error('Failed to generate shot list')
     }
   }

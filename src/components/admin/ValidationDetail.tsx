@@ -198,6 +198,16 @@ export default function ValidationDetail({
   const [shotList, setShotList] = useState<any | undefined>(request.shot_list)
   const [isGeneratingScript, setIsGeneratingScript] = useState(false)
   const [isGeneratingShotList, setIsGeneratingShotList] = useState(false)
+  const [shotListGenerationProgress, setShotListGenerationProgress] = useState<string>('')
+  const [isGeneratingDialogue, setIsGeneratingDialogue] = useState(false)
+  const [dialogueGenerationProgress, setDialogueGenerationProgress] = useState<string>('')
+  const [isGeneratingVoiceOver, setIsGeneratingVoiceOver] = useState(false)
+  const [voiceOverGenerationProgress, setVoiceOverGenerationProgress] = useState<string>('')
+  const [isGeneratingCameraLogic, setIsGeneratingCameraLogic] = useState(false)
+  const [cameraLogicGenerationProgress, setCameraLogicGenerationProgress] = useState<string>('')
+  const [isGeneratingSceneMath, setIsGeneratingSceneMath] = useState(false)
+  const [sceneMathGenerationProgress, setSceneMathGenerationProgress] = useState<string>('')
+  const [scriptGenerationProgress, setScriptGenerationProgress] = useState<string>('')
   const [genreScripts, setGenreScripts] = useState<Array<{genre: string; script: string; confidence: number; word_count: number}>>(
     request.genre_scripts || []
   )
@@ -289,9 +299,40 @@ export default function ValidationDetail({
       } else {
         toast.error('Failed to generate synopsis', 'Please try again.')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate synopsis:', error)
-      toast.error('Failed to generate synopsis', 'Please try again.')
+      
+      // Check if it's a timeout - if so, poll for completion
+      if (error?.message?.includes('timeout') || error?.message?.includes('aborted')) {
+        // Poll to see if backend completed
+        let pollAttempts = 0
+        const maxPollAttempts = 10
+        const pollInterval = 3000 // 3 seconds
+        
+        while (pollAttempts < maxPollAttempts) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, pollInterval))
+            pollAttempts++
+            
+            const validation = await adminApi.getValidationRequest(request.validation_id)
+            if (validation.synopsis) {
+              // Backend completed successfully!
+              setSynopsis(validation.synopsis)
+              toast.success('Synopsis generated', `Generated ${validation.synopsis.split(/\s+/).length} words (completed after timeout)`)
+              if (onReviewSent) {
+                onReviewSent()
+              }
+              return
+            }
+          } catch (pollError) {
+            console.error('Polling error:', pollError)
+          }
+        }
+        
+        toast.error('Synopsis generation timeout', 'The request timed out. Please check the admin panel to see if synopsis was generated.')
+      } else {
+        toast.error('Failed to generate synopsis', 'Please try again.')
+      }
     } finally {
       setIsGeneratingSynopsis(false)
     }
@@ -362,9 +403,31 @@ export default function ValidationDetail({
 
   const handleGenerateScript = async () => {
     setIsGeneratingScript(true)
+    setScriptGenerationProgress('Initializing script generation...')
+    
+    // Get genre predictions from dossier to show expected progress
+    let expectedGenres: string[] = []
+    try {
+      // Try to get genre predictions from dossier_data if available
+      if (request.dossier_data?.genre_predictions) {
+        expectedGenres = request.dossier_data.genre_predictions.map((gp: any) => gp.genre || gp)
+      }
+    } catch (e) {
+      console.warn('Could not get genre predictions:', e)
+    }
+    
+    // Show initial progress with estimated time
+    if (expectedGenres.length > 0) {
+      const estimatedTime = Math.ceil(expectedGenres.length * 2) // ~2 minutes per genre
+      setScriptGenerationProgress(`Generating scripts for ${expectedGenres.length} genres (${expectedGenres.join(', ')}). This may take ${estimatedTime}-${estimatedTime + 5} minutes. Please be patient...`)
+    } else {
+      setScriptGenerationProgress('Generating scripts for detected genres. This may take 10-15 minutes. Please be patient...')
+    }
+    
     try {
       const result = await adminApi.generateScript(request.validation_id)
       if (result.success) {
+        setScriptGenerationProgress('')
         // Handle multiple genre scripts
         if (result.genre_scripts && result.genre_scripts.length > 0) {
           setGenreScripts(result.genre_scripts)
@@ -384,13 +447,71 @@ export default function ValidationDetail({
           onReviewSent()
         }
       } else {
+        setScriptGenerationProgress('')
         toast.error('Failed to generate script', 'Please try again.')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate script:', error)
-      toast.error('Failed to generate script', 'Please try again.')
+      setScriptGenerationProgress('')
+      
+      // Check if it's a timeout - if so, poll for completion
+      if (error?.message?.includes('timeout') || error?.message?.includes('aborted')) {
+        setScriptGenerationProgress('Request timed out, checking if generation completed...')
+        // Poll to see if backend completed
+        let pollAttempts = 0
+        const maxPollAttempts = 10
+        const pollInterval = 3000 // 3 seconds
+        
+        const pollForCompletion = async () => {
+          while (pollAttempts < maxPollAttempts) {
+            try {
+              await new Promise(resolve => setTimeout(resolve, pollInterval))
+              pollAttempts++
+              
+              const validation = await adminApi.getValidationRequest(request.validation_id)
+              if (validation.genre_scripts && validation.genre_scripts.length > 0) {
+                // Backend completed successfully!
+                setScriptGenerationProgress('')
+                setGenreScripts(validation.genre_scripts)
+                const highestConf = validation.genre_scripts.reduce((prev: any, curr: any) => 
+                  curr.confidence > prev.confidence ? curr : prev
+                )
+                setFullScript(highestConf.script)
+                setSelectedGenreScript(highestConf.genre)
+                toast.success('Scripts generated', `Generated ${validation.genre_scripts.length} genre-specific scripts (completed after timeout)`)
+                if (onReviewSent) {
+                  onReviewSent()
+                }
+                return
+              } else if (validation.full_script) {
+                // Single script was generated
+                setScriptGenerationProgress('')
+                setFullScript(validation.full_script)
+                toast.success('Script generated', 'Script generation completed (after timeout)')
+                if (onReviewSent) {
+                  onReviewSent()
+                }
+                return
+              }
+              
+              setScriptGenerationProgress(`Checking for completion... (${pollAttempts}/${maxPollAttempts})`)
+            } catch (pollError) {
+              console.error('Polling error:', pollError)
+            }
+          }
+          
+          // If we get here, polling didn't find completion
+          setScriptGenerationProgress('')
+          toast.error('Script generation timeout', 'The request timed out. Please check the admin panel to see if scripts were generated.')
+        }
+        
+        await pollForCompletion()
+      } else {
+        toast.error('Failed to generate script', 'Please try again.')
+      }
     } finally {
       setIsGeneratingScript(false)
+      setScriptGenerationProgress('')
     }
   }
 
@@ -415,22 +536,138 @@ export default function ValidationDetail({
 
   const handleGenerateShotList = async () => {
     setIsGeneratingShotList(true)
+    setShotListGenerationProgress('Generating shot list from script. This may take upto 5 minutes. Please be patient...')
+    
     try {
       const result = await adminApi.generateShotList(request.validation_id)
       if (result.success) {
+        setShotListGenerationProgress('')
         setShotList(result.shot_list)
         toast.success('Shot list generated', `Generated ${result.scene_count} scenes, ${result.total_shots} shots`)
         if (onReviewSent) {
           onReviewSent()
         }
       } else {
+        setShotListGenerationProgress('')
         toast.error('Failed to generate shot list', 'Please try again.')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate shot list:', error)
-      toast.error('Failed to generate shot list', 'Please try again.')
+      setShotListGenerationProgress('')
+      
+      // Check if it's a timeout - if so, poll for completion
+      if (error?.message?.includes('timeout') || error?.message?.includes('aborted')) {
+        setShotListGenerationProgress('Request timed out, checking if generation completed...')
+        let pollAttempts = 0
+        const maxPollAttempts = 10
+        const pollInterval = 3000
+        
+        while (pollAttempts < maxPollAttempts) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, pollInterval))
+            pollAttempts++
+            setShotListGenerationProgress(`Checking for completion... (${pollAttempts}/${maxPollAttempts})`)
+            
+            const validation = await adminApi.getValidationRequest(request.validation_id)
+            if (validation.shot_list) {
+              setShotListGenerationProgress('')
+              setShotList(validation.shot_list)
+              toast.success('Shot list generated', 'Shot list generation completed (after timeout)')
+              if (onReviewSent) {
+                onReviewSent()
+              }
+              return
+            }
+          } catch (pollError) {
+            console.warn('Polling for shot list generation failed:', pollError)
+          }
+        }
+        
+        setShotListGenerationProgress('')
+        toast.error('Shot list generation timeout', 'The request timed out. Please check the admin panel to see if the shot list was generated.')
+      } else {
+        toast.error('Failed to generate shot list', 'Please try again.')
+      }
     } finally {
       setIsGeneratingShotList(false)
+      setShotListGenerationProgress('')
+    }
+  }
+
+  const handleGenerateDialogue = async () => {
+    setIsGeneratingDialogue(true)
+    setDialogueGenerationProgress('Generating dialogue export. This may take 5 minutes. Please be patient...')
+    
+    try {
+      // TODO: Implement backend endpoint for dialogue generation
+      // For now, show a placeholder message
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setDialogueGenerationProgress('')
+      toast.info('Dialogue Export', 'This feature is coming soon. Backend endpoint needs to be implemented.')
+    } catch (error) {
+      console.error('Failed to generate dialogue:', error)
+      setDialogueGenerationProgress('')
+      toast.error('Failed to generate dialogue', 'Please try again.')
+    } finally {
+      setIsGeneratingDialogue(false)
+      setDialogueGenerationProgress('')
+    }
+  }
+
+  const handleGenerateVoiceOver = async () => {
+    setIsGeneratingVoiceOver(true)
+    setVoiceOverGenerationProgress('Generating voice-over script. This may take 5 minutes. Please be patient...')
+    
+    try {
+      // TODO: Implement backend endpoint for voice-over generation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setVoiceOverGenerationProgress('')
+      toast.info('Voice-Over Script', 'This feature is coming soon. Backend endpoint needs to be implemented.')
+    } catch (error) {
+      console.error('Failed to generate voice-over:', error)
+      setVoiceOverGenerationProgress('')
+      toast.error('Failed to generate voice-over', 'Please try again.')
+    } finally {
+      setIsGeneratingVoiceOver(false)
+      setVoiceOverGenerationProgress('')
+    }
+  }
+
+  const handleGenerateCameraLogic = async () => {
+    setIsGeneratingCameraLogic(true)
+    setCameraLogicGenerationProgress('Generating camera logic. This may take 5 minutes. Please be patient...')
+    
+    try {
+      // TODO: Implement backend endpoint for camera logic generation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setCameraLogicGenerationProgress('')
+      toast.info('Camera Logic', 'This feature is coming soon. Backend endpoint needs to be implemented.')
+    } catch (error) {
+      console.error('Failed to generate camera logic:', error)
+      setCameraLogicGenerationProgress('')
+      toast.error('Failed to generate camera logic', 'Please try again.')
+    } finally {
+      setIsGeneratingCameraLogic(false)
+      setCameraLogicGenerationProgress('')
+    }
+  }
+
+  const handleGenerateSceneMath = async () => {
+    setIsGeneratingSceneMath(true)
+    setSceneMathGenerationProgress('Generating scene math. This may take 5 minutes. Please be patient...')
+    
+    try {
+      // TODO: Implement backend endpoint for scene math generation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      setSceneMathGenerationProgress('')
+      toast.info('Scene Math', 'This feature is coming soon. Backend endpoint needs to be implemented.')
+    } catch (error) {
+      console.error('Failed to generate scene math:', error)
+      setSceneMathGenerationProgress('')
+      toast.error('Failed to generate scene math', 'Please try again.')
+    } finally {
+      setIsGeneratingSceneMath(false)
+      setSceneMathGenerationProgress('')
     }
   }
 
@@ -1085,7 +1322,7 @@ export default function ValidationDetail({
                           {isGeneratingSynopsis ? (
                             <>
                               <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-white!"></div>
-                              <span>Generating Synopsis...</span>
+                              <span>Generating synopsis (this may take 1-2 minutes)...</span>
                             </>
                           ) : (
                             'Generate Synopsis (Step 10)'
@@ -1297,13 +1534,23 @@ export default function ValidationDetail({
                               }`}
                             >
                               {isGeneratingScript 
-                                ? 'Generating...' 
+                                ? 'Generating Scripts...' 
                                 : genreScripts.length > 0 
                                   ? `Generated (${genreScripts.length} genres)` 
                                   : fullScript 
                                     ? 'Generated' 
                                     : 'Generate Script'}
                             </button>
+                          )}
+                          {scriptGenerationProgress && isGeneratingScript && (
+                            <div className={`mt-3! p-3! rounded-lg! bg-blue-50! dark:bg-blue-900/20! border! border-blue-200! dark:border-blue-800!`}>
+                              <div className={`text-sm! font-medium! ${colors.text}! mb-1!`}>
+                                ⏳ Script Generation in Progress
+                              </div>
+                              <div className={`text-sm! ${colors.textSecondary}!`}>
+                                {scriptGenerationProgress}
+                              </div>
+                            </div>
                           )}
                         </div>
                         {/* Multiple Genre Scripts Display */}
@@ -1426,6 +1673,14 @@ export default function ValidationDetail({
                             </button>
                           )}
                         </div>
+                        {shotListGenerationProgress && isGeneratingShotList && (
+                          <div className={`mt-2! p-3! rounded! bg-blue-50! dark:bg-blue-900/20! border-l-4! border-blue-500! ${colors.textSecondary}! text-sm! italic!`}>
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin! rounded-full! h-4! w-4! border-b-2! border-blue-500!"></div>
+                              <span>{shotListGenerationProgress}</span>
+                            </div>
+                          </div>
+                        )}
                         {shotList ? (
                           <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
                             <pre className={`${colors.text}! text-sm! whitespace-pre-wrap! overflow-x-auto!`}>
@@ -1443,12 +1698,184 @@ export default function ValidationDetail({
                         )}
                       </div>
 
-                      {/* Other steps (14-20) */}
+                      {/* Step 14: Dialogue Export */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 14: LLM — Dialogue Export
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              Dialogue lines, timing per line, emotional indicators
+                            </p>
+                          </div>
+                          {fullScript && (
+                            <button
+                              onClick={handleGenerateDialogue}
+                              disabled={isGeneratingDialogue}
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
+                                isGeneratingDialogue
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
+                              }`}
+                            >
+                              {isGeneratingDialogue ? 'Generating...' : 'Generate Dialogue'}
+                            </button>
+                          )}
+                        </div>
+                        {dialogueGenerationProgress && isGeneratingDialogue && (
+                          <div className={`mt-2! p-3! rounded! bg-blue-50! dark:bg-blue-900/20! border-l-4! border-blue-500! ${colors.textSecondary}! text-sm! italic!`}>
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin! rounded-full! h-4! w-4! border-b-2! border-blue-500!"></div>
+                              <span>{dialogueGenerationProgress}</span>
+                            </div>
+                          </div>
+                        )}
+                        {fullScript ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate Dialogue" to extract dialogue lines from the script.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after script generation (Step 12).
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 15: Voice-Over Script */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 15: LLM — Voice-Over Script
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              Narrator text, duration logic, VO placement, tone markings
+                            </p>
+                          </div>
+                          {fullScript && (
+                            <button
+                              onClick={handleGenerateVoiceOver}
+                              disabled={isGeneratingVoiceOver}
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
+                                isGeneratingVoiceOver
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
+                              }`}
+                            >
+                              {isGeneratingVoiceOver ? 'Generating...' : 'Generate VO Script'}
+                            </button>
+                          )}
+                        </div>
+                        {voiceOverGenerationProgress && isGeneratingVoiceOver && (
+                          <div className={`mt-2! p-3! rounded! bg-blue-50! dark:bg-blue-900/20! border-l-4! border-blue-500! ${colors.textSecondary}! text-sm! italic!`}>
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin! rounded-full! h-4! w-4! border-b-2! border-blue-500!"></div>
+                              <span>{voiceOverGenerationProgress}</span>
+                            </div>
+                          </div>
+                        )}
+                        {fullScript ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate VO Script" to create the voice-over script from the generated script.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after script generation (Step 12).
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 16: Camera Logic */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 16: LLM — Camera Logic
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              Camera angles, movement, lens style, framing, proximity, rhythm of cut
+                            </p>
+                          </div>
+                          {shotList && (
+                            <button
+                              onClick={handleGenerateCameraLogic}
+                              disabled={isGeneratingCameraLogic}
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
+                                isGeneratingCameraLogic
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
+                              }`}
+                            >
+                              {isGeneratingCameraLogic ? 'Generating...' : 'Generate Camera Logic'}
+                            </button>
+                          )}
+                        </div>
+                        {cameraLogicGenerationProgress && isGeneratingCameraLogic && (
+                          <div className={`mt-2! p-3! rounded! bg-blue-50! dark:bg-blue-900/20! border-l-4! border-blue-500! ${colors.textSecondary}! text-sm! italic!`}>
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin! rounded-full! h-4! w-4! border-b-2! border-blue-500!"></div>
+                              <span>{cameraLogicGenerationProgress}</span>
+                            </div>
+                          </div>
+                        )}
+                        {shotList ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate Camera Logic" to create camera instructions from the shot list.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after shot list generation (Step 13).
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 17: Scene Math */}
+                      <div className={`p-4! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className={`text-base! font-semibold! mb-2! ${colors.text}!`}>
+                              Step 17: LLM — Scene Math
+                            </h4>
+                            <p className={`text-sm! ${colors.textSecondary}!`}>
+                              Shot duration, beat frequency, transition time, dialogue timing, visual rhythm
+                            </p>
+                          </div>
+                          {shotList && (
+                            <button
+                              onClick={handleGenerateSceneMath}
+                              disabled={isGeneratingSceneMath}
+                              className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
+                                isGeneratingSceneMath
+                                  ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                  : 'bg-blue-600! hover:bg-blue-700! text-white!'
+                              }`}
+                            >
+                              {isGeneratingSceneMath ? 'Generating...' : 'Generate Scene Math'}
+                            </button>
+                          )}
+                        </div>
+                        {sceneMathGenerationProgress && isGeneratingSceneMath && (
+                          <div className={`mt-2! p-3! rounded! bg-blue-50! dark:bg-blue-900/20! border-l-4! border-blue-500! ${colors.textSecondary}! text-sm! italic!`}>
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin! rounded-full! h-4! w-4! border-b-2! border-blue-500!"></div>
+                              <span>{sceneMathGenerationProgress}</span>
+                            </div>
+                          </div>
+                        )}
+                        {shotList ? (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Click "Generate Scene Math" to calculate timing and rhythm from the shot list.
+                          </div>
+                        ) : (
+                          <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
+                            Content will be generated after shot list generation (Step 13).
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Other steps (18, 20) */}
                       {[
-                        { step: 14, title: 'Dialogue Export', description: 'Dialogue lines, timing per line, emotional indicators' },
-                        { step: 15, title: 'Voice-Over Script', description: 'Narrator text, duration logic, VO placement, tone markings' },
-                        { step: 16, title: 'Camera Logic', description: 'Camera angles, movement, lens style, framing, proximity, rhythm of cut' },
-                        { step: 17, title: 'Scene Math', description: 'Shot duration, beat frequency, transition time, dialogue timing, visual rhythm' },
                         { step: 18, title: 'Prompt Micro-Details', description: 'Micro-prompt instructions for each shot: framing, tone, lighting, texture, motion' },
                         { step: 20, title: 'LLM → VLM', description: 'Visual generation preparation and execution' }
                       ].map((item) => (
@@ -1460,7 +1887,7 @@ export default function ValidationDetail({
                             {item.description}
                           </p>
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
-                            Content will be generated after synopsis approval.
+                            Content will be generated after previous steps are complete.
                           </div>
                         </div>
                       ))}
