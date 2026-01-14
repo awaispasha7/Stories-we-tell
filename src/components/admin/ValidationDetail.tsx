@@ -1702,14 +1702,13 @@ export default function ValidationDetail({
                                       </button>
                                     </div>
                                   </div>
-                                  <div className="mt-3!">
-                                    <ExpandableText 
-                                      content={genreScript.script} 
-                                      contentId={`genreScript-${genreScript.genre}`}
-                                      maxLength={500}
-                                      className={`p-3! rounded! bg-gray-50! dark:bg-gray-800! border! ${colors.border}! ${colors.text}! whitespace-pre-wrap! text-sm!`}
-                                    />
-                                  </div>
+                                  {isExpanded && (
+                                    <div className={`mt-3! p-3! rounded! bg-gray-50! dark:bg-gray-800! border! ${colors.border}! max-h-96! overflow-y-auto!`}>
+                                      <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
+                                        {genreScript.script}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )
                             })}
