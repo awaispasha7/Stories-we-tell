@@ -233,20 +233,49 @@ class AdminApi {
     }
   }
 
-  async generateScript(id: string): Promise<{ success: boolean; script: string; word_count: number }> {
+  async generateScript(id: string): Promise<{ 
+    success: boolean; 
+    script: string; 
+    word_count: number;
+    genre_scripts?: Array<{genre: string; script: string; confidence: number; word_count: number}>;
+    message?: string;
+  }> {
     try {
       const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/generate-script`, {
         headers: {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/json'
         },
-        timeout: 90000 // 90 seconds for script generation
-      }).json<{ success: boolean; script: string; word_count: number }>()
+        timeout: 180000 // 180 seconds for multiple script generation
+      }).json<{ 
+        success: boolean; 
+        script: string; 
+        word_count: number;
+        genre_scripts?: Array<{genre: string; script: string; confidence: number; word_count: number}>;
+        message?: string;
+      }>()
 
       return response
     } catch (error) {
       console.error('Failed to generate script:', error)
       throw new Error('Failed to generate script')
+    }
+  }
+
+  async selectGenreScript(id: string, genre: string): Promise<{ success: boolean }> {
+    try {
+      const response = await ky.post(`${API_BASE_URL}/api/v1/validation/queue/${id}/select-genre-script`, {
+        headers: {
+          ...this.getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        json: { selected_genre_script: genre }
+      }).json<{ success: boolean }>()
+
+      return response
+    } catch (error) {
+      console.error('Failed to select genre script:', error)
+      throw new Error('Failed to select genre script')
     }
   }
 

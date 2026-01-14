@@ -62,6 +62,7 @@ export function GenreSelectionModal({
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [genrePredictions, setGenrePredictions] = useState<Array<{genre: string, confidence: number}>>([])
   const { resolvedTheme } = useTheme()
   const colors = getThemeColors(resolvedTheme)
 
@@ -77,6 +78,10 @@ export function GenreSelectionModal({
           setSelectedGenre(genre)
           setCustomGenre('')
           setIsCustomMode(false)
+          
+          // Get genre predictions with percentages
+          const predictions = dossier.snapshot_json?.genre_predictions || []
+          setGenrePredictions(predictions)
         })
         .catch((err) => {
           console.error('Failed to fetch dossier:', err)
@@ -291,6 +296,100 @@ export function GenreSelectionModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Genre Predictions with Percentages */}
+            {genrePredictions.length > 0 && !isCustomMode && (
+              <div 
+                className="p-4 rounded-lg border-2 mb-4"
+                style={{
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  borderWidth: '2px',
+                  borderColor: resolvedTheme === 'dark' ? 'rgb(99, 102, 241)' : 'rgb(139, 92, 246)',
+                  backgroundColor: resolvedTheme === 'dark' ? 'rgba(99, 102, 241, 0.1)' : 'rgba(139, 92, 246, 0.05)',
+                  marginBottom: '1rem'
+                }}
+              >
+                <h3 
+                  className="text-sm font-semibold mb-3 flex items-center gap-2"
+                  style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    marginBottom: '0.75rem',
+                    color: resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Detected Genres (with confidence)
+                </h3>
+                <div className="space-y-2">
+                  {genrePredictions.slice(0, 5).map((pred, idx) => {
+                    const percentage = Math.round(pred.confidence * 100)
+                    const isSelected = selectedGenre === pred.genre
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleGenreSelect(pred.genre)}
+                        className="w-full px-3 py-2 rounded text-left transition-all"
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          textAlign: 'left',
+                          border: isSelected ? '2px solid rgb(139, 92, 246)' : '1px solid transparent',
+                          backgroundColor: isSelected
+                            ? resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)'
+                            : resolvedTheme === 'dark' ? 'rgba(71, 85, 105, 0.3)' : 'rgba(243, 244, 246, 0.8)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span 
+                            className="font-medium text-sm"
+                            style={{
+                              fontWeight: isSelected ? '600' : '500',
+                              fontSize: '0.875rem',
+                              color: resolvedTheme === 'dark' ? 'rgb(203, 213, 225)' : 'rgb(55, 65, 81)'
+                            }}
+                          >
+                            {pred.genre}
+                          </span>
+                          <span 
+                            className="text-xs font-bold px-2 py-1 rounded"
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              backgroundColor: resolvedTheme === 'dark' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)',
+                              color: 'rgb(139, 92, 246)'
+                            }}
+                          >
+                            {percentage}%
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p 
+                  className="text-xs mt-3 text-center"
+                  style={{
+                    fontSize: '0.75rem',
+                    marginTop: '0.75rem',
+                    textAlign: 'center',
+                    color: resolvedTheme === 'dark' ? 'rgb(148, 163, 184)' : 'rgb(107, 114, 128)'
+                  }}
+                >
+                  Click on a genre above to select it, or choose from the options below
+                </p>
+              </div>
+            )}
+            
             {/* Genre Suggestions */}
             {!isCustomMode && (
             <div className="space-y-4">

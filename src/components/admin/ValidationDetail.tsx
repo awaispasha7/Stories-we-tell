@@ -89,6 +89,8 @@ interface ValidationRequest {
   synopsis_checklist?: SynopsisChecklist
   full_script?: string
   shot_list?: any
+  genre_scripts?: Array<{genre: string; script: string; confidence: number; word_count: number}>
+  selected_genre_script?: string
 }
 
 interface Props {
@@ -196,6 +198,11 @@ export default function ValidationDetail({
   const [shotList, setShotList] = useState<any | undefined>(request.shot_list)
   const [isGeneratingScript, setIsGeneratingScript] = useState(false)
   const [isGeneratingShotList, setIsGeneratingShotList] = useState(false)
+  const [genreScripts, setGenreScripts] = useState<Array<{genre: string; script: string; confidence: number; word_count: number}>>(
+    request.genre_scripts || []
+  )
+  const [selectedGenreScript, setSelectedGenreScript] = useState<string | undefined>(request.selected_genre_script)
+  const [expandedGenreScript, setExpandedGenreScript] = useState<string | null>(null)
   
   // Track which tabs are unlocked by admin (override locks)
   const [unlockedTabs, setUnlockedTabs] = useState<Set<TabType>>(new Set())
@@ -358,8 +365,21 @@ export default function ValidationDetail({
     try {
       const result = await adminApi.generateScript(request.validation_id)
       if (result.success) {
-        setFullScript(result.script)
-        toast.success('Script generated', `Generated ${result.word_count} words`)
+        // Handle multiple genre scripts
+        if (result.genre_scripts && result.genre_scripts.length > 0) {
+          setGenreScripts(result.genre_scripts)
+          // Set the highest confidence script as default
+          const highestConf = result.genre_scripts.reduce((prev, curr) => 
+            curr.confidence > prev.confidence ? curr : prev
+          )
+          setFullScript(highestConf.script)
+          setSelectedGenreScript(highestConf.genre)
+          toast.success('Scripts generated', `Generated ${result.genre_scripts.length} genre-specific scripts`)
+        } else {
+          // Fallback to single script
+          setFullScript(result.script)
+          toast.success('Script generated', `Generated ${result.word_count} words`)
+        }
         if (onReviewSent) {
           onReviewSent()
         }
@@ -371,6 +391,25 @@ export default function ValidationDetail({
       toast.error('Failed to generate script', 'Please try again.')
     } finally {
       setIsGeneratingScript(false)
+    }
+  }
+
+  const handleSelectGenreScript = async (genre: string, script: string) => {
+    try {
+      const result = await adminApi.selectGenreScript(request.validation_id, genre)
+      if (result.success) {
+        setSelectedGenreScript(genre)
+        setFullScript(script)
+        toast.success('Genre script selected', `Selected ${genre} script`)
+        if (onReviewSent) {
+          onReviewSent()
+        }
+      } else {
+        toast.error('Failed to select genre script', 'Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to select genre script:', error)
+      toast.error('Failed to select genre script', 'Please try again.')
     }
   }
 
@@ -474,6 +513,12 @@ export default function ValidationDetail({
     }
     if (request.shot_list !== undefined) {
       setShotList(request.shot_list)
+    }
+    if (request.genre_scripts !== undefined) {
+      setGenreScripts(request.genre_scripts || [])
+    }
+    if (request.selected_genre_script !== undefined) {
+      setSelectedGenreScript(request.selected_genre_script)
     }
     // Note: synopsis_approved is read directly from request.synopsis_approved
     // No local state needed - always use request.synopsis_approved for conditional rendering
@@ -1244,18 +1289,102 @@ export default function ValidationDetail({
                           {request.synopsis_approved && (
                             <button
                               onClick={handleGenerateScript}
-                              disabled={isGeneratingScript || !!fullScript}
+                              disabled={isGeneratingScript || !!fullScript || genreScripts.length > 0}
                               className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
-                                isGeneratingScript || fullScript
+                                isGeneratingScript || fullScript || genreScripts.length > 0
                                   ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
                                   : 'bg-blue-600! hover:bg-blue-700! text-white!'
                               }`}
                             >
-                              {isGeneratingScript ? 'Generating...' : fullScript ? 'Generated' : 'Generate Script'}
+                              {isGeneratingScript 
+                                ? 'Generating...' 
+                                : genreScripts.length > 0 
+                                  ? `Generated (${genreScripts.length} genres)` 
+                                  : fullScript 
+                                    ? 'Generated' 
+                                    : 'Generate Script'}
                             </button>
                           )}
                         </div>
-                        {fullScript ? (
+                        {/* Multiple Genre Scripts Display */}
+                        {genreScripts.length > 0 ? (
+                          <div className="mt-3! space-y-3!">
+                            <p className={`text-sm! ${colors.textSecondary}! mb-3!`}>
+                              Generated {genreScripts.length} genre-specific scripts. Select the best fit:
+                            </p>
+                            {genreScripts.map((genreScript, idx) => {
+                              const isSelected = selectedGenreScript === genreScript.genre
+                              const isExpanded = expandedGenreScript === genreScript.genre
+                              const percentage = Math.round(genreScript.confidence * 100)
+                              
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`p-4! rounded-lg! border-2! ${
+                                    isSelected 
+                                      ? 'border-blue-500! bg-blue-50! dark:bg-blue-900/20!' 
+                                      : colors.border + '! bg-white! dark:bg-gray-900!'
+                                  }`}
+                                >
+                                  <div className="flex! items-start! justify-between! mb-2!">
+                                    <div className="flex-1!">
+                                      <div className="flex! items-center! gap-2! mb-1!">
+                                        <h5 className={`text-base! font-semibold! ${colors.text}!`}>
+                                          {genreScript.genre}
+                                        </h5>
+                                        <span className={`px-2! py-1! rounded! text-xs! font-bold! ${
+                                          isSelected 
+                                            ? 'bg-blue-600! text-white!' 
+                                            : 'bg-gray-200! dark:bg-gray-700! ' + colors.text + '!'
+                                        }`}>
+                                          {percentage}%
+                                        </span>
+                                        {isSelected && (
+                                          <span className="px-2! py-1! rounded! text-xs! font-semibold! bg-green-100! dark:bg-green-900/30! text-green-800! dark:text-green-300!">
+                                            ✓ Selected
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className={`text-xs! ${colors.textSecondary}!`}>
+                                        {genreScript.word_count} words
+                                      </p>
+                                    </div>
+                                    <div className="flex! gap-2!">
+                                      <button
+                                        onClick={() => setExpandedGenreScript(isExpanded ? null : genreScript.genre)}
+                                        className={`px-3! py-1! rounded! text-xs! font-medium! transition-colors! ${
+                                          isExpanded
+                                            ? 'bg-gray-200! dark:bg-gray-700! ' + colors.text + '!'
+                                            : 'bg-gray-100! dark:bg-gray-800! ' + colors.textSecondary + '! hover:bg-gray-200! dark:hover:bg-gray-700!'
+                                        }`}
+                                      >
+                                        {isExpanded ? 'Collapse' : 'Preview'}
+                                      </button>
+                                      <button
+                                        onClick={() => handleSelectGenreScript(genreScript.genre, genreScript.script)}
+                                        disabled={isSelected}
+                                        className={`px-3! py-1! rounded! text-xs! font-medium! transition-colors! ${
+                                          isSelected
+                                            ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
+                                            : 'bg-blue-600! hover:bg-blue-700! text-white!'
+                                        }`}
+                                      >
+                                        {isSelected ? 'Selected' : 'Select'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {isExpanded && (
+                                    <div className={`mt-3! p-3! rounded! bg-gray-50! dark:bg-gray-800! border! ${colors.border}! max-h-96! overflow-y-auto!`}>
+                                      <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
+                                        {genreScript.script}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : fullScript ? (
                           <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
                             <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
                               {fullScript}
