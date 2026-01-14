@@ -214,8 +214,84 @@ export default function ValidationDetail({
   const [selectedGenreScript, setSelectedGenreScript] = useState<string | undefined>(request.selected_genre_script)
   const [expandedGenreScript, setExpandedGenreScript] = useState<string | null>(null)
   
+  // Track expanded/collapsed state for long text content
+  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set())
+  
   // Track which tabs are unlocked by admin (override locks)
   const [unlockedTabs, setUnlockedTabs] = useState<Set<TabType>>(new Set())
+  
+  // Helper function to toggle content expansion
+  const toggleContent = (contentId: string) => {
+    setExpandedContent(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(contentId)) {
+        newSet.delete(contentId)
+      } else {
+        newSet.add(contentId)
+      }
+      return newSet
+    })
+  }
+  
+  // Helper component for expandable text content
+  const ExpandableText = ({ content, contentId, maxLength = 500, className = '' }: { 
+    content: string, 
+    contentId: string, 
+    maxLength?: number,
+    className?: string 
+  }) => {
+    const isExpanded = expandedContent.has(contentId)
+    const shouldTruncate = content.length > maxLength
+    const displayText = shouldTruncate && !isExpanded ? content.substring(0, maxLength) + '...' : content
+    
+    if (!shouldTruncate) {
+      return <div className={className}>{content}</div>
+    }
+    
+    return (
+      <div>
+        <div className={className}>
+          {displayText}
+        </div>
+        <button
+          onClick={() => toggleContent(contentId)}
+          className="mt-2! text-sm! font-medium! text-blue-600! dark:text-blue-400! hover:underline!"
+        >
+          {isExpanded ? 'Show Less' : 'Show More'}
+        </button>
+      </div>
+    )
+  }
+  
+  // Helper component for expandable JSON content
+  const ExpandableJSON = ({ content, contentId, maxLength = 1000 }: { 
+    content: any, 
+    contentId: string, 
+    maxLength?: number 
+  }) => {
+    const isExpanded = expandedContent.has(contentId)
+    const jsonString = JSON.stringify(content, null, 2)
+    const shouldTruncate = jsonString.length > maxLength
+    const displayText = shouldTruncate && !isExpanded 
+      ? jsonString.substring(0, maxLength) + '\n...' 
+      : jsonString
+    
+    return (
+      <div>
+        <pre className={`${colors.text}! text-sm! whitespace-pre-wrap! overflow-x-auto!`}>
+          {displayText}
+        </pre>
+        {shouldTruncate && (
+          <button
+            onClick={() => toggleContent(contentId)}
+            className="mt-2! text-sm! font-medium! text-blue-600! dark:text-blue-400! hover:underline!"
+          >
+            {isExpanded ? 'Show Less' : 'Show More'}
+          </button>
+        )}
+      </div>
+    )
+  }
   
   // Determine if a tab should be locked based on workflow progress
   const isTabLocked = (tabKey: TabType): boolean => {
@@ -943,10 +1019,13 @@ export default function ValidationDetail({
                     <p className={`text-sm! sm:text-base! ${colors.textSecondary}! mb-6!`}>
                       Complete conversation history between the user and the chatbot.
                     </p>
-                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800! max-h-[70vh]! overflow-y-auto!`}>
-                      <pre className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-mono! leading-relaxed!`}>
-                        {request.conversation_transcript || 'No conversation transcript available.'}
-                      </pre>
+                    <div className={`p-4! sm:p-5! rounded-lg! border-2! ${colors.border}! bg-gray-50! dark:bg-gray-800!`}>
+                      <ExpandableText 
+                        content={request.conversation_transcript || 'No conversation transcript available.'} 
+                        contentId="conversationTranscript"
+                        maxLength={2000}
+                        className={`whitespace-pre-wrap! text-sm! sm:text-base! ${colors.text}! font-mono! leading-relaxed!`}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1345,10 +1424,13 @@ export default function ValidationDetail({
                               </span>
                             )}
                           </div>
-                          <div className={`p-4! rounded! bg-white! dark:bg-gray-900! border! ${colors.border}! max-h-[600px]! overflow-y-auto!`}>
-                            <p className={`text-sm! sm:text-base! ${colors.text}! whitespace-pre-wrap! leading-relaxed!`}>
-                              {synopsis}
-                            </p>
+                          <div className={`p-4! rounded! bg-white! dark:bg-gray-900! border! ${colors.border}!`}>
+                            <ExpandableText 
+                              content={synopsis} 
+                              contentId="synopsis"
+                              maxLength={800}
+                              className={`text-sm! sm:text-base! ${colors.text}! whitespace-pre-wrap! leading-relaxed!`}
+                            />
                           </div>
                           <div className={`mt-3! text-xs! ${colors.textSecondary}!`}>
                             Word count: {synopsis ? synopsis.split(/\s+/).filter(Boolean).length : 0} words
@@ -1620,22 +1702,26 @@ export default function ValidationDetail({
                                       </button>
                                     </div>
                                   </div>
-                                  {isExpanded && (
-                                    <div className={`mt-3! p-3! rounded! bg-gray-50! dark:bg-gray-800! border! ${colors.border}! max-h-96! overflow-y-auto!`}>
-                                      <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
-                                        {genreScript.script}
-                                      </div>
-                                    </div>
-                                  )}
+                                  <div className="mt-3!">
+                                    <ExpandableText 
+                                      content={genreScript.script} 
+                                      contentId={`genreScript-${genreScript.genre}`}
+                                      maxLength={500}
+                                      className={`p-3! rounded! bg-gray-50! dark:bg-gray-800! border! ${colors.border}! ${colors.text}! whitespace-pre-wrap! text-sm!`}
+                                    />
+                                  </div>
                                 </div>
                               )
                             })}
                           </div>
                         ) : fullScript ? (
                           <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
-                            <div className={`${colors.text}! whitespace-pre-wrap! text-sm!`}>
-                              {fullScript}
-                            </div>
+                            <ExpandableText 
+                              content={fullScript} 
+                              contentId="fullScript"
+                              maxLength={1000}
+                              className={`${colors.text}! whitespace-pre-wrap! text-sm!`}
+                            />
                           </div>
                         ) : request.synopsis_approved ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
@@ -1659,17 +1745,17 @@ export default function ValidationDetail({
                               Scene breakdown, shot sequences, character presence, transitions, atmosphere
                             </p>
                           </div>
-                          {fullScript && (
+                          {fullScript && fullScript.trim().length > 0 && (
                             <button
                               onClick={handleGenerateShotList}
-                              disabled={isGeneratingShotList || !!shotList}
+                              disabled={isGeneratingShotList || (shotList && Object.keys(shotList).length > 0)}
                               className={`px-4! py-2! rounded-lg! font-medium! transition-colors! ${
-                                isGeneratingShotList || shotList
+                                isGeneratingShotList || (shotList && Object.keys(shotList).length > 0)
                                   ? 'bg-gray-300! dark:bg-gray-700! text-gray-500! cursor-not-allowed!'
                                   : 'bg-blue-600! hover:bg-blue-700! text-white!'
                               }`}
                             >
-                              {isGeneratingShotList ? 'Generating...' : shotList ? 'Generated' : 'Generate Shot List'}
+                              {isGeneratingShotList ? 'Generating...' : (shotList && Object.keys(shotList).length > 0) ? 'Generated' : 'Generate Shot List'}
                             </button>
                           )}
                         </div>
@@ -1681,13 +1767,15 @@ export default function ValidationDetail({
                             </div>
                           </div>
                         )}
-                        {shotList ? (
+                        {shotList && Object.keys(shotList).length > 0 ? (
                           <div className={`mt-3! p-4! rounded! bg-white dark:bg-gray-900 ${colors.border}! border!`}>
-                            <pre className={`${colors.text}! text-sm! whitespace-pre-wrap! overflow-x-auto!`}>
-                              {JSON.stringify(shotList, null, 2)}
-                            </pre>
+                            <ExpandableJSON 
+                              content={shotList} 
+                              contentId="shotList"
+                              maxLength={2000}
+                            />
                           </div>
-                        ) : fullScript ? (
+                        ) : fullScript && fullScript.trim().length > 0 ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
                             Click "Generate Shot List" to create the shot list from the generated script.
                           </div>
@@ -1709,7 +1797,7 @@ export default function ValidationDetail({
                               Dialogue lines, timing per line, emotional indicators
                             </p>
                           </div>
-                          {fullScript && (
+                          {fullScript && fullScript.trim().length > 0 && (
                             <button
                               onClick={handleGenerateDialogue}
                               disabled={isGeneratingDialogue}
@@ -1731,7 +1819,7 @@ export default function ValidationDetail({
                             </div>
                           </div>
                         )}
-                        {fullScript ? (
+                        {fullScript && fullScript.trim().length > 0 ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
                             Click "Generate Dialogue" to extract dialogue lines from the script.
                           </div>
@@ -1753,7 +1841,7 @@ export default function ValidationDetail({
                               Narrator text, duration logic, VO placement, tone markings
                             </p>
                           </div>
-                          {fullScript && (
+                          {fullScript && fullScript.trim().length > 0 && (
                             <button
                               onClick={handleGenerateVoiceOver}
                               disabled={isGeneratingVoiceOver}
@@ -1775,7 +1863,7 @@ export default function ValidationDetail({
                             </div>
                           </div>
                         )}
-                        {fullScript ? (
+                        {fullScript && fullScript.trim().length > 0 ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
                             Click "Generate VO Script" to create the voice-over script from the generated script.
                           </div>
@@ -1797,7 +1885,7 @@ export default function ValidationDetail({
                               Camera angles, movement, lens style, framing, proximity, rhythm of cut
                             </p>
                           </div>
-                          {shotList && (
+                          {shotList && Object.keys(shotList).length > 0 && (
                             <button
                               onClick={handleGenerateCameraLogic}
                               disabled={isGeneratingCameraLogic}
@@ -1819,7 +1907,7 @@ export default function ValidationDetail({
                             </div>
                           </div>
                         )}
-                        {shotList ? (
+                        {shotList && Object.keys(shotList).length > 0 ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
                             Click "Generate Camera Logic" to create camera instructions from the shot list.
                           </div>
@@ -1841,7 +1929,7 @@ export default function ValidationDetail({
                               Shot duration, beat frequency, transition time, dialogue timing, visual rhythm
                             </p>
                           </div>
-                          {shotList && (
+                          {shotList && Object.keys(shotList).length > 0 && (
                             <button
                               onClick={handleGenerateSceneMath}
                               disabled={isGeneratingSceneMath}
@@ -1863,7 +1951,7 @@ export default function ValidationDetail({
                             </div>
                           </div>
                         )}
-                        {shotList ? (
+                        {shotList && Object.keys(shotList).length > 0 ? (
                           <div className={`mt-3! p-3! rounded! bg-gray-100! dark:bg-gray-700! ${colors.textSecondary}! text-sm!`}>
                             Click "Generate Scene Math" to calculate timing and rhythm from the shot list.
                           </div>
